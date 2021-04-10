@@ -1,0 +1,4 @@
+pywin32
+boto3
+pymssql<3.0
+filechunkio
