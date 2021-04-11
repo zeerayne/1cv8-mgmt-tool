@@ -36,11 +36,12 @@ def execute_v8_command(
         if permission_code:
             # Блокирует фоновые задания и новые сеансы
             cci.lock_info_base(working_process_connection, ib, permission_code)
-            logging.debug('[{0}] Locked sucessfully'.format(ib_name))
             # Перед завершением сеансов следует взять паузу,
             # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
             # после включения блокировки регламентных заданий
-            time.sleep(settings.V8_LOCK_INFO_BASE_PAUSE)
+            pause = settings.V8_LOCK_INFO_BASE_PAUSE
+            logging.debug(f'[{ib_name}] Wait for {pause} seconds')
+            time.sleep(pause)
             # Принудительно завершает текущие сеансы
             cci.terminate_info_base_sessions(agent_connection, cluster, ib_short)
             del agent_connection
