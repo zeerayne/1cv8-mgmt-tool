@@ -84,7 +84,7 @@ def _get_update_chain(manifests, name_in_metadata, version_in_metadata):
     return update_chain, len(update_chain) > 1
 
 
-def _update_info_base(ib_name):
+def _update_info_base(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
     2. Блокирует фоновые задания и новые сеансы
@@ -128,28 +128,32 @@ def _update_info_base(ib_name):
             time_str = get_formatted_current_datetime()
             ib_and_time_str = ib_name + '_' + time_str
             log_filename = logPath + ib_and_time_str + '.log'
+            # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
-                '"' + get_platform_full_path() + '" ' \
-                'DESIGNER /S ' + server + '\\' + ib_name + ' ' \
-                '/N"' + info_base_user + '" /P"' + info_base_pwd + '" ' \
-                '/Out ' + log_filename + ' -NoTruncate ' \
-                '/UC "' + permission_code + '" ' \
-                '/UpdateCfg "' + selected_update_filename + '" /UpdateDBCfg -Server -v1'
-            # Обновляет информационную базу и конфигурацию БД
-            execute_v8_command(
-                ib_name, v8_command, log_filename, permission_code
-            )
-            if is_multiupdate:
-                # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
-                # и продолжает только в случае, если ИБ обновилась.
-                previous_version = current_version
-                metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-                current_version = get_version_from_string(metadata[1])
-                if current_version == previous_version:
-                    logging.error('[%s] Update [%s %s] -> [%s] was not applied, next chain updates will not be applied' %
-                                (ib_name, name_in_metadata, current_version, selected_manifest[1])
-                                )
-                    result = False
+                f'"{get_platform_full_path()}" ' \
+                f'DESIGNER /S {server}\\{ib_name} ' \
+                f'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+                f'/Out {log_filename} -NoTruncate ' \
+                f'/UC "{permission_code}" ' \
+                f'/DisableStartupDialogs /DisableStartupMessages ' \
+                f'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
+            logging.info(f'[{ib_name}] Created update command [{v8_command}]')
+            if not dry:
+                # Обновляет информационную базу и конфигурацию БД
+                execute_v8_command(
+                    ib_name, v8_command, log_filename, permission_code
+                )
+                if is_multiupdate:
+                    # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
+                    # и продолжает только в случае, если ИБ обновилась.
+                    previous_version = current_version
+                    metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+                    current_version = get_version_from_string(metadata[1])
+                    if current_version == previous_version:
+                        logging.error('[%s] Update [%s %s] -> [%s] was not applied, next chain updates will not be applied' %
+                                    (ib_name, name_in_metadata, current_version, selected_manifest[1])
+                                    )
+                        result = False
         if not update_chain:
             logging.info('[%s] No suitable update for [%s %s] was found' %
                         (ib_name, name_in_metadata, version_in_metadata)
