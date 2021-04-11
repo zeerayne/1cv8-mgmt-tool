@@ -79,7 +79,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-def com_func_wrapper(func, ib_name):
+def com_func_wrapper(func, ib_name, **kwargs):
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
@@ -87,7 +87,7 @@ def com_func_wrapper(func, ib_name):
     :return: Массив ib_name, func_result
     """
     try:
-        result = func(ib_name)
+        result = func(ib_name, **kwargs)
     except pywintypes.com_error as e:
         logging.exception('[%s] COM Error occured' % ib_name)
         # Если произошла ошибка, пытаемся снять блокировку ИБ
