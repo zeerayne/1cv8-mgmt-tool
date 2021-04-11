@@ -59,6 +59,7 @@ def _backup_info_base(ib_name):
     ib_and_time_str = ib_name + '_' + time_str
     dt_filename = backupPath + ib_and_time_str + '.dt'
     log_filename = logPath + ib_and_time_str + '.log'
+    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
         '"' + get_platform_full_path() + '" ' \
         'DESIGNER /S ' + server + '\\' + ib_name + ' ' \
@@ -66,6 +67,7 @@ def _backup_info_base(ib_name):
         '/Out ' + log_filename + ' -NoTruncate ' \
         '/UC "' + permission_code + '" ' \
         '/DumpIB ' + dt_filename
+    logging.info(f'[{ib_name}] Created dump command [{v8_command}]')
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES
     # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
