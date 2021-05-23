@@ -186,10 +186,12 @@ def _maintenance_mssql_database(ib_name):
 
 
 def concat_bool_to_result(result, bool_value):
-    if bool_value:
-        return result
-    else:
-        return result[0], bool_value
+    if type(bool_value) == bool:
+        bool_in_result = result[1]
+        bool_in_result = bool_in_result & bool_value
+        return result[0], bool_in_result
+    if type(bool_value) == tuple:
+        return concat_bool_to_result(result, bool_value[1])
 
 
 def maintenance_info_base(ib_name):
