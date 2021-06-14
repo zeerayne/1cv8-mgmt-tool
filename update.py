@@ -126,7 +126,7 @@ def _update_info_base(ib_name, dry=False):
             # Формирует команду для обновления
             time_str = get_formatted_current_datetime()
             ib_and_time_str = ib_name + '_' + time_str
-            log_filename = logPath + ib_and_time_str + '.log'
+            log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
                 f'"{get_platform_full_path()}" ' \

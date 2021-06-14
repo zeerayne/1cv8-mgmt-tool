@@ -58,8 +58,8 @@ def _backup_info_base(ib_name):
     info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
     time_str = get_formatted_current_datetime()
     ib_and_time_str = ib_name + '_' + time_str
-    dt_filename = backupPath + ib_and_time_str + '.dt'
-    log_filename = logPath + ib_and_time_str + '.log'
+    dt_filename = os.path.join(backupPath, f'{ib_and_time_str}.dt')
+    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
         rf'"{get_platform_full_path()}" ' \
@@ -116,8 +116,8 @@ def _backup_pgdump(ib_name):
         db_name = ib_info.dbName
     time_str = get_formatted_current_datetime()
     ib_and_time_str = ib_name + '_' + time_str
-    backup_filename = settings.PG_BACKUP_PATH + ib_and_time_str + '.pgdump'
-    log_filename = logPath + ib_and_time_str + '.log'
+    backup_filename = os.path.join(settings.PG_BACKUP_PATH, f'{ib_and_time_str}.pgdump')
+    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
     # --blobs
     # Include large objects in the dump.
     # This is the default behavior except when --schema, --table, or --schema-only is specified.

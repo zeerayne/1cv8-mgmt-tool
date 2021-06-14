@@ -45,7 +45,7 @@ def _maintenance_info_base(ib_name):
     info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
     time_str = get_formatted_current_datetime()
     ib_and_time_str = ib_name + '_' + time_str
-    log_filename = logPath + ib_and_time_str + '.log'
+    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
     reduce_date = datetime.now() - timedelta(days=logRetentionDays)
     reduce_date_str = get_formatted_date(reduce_date)
     v8_command = \
