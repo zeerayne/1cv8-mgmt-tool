@@ -5,13 +5,16 @@ import functools
 LABEL_STACK_MAP = dict()
 
 
-def logaugment(logger, label, key, prefix='', postfix=''):
+def logaugment(logger, label, key, stacked=False, prefix='', postfix=''):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             def make_value(label_stack, prefix, postfix):
                 return f'{prefix}{":".join(label_stack)}{postfix}'
-            label_stack = LABEL_STACK_MAP.setdefault(logger.name, [])
+            if stacked:
+                label_stack = LABEL_STACK_MAP.setdefault(logger.name, [])
+            else:
+                label_stack = []
             label_stack.append(label)
             logger.extra[key] = make_value(label_stack, prefix, postfix)
             result = func(*args, **kwargs)
@@ -22,7 +25,7 @@ def logaugment(logger, label, key, prefix='', postfix=''):
     return decorator
 
 
-def logaugment_parameter(logger, parameter, key, prefix='', postfix=''):
+def logaugment_parameter(logger, parameter, key, stacked=False, prefix='', postfix=''):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -37,7 +40,7 @@ def logaugment_parameter(logger, parameter, key, prefix='', postfix=''):
                 label = kwargs[parameter]
             else:
                 raise ValueError(f'function called without {parameter} parameter')
-            logaugment_decorator = logaugment(logger, label, key, prefix, postfix)
+            logaugment_decorator = logaugment(logger, label, key, stacked, prefix, postfix)
             wrapper = functools.update_wrapper(logaugment_decorator, func)
             result = wrapper(func)(*args, **kwargs)
             return result
