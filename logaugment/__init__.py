@@ -14,15 +14,18 @@ def logaugment(logger, label, key, stacked=False, prefix='', postfix=''):
                     return f'{prefix}{":".join(label_stack)}{postfix}'
                 else:
                     return ''
+
+            was_appended = False
             if stacked:
                 label_stack = LABEL_STACK_MAP.setdefault(logger.name, [])
             else:
                 label_stack = []
-            if label:
+            if label and (not label_stack or not label_stack[-1] == label):
+                was_appended = True
                 label_stack.append(label)
                 logger.extra[key] = make_value(label_stack, prefix, postfix)
             result = func(*args, **kwargs)
-            if label:
+            if label and was_appended:
                 label_stack.pop()
                 logger.extra[key] = make_value(label_stack, prefix, postfix)
             return result
