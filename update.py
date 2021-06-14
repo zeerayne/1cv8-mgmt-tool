@@ -129,7 +129,7 @@ def _update_info_base(ib_name, dry=False):
             # Код блокировки новых сеансов
             permission_code = "0000"
             # Формирует команду для обновления
-            log_filename = common_funcs.get_ib_and_time_filename(ib_name, 'log')
+            log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
                 rf'"{common_funcs.get_platform_full_path()}" ' \

@@ -48,7 +48,7 @@ def _maintenance_info_base(ib_name):
     result = True
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
-    log_filename = common_funcs.get_ib_and_time_filename(ib_name, 'log')
+    log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
     reduce_date = datetime.now() - timedelta(days=logRetentionDays)
     reduce_date_str = common_funcs.get_formatted_date(reduce_date)
     v8_command = \
@@ -97,7 +97,7 @@ def _maintenance_vacuumdb(ib_name):
         log.error(f'password not found for user {db_user_string}')
         return False
     db_name = ib_info.dbName
-    log_filename = common_funcs.get_ib_and_time_filename(ib_name, 'log')
+    log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
     vacuumdb_command = \
         f'{settings.PG_VACUUMDB_PATH} --host={db_server} --port=5432 --username={db_user} ' \
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
