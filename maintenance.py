@@ -39,7 +39,7 @@ def _maintenance_info_base(ib_name):
     2. Удаляет старые резервные копии
     3. Удаляет старые log-файлы
     """
-    logging.info('[%s] Start maintenance' % ib_name)
+    logging.info(f'[{ib_name}] Start maintenance')
     result = True
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
@@ -49,17 +49,17 @@ def _maintenance_info_base(ib_name):
     reduce_date = datetime.now() - timedelta(days=logRetentionDays)
     reduce_date_str = get_formatted_date(reduce_date)
     v8_command = \
-        '"' + get_platform_full_path() + '" ' \
-        'DESIGNER /S ' + server + '\\' + ib_name + ' ' \
-        '/N"' + info_base_user + '" /P"' + info_base_pwd + '" ' \
-        '/Out ' + log_filename + ' -NoTruncate ' \
-        '/ReduceEventLogSize ' + reduce_date_str
+        rf'"{get_platform_full_path()}" ' \
+        rf'DESIGNER /S {server}\{ib_name} ' \
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+        rf'/Out {log_filename} -NoTruncate ' \
+        rf'/ReduceEventLogSize {reduce_date_str}'
     execute_v8_command(
         ib_name, v8_command, log_filename, timeout=600
     )
     filename_pattern = "*" + ib_name + "_*.*"
     # Получает список резервных копий ИБ, удаляет старые
-    logging.info('[%s] Removing backups older than %i days' % (ib_name, backupRetentionDays))
+    logging.info(f'[{ib_name}] Removing backups older than {backupRetentionDays} days')
     path = backupPath + filename_pattern
     remove_old_files_by_pattern(path, backupRetentionDays)
     # Удаляет старые резервные копии в местах репликации
@@ -68,57 +68,50 @@ def _maintenance_info_base(ib_name):
             path = replication_path + filename_pattern
             remove_old_files_by_pattern(path, backupRetentionDays)
     # Получает список log-файлов, удаляет старые
-    logging.info('[%s] Removing logs older than %i days' % (ib_name, logRetentionDays))
+    logging.info(f'[{ib_name}] Removing logs older than {logRetentionDays} days')
     path = logPath + filename_pattern
     remove_old_files_by_pattern(path, logRetentionDays)
     return result
 
 
 def _maintenance_vacuumdb(ib_name):
-    logging.info('[{0}] Start vacuumdb'.format(ib_name))
+    logging.info(f'[{ib_name}] Start vacuumdb')
     cci = ClusterControlInterface()
     # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
     # то не будет возможности получить данные, кроме имени ИБ
     wpc = cci.get_working_process_connection_with_info_base_auth()
     ib_info = cci.get_info_base(wpc, ib_name)
     if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
-        logging.error('[{0}] vacuumdb can not be performed for {1} DBMS'.format(ib_name, ib_info.DBMS))
+        logging.error(f'[{ib_name}] vacuumdb can not be performed for {ib_info.DBMS} DBMS')
         return True
     db_user = ib_info.dbUser
     db_server = ib_info.dbServerName
-    db_user_string = db_user + '@' + db_server
+    db_user_string = f'{db_user}@{db_server}'
     try:
         db_pwd = settings.PG_CREDENTIALS[db_user_string]
     except KeyError:
-        logging.error('[{0}] password not found for user {1}'.format(ib_name, db_user_string))
+        logging.error(f'[{ib_name}] password not found for user {db_user_string}')
         return False
     db_name = ib_info.dbName
     time_str = get_formatted_current_datetime()
     ib_and_time_str = ib_name + '_' + time_str
-    log_filename = logPath + ib_and_time_str + '.log'
-    vacuumdb_command = '{vacuumdb_path} --host={db_server} --port=5432 --username={db_user} ' \
-                       '--analyze --verbose --dbname={db_name} > {log_file} 2>&1' \
-        .format(
-            vacuumdb_path=settings.PG_VACUUMDB_PATH,
-            db_server=db_server,
-            db_user=db_user,
-            db_name=db_name,
-            log_file=log_filename,
-        )
+    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
+    vacuumdb_command = \
+        f'{settings.PG_VACUUMDB_PATH} --host={db_server} --port=5432 --username={db_user} ' \
+        f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
     vacuumdb_env = os.environ.copy()
     vacuumdb_env['PGPASSWORD'] = db_pwd
     vacuumdb_process = subprocess.Popen(vacuumdb_command, env=vacuumdb_env, shell=True)
-    logging.debug('[{0}] vacuumdb PID is {1}'.format(ib_name, str(vacuumdb_process.pid)))
+    logging.debug(f'[{ib_name}] vacuumdb PID is {str(vacuumdb_process.pid)}')
     vacuumdb_process.wait()
     if vacuumdb_process.returncode != 0:
         with open(log_filename) as log_file:
             read_data = log_file.read()
             # remove a trailing newline
             read_data = read_data.rstrip()
-            msg = '[{0}] Log message <<< {1} >>>'.format(ib_name, read_data)
-        logging.error(msg)
+        logging.error(f'[{ib_name}] Log message <<< {read_data} >>>')
         return False
-    logging.info('[{0}] vacuumdb completed'.format(ib_name))
+    logging.info(f'[{ib_name}] vacuumdb completed')
     return True
 
 
@@ -128,7 +121,7 @@ def _maintenance_adaptive_index_defrag(conn, ib_name, db_name):
     ))
     if not adaptive_index_defrag_exists:
         server_net_addr = conn.execute_scalar('SELECT ConnectionProperty(\'local_net_address\')').decode('utf-8')
-        logging.error('[{0}] usp_AdaptiveIndexDefrag does not exists on server {1}'.format(ib_name, server_net_addr))
+        logging.error(f'[{ib_name}] usp_AdaptiveIndexDefrag does not exists on server {server_net_addr}')
         return False
     usp_adaptive_index_defrag = conn.init_procedure('msdb.dbo.usp_AdaptiveIndexDefrag')
     #
@@ -139,34 +132,34 @@ def _maintenance_adaptive_index_defrag(conn, ib_name, db_name):
 
 
 def _maintenance_shrink_transaction_log(conn, ib_name, db_name):
-    logging.info('[{0}] Shrink database transaction log'.format(ib_name))
+    logging.info(f'[{ib_name}] Shrink database transaction log')
     conn.execute_query(
-        'SELECT mf.name as log_file FROM sys.master_files mf '
-        'inner join sys.databases d on mf.database_id = d.database_id '
-        'where d.name = %(db_name)s and mf.type_desc = \'LOG\''
+        "SELECT mf.name as log_file FROM sys.master_files mf "
+        "inner join sys.databases d on mf.database_id = d.database_id "
+        "where d.name = %(db_name)s and mf.type_desc = 'LOG'"
         , {'db_name': db_name}
     )
     log_files = [row for row in conn]
     if len(log_files) > 0:
         conn.execute_non_query('CHECKPOINT')
         for row in log_files:
-            conn.execute_non_query('DBCC SHRINKFILE (%(log_file)s, %(log_size)d) WITH NO_INFOMSGS',
-                                   {'log_file': row['log_file'], 'log_size': settings.MSSQL_SHRINK_LOG_SIZE}
-                                   )
+            conn.execute_non_query(
+                'DBCC SHRINKFILE (%(log_file)s, %(log_size)d) WITH NO_INFOMSGS',
+                {'log_file': row['log_file'], 'log_size': settings.MSSQL_SHRINK_LOG_SIZE}
+            )
     else:
-        logging.warning('[{0}] No log files found for database {1}'.format(ib_name, db_name))
+        logging.warning(f'[{ib_name}] No log files found for database {db_name}')
 
 
 def _maintenance_mssql_database(ib_name):
-    logging.info('[{0}] Start MSSQL database maintenance'.format(ib_name))
+    logging.info(f'[{ib_name}] Start MSSQL database maintenance')
     with ClusterControlInterface() as cci:
         # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
         # то не будет возможности получить данные, кроме имени ИБ
         wpc = cci.get_working_process_connection_with_info_base_auth()
         ib_info = cci.get_info_base(wpc, ib_name)
         if ib_info.DBMS.lower() != 'MSSQLServer'.lower():
-            logging.error('[{0}] MSSQL database maintenance can not be performed for {1} DBMS'
-                        .format(ib_name, ib_info.DBMS))
+            logging.error(f'[{ib_name}] MSSQL database maintenance can not be performed for {ib_info.DBMS} DBMS')
             return True
         db_user = ib_info.dbUser
         db_server = ib_info.dbServerName
@@ -178,7 +171,7 @@ def _maintenance_mssql_database(ib_name):
     try:
         db_pwd = settings.MSSQL_CREDENTIALS[db_user_string]
     except KeyError:
-        logging.error('[{0}] password not found for user {1}'.format(ib_name, db_user_string))
+        logging.error(f'[{ib_name}] password not found for user {db_user_string}')
         return False
     with _mssql.connect(server=db_server, user=db_user, password=db_pwd, database=db_name) as conn:
         _maintenance_shrink_transaction_log(conn, ib_name, db_name)
@@ -208,7 +201,7 @@ def maintenance_info_base(ib_name):
             result = concat_bool_to_result(result, result_ms)
         return result
     except Exception as e:
-        logging.exception('[{0}] Unknown exception occurred in thread'.format(ib_name))
+        logging.exception(f'[{ib_name}] Unknown exception occurred in thread')
         return ib_name, False
 
 

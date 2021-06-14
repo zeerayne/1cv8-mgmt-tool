@@ -1,3 +1,4 @@
+import os.path
 import re
 import glob
 import logging
@@ -116,11 +117,9 @@ def _update_info_base(ib_name, dry=False):
         current_version = version_in_metadata
         if is_multiupdate:
             chain_str = " -> ".join([str(manifest[1]) for manifest in update_chain])
-            logging.info('[%s] Created update chain [%s]' % (ib_name, chain_str))
+            logging.info(f'[{ib_name}] Created update chain [{chain_str}]')
         for selected_manifest in update_chain:
-            logging.info('[%s] Start update for [%s %s] -> [%s]' %
-                        (ib_name, name_in_metadata, current_version, selected_manifest[1])
-                        )
+            logging.info(f'[{ib_name}] Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
             selected_update_filename = selected_manifest[0].replace('1cv8.mft', '1cv8.cfu')
             # Код блокировки новых сеансов
             permission_code = "0000"
@@ -155,10 +154,8 @@ def _update_info_base(ib_name, dry=False):
                                     )
                         result = False
         if not update_chain:
-            logging.info('[%s] No suitable update for [%s %s] was found' %
-                        (ib_name, name_in_metadata, version_in_metadata)
-                        )
-            logging.info('[%s] Skip update' % ib_name)
+            logging.info(f'[{ib_name}] No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
+            logging.info(f'[{ib_name}] Skip update')
     return result
 
 
@@ -166,7 +163,7 @@ def update_info_base(ib_name):
     try:
         return com_func_wrapper(_update_info_base, ib_name)
     except Exception as e:
-        logging.exception('[{0}] Unknown exception occurred in thread'.format(ib_name))
+        logging.exception(f'[{ib_name}] Unknown exception occurred in thread')
         return ib_name, False
 
 
