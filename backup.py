@@ -7,16 +7,15 @@ import subprocess
 import sys
 from datetime import datetime
 from shutil import copyfile
+import core.common as common_funcs
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 from core.process import execute_v8_command
-from core.common import get_platform_full_path, get_formatted_current_datetime, \
-    com_func_wrapper, get_info_bases, get_info_base_credentials, path_leaf, get_server_address
 from core.aws import analyze_s3_result, upload_infobase_to_s3
 from core.process import pycom_threadpool_initializer
 from util.notification import make_html_table, send_notification
 
-server = get_server_address()
+server = common_funcs.get_server_address()
 backupPath = settings.BACKUP_PATH
 backupReplicationEnabled = settings.BACKUP_REPLICATION_ENABLED
 backupReplicationPaths = settings.BACKUP_REPLICATION_PATHS
@@ -24,7 +23,7 @@ logPath = settings.LOG_PATH
 
 
 def replicate_backup(backup_fullpath, replication_paths):
-    backup_filename = path_leaf(backup_fullpath)
+    backup_filename = common_funcs.path_leaf(backup_fullpath)
     for path in replication_paths:
         try:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
@@ -55,14 +54,13 @@ def _backup_info_base(ib_name):
     # Код блокировки новых сеансов
     permission_code = "0000"
     # Формирует команду для выгрузки
-    info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
-    time_str = get_formatted_current_datetime()
-    ib_and_time_str = ib_name + '_' + time_str
-    dt_filename = os.path.join(backupPath, f'{ib_and_time_str}.dt')
-    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
+    info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
+    ib_and_time_str = common_funcs.get_ib_and_time_string(ib_name)
+    dt_filename = os.path.join(backupPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'dt'))
+    log_filename = os.path.join(logPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'log'))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
-        rf'"{get_platform_full_path()}" ' \
+        rf'"{common_funcs.get_platform_full_path()}" ' \
         rf'DESIGNER /S {server}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
@@ -114,10 +112,9 @@ def _backup_pgdump(ib_name):
             logging.error(f'[{ib_name}] password not found for user {db_user_string}')
             return False
         db_name = ib_info.dbName
-    time_str = get_formatted_current_datetime()
-    ib_and_time_str = ib_name + '_' + time_str
-    backup_filename = os.path.join(settings.PG_BACKUP_PATH, f'{ib_and_time_str}.pgdump')
-    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
+    ib_and_time_str = common_funcs.get_ib_and_time_string(ib_name)
+    backup_filename = os.path.join(backupPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
+    log_filename = os.path.join(logPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'log'))
     # --blobs
     # Include large objects in the dump.
     # This is the default behavior except when --schema, --table, or --schema-only is specified.
@@ -152,7 +149,7 @@ def backup_info_base(ib_name):
         if settings.PG_BACKUP_ENABLED:
             result = ib_name, _backup_pgdump(ib_name)
         else:
-            result = com_func_wrapper(_backup_info_base, ib_name)
+            result = common_funcs.com_func_wrapper(_backup_info_base, ib_name)
         # Если включена репликация и результат выгрузки успешен
         if backupReplicationEnabled and result and result[1]:
             backup_filename = result[0]
@@ -185,14 +182,14 @@ def analyze_backup_result(result, workload, datetime_start, datetime_finish):
         logging.warning(f'[Backup] {len(workload)} required; {len(result)} done; {missed} missed')
 
 
-if __name__ == "__main__":
+def main():
     MIN_PYTHON_VERSION = (3, 7)
     if sys.version_info < MIN_PYTHON_VERSION:
         sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON_VERSION)
     try:
         # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
         # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
-        info_bases = get_info_bases()
+        info_bases = common_funcs.get_info_bases()
         backup_threads = settings.BACKUP_THREADS
         aws_threads = settings.AWS_THREADS
         backup_result = []
@@ -280,3 +277,7 @@ if __name__ == "__main__":
         logging.info('Done')
     except Exception as e:
         logging.exception('Unknown exception occurred in main thread')
+
+
+if __name__ == "__main__":
+    main()

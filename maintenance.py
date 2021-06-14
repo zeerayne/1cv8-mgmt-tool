@@ -6,12 +6,12 @@ import _mssql
 import settings
 import subprocess
 
+import core.common as common_funcs
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command, execute_in_threadpool
-from core.common import get_platform_full_path, get_formatted_current_datetime, get_formatted_date, com_func_wrapper, \
-    get_info_bases, get_info_base_credentials, get_server_address
 
-server = get_server_address()
+
+server = common_funcs.get_server_address()
 logPath = settings.LOG_PATH
 logRetentionDays = settings.LOG_RETENTION_DAYS
 backupPath = settings.BACKUP_PATH
@@ -42,14 +42,12 @@ def _maintenance_info_base(ib_name):
     logging.info(f'[{ib_name}] Start maintenance')
     result = True
     # Формирует команду для урезания журнала регистрации
-    info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
-    time_str = get_formatted_current_datetime()
-    ib_and_time_str = ib_name + '_' + time_str
-    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
+    info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
+    log_filename = common_funcs.get_ib_and_time_filename(ib_name, 'log')
     reduce_date = datetime.now() - timedelta(days=logRetentionDays)
-    reduce_date_str = get_formatted_date(reduce_date)
+    reduce_date_str = common_funcs.get_formatted_date(reduce_date)
     v8_command = \
-        rf'"{get_platform_full_path()}" ' \
+        rf'"{common_funcs.get_platform_full_path()}" ' \
         rf'DESIGNER /S {server}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
@@ -93,9 +91,7 @@ def _maintenance_vacuumdb(ib_name):
         logging.error(f'[{ib_name}] password not found for user {db_user_string}')
         return False
     db_name = ib_info.dbName
-    time_str = get_formatted_current_datetime()
-    ib_and_time_str = ib_name + '_' + time_str
-    log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
+    log_filename = common_funcs.get_ib_and_time_filename(ib_name, 'log')
     vacuumdb_command = \
         f'{settings.PG_VACUUMDB_PATH} --host={db_server} --port=5432 --username={db_user} ' \
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
@@ -191,7 +187,7 @@ def maintenance_info_base(ib_name):
     result = ib_name, True
     try:
         if settings.V8_MAINTENANCE_ENABLED:
-            result_v8 = com_func_wrapper(_maintenance_info_base, ib_name)
+            result_v8 = common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
             result = concat_bool_to_result(result, result_v8)
         if settings.PG_MAINTENANCE_ENABLED:
             result_pg = _maintenance_vacuumdb(ib_name)
@@ -205,11 +201,15 @@ def maintenance_info_base(ib_name):
         return ib_name, False
 
 
-if __name__ == "__main__":
+def main():
     try:
-        info_bases = get_info_bases()
+        info_bases = common_funcs.get_info_bases()
         maintenanceThreads = settings.MAINTENANCE_THREADS
         execute_in_threadpool(maintenance_info_base, info_bases, maintenanceThreads)
         logging.info('Done')
     except Exception as e:
         logging.exception('Unknown exception occured in main thread')
+
+
+if __name__ == "__main__":
+    main()

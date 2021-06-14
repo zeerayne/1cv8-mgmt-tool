@@ -1,8 +1,12 @@
 import logging
 import ntpath
+import datetime
+import os
+
 import pywintypes
 import settings
-import time
+
+from typing import Union
 from core import version
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
@@ -13,24 +17,41 @@ platformPath = settings.V8_PLATFORM_PATH
 platformVersion = version.find_platform_last_version(platformPath)
 
 
-def get_platform_full_path():
-    full_path = platformPath + platformVersion + '\\bin\\1cv8.exe'
+def get_platform_full_path() -> str:
+    full_path = os.path.join(platformPath, platformVersion, 'bin', '1cv8.exe')
     return full_path
 
 
-def get_server_address():
+def get_server_address() -> str:
     address = settings.V8_SERVER_AGENT['address']
     return address
 
 
-def get_formatted_current_datetime():
-    time_str = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime(time.time()))
+def get_formatted_current_datetime() -> str:
+    time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     return time_str
 
 
-def get_formatted_date(datetime_value):
-    time_str = time.strftime("%Y-%m-%d", datetime_value.timetuple())
+def get_formatted_date(datetime_value: Union[datetime.datetime, datetime.date]) -> str:
+    time_str = datetime_value.strftime("%Y-%m-%d")
     return time_str
+
+
+def get_ib_and_time_string(ib_name: str) -> str:
+    time_str = get_formatted_current_datetime()
+    ib_and_time_str = f'{ib_name}_{time_str}'
+    return ib_and_time_str
+
+
+def append_file_extension_to_string(string: str, file_ext: str) -> str:
+    string_with_extension = f'{string}.{file_ext}'
+    return string_with_extension
+
+
+def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
+    ib_and_time_str = get_ib_and_time_string(ib_name)
+    ib_and_time_filename = append_file_extension_to_string(ib_and_time_str, file_ext)
+    return ib_and_time_filename
 
 
 def get_info_bases():
@@ -49,8 +70,9 @@ def get_info_bases():
         working_process_connection = cci.get_working_process_connection_with_info_base_auth()
 
         info_bases = cci.get_info_bases(working_process_connection)
-        info_bases = [ib.Name for ib in info_bases if ib.Name.lower() not in
-                    [ib.lower() for ib in settings.V8_INFO_BASES_EXCLUDE]]
+        info_bases = [
+            ib.Name for ib in info_bases if ib.Name.lower() not in [ib.lower() for ib in settings.V8_INFO_BASES_EXCLUDE]
+        ]
         del working_process_connection
         return info_bases
 

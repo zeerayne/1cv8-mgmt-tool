@@ -4,13 +4,12 @@ import glob
 import logging
 import pywintypes
 import settings
+import core.common as common_funcs
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command, execute_in_threadpool
-from core.common import get_platform_full_path, get_formatted_current_datetime, \
-    com_func_wrapper, get_info_bases, get_info_base_credentials, get_server_address
 from core.version import get_version_from_string
 
-server = get_server_address()
+server = common_funcs.get_server_address()
 logPath = settings.LOG_PATH
 updatePath = settings.UPDATE_PATH
 
@@ -97,7 +96,7 @@ def _update_info_base(ib_name, dry=False):
     logging.info('[%s] Initiate update' % ib_name)
     result = True
     with ClusterControlInterface() as cci:
-        info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
+        info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
         # Получает тип конфигурации и её версию
         try:
             metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
@@ -124,19 +123,17 @@ def _update_info_base(ib_name, dry=False):
             # Код блокировки новых сеансов
             permission_code = "0000"
             # Формирует команду для обновления
-            time_str = get_formatted_current_datetime()
-            ib_and_time_str = ib_name + '_' + time_str
-            log_filename = os.path.join(logPath, f'{ib_and_time_str}.log')
+            log_filename = common_funcs.get_ib_and_time_filename(ib_name, 'log')
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
-                f'"{get_platform_full_path()}" ' \
-                f'DESIGNER /S {server}\\{ib_name} ' \
-                f'/N"{info_base_user}" /P"{info_base_pwd}" ' \
-                f'/Out {log_filename} -NoTruncate ' \
-                f'/UC "{permission_code}" ' \
-                f'/DisableStartupDialogs /DisableStartupMessages ' \
-                f'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
-            logging.info(f'[{ib_name}] Created update command [{v8_command}]')
+                rf'"{common_funcs.get_platform_full_path()}" ' \
+                rf'DESIGNER /S {server}\{ib_name} ' \
+                rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+                rf'/Out {log_filename} -NoTruncate ' \
+                rf'/UC "{permission_code}" ' \
+                rf'/DisableStartupDialogs /DisableStartupMessages ' \
+                rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
+            log.info(f'Created update command [{v8_command}]')
             if not dry:
                 # Обновляет информационную базу и конфигурацию БД
                 execute_v8_command(
@@ -161,17 +158,21 @@ def _update_info_base(ib_name, dry=False):
 
 def update_info_base(ib_name):
     try:
-        return com_func_wrapper(_update_info_base, ib_name)
+        return common_funcs.com_func_wrapper(_update_info_base, ib_name)
     except Exception as e:
         logging.exception(f'[{ib_name}] Unknown exception occurred in thread')
         return ib_name, False
 
 
-if __name__ == "__main__":
+def main():
     try:
-        info_bases = get_info_bases()
+        info_bases = common_funcs.get_info_bases()
         updateThreads = settings.UPDATE_THREADS
         result = execute_in_threadpool(update_info_base, info_bases, updateThreads)
         logging.info('Done')
     except Exception as e:
         logging.exception('Unknown exception occured in main thread')
+
+
+if __name__ == "__main__":
+    main()
