@@ -10,7 +10,10 @@ def logaugment(logger, label, key, stacked=False, prefix='', postfix=''):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             def make_value(label_stack, prefix, postfix):
-                return f'{prefix}{":".join(label_stack)}{postfix}'
+                if label_stack:
+                    return f'{prefix}{":".join(label_stack)}{postfix}'
+                else:
+                    return ''
             if stacked:
                 label_stack = LABEL_STACK_MAP.setdefault(logger.name, [])
             else:
