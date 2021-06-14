@@ -15,11 +15,13 @@ def logaugment(logger, label, key, stacked=False, prefix='', postfix=''):
                 label_stack = LABEL_STACK_MAP.setdefault(logger.name, [])
             else:
                 label_stack = []
-            label_stack.append(label)
-            logger.extra[key] = make_value(label_stack, prefix, postfix)
+            if label:
+                label_stack.append(label)
+                logger.extra[key] = make_value(label_stack, prefix, postfix)
             result = func(*args, **kwargs)
-            label_stack.pop()
-            logger.extra[key] = make_value(label_stack, prefix, postfix)
+            if label:
+                label_stack.pop()
+                logger.extra[key] = make_value(label_stack, prefix, postfix)
             return result
         return wrapper
     return decorator
