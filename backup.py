@@ -32,7 +32,7 @@ def replicate_backup(backup_fullpath, replication_paths):
     for path in replication_paths:
         try:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
-            replication_fullpath = path + backup_filename
+            replication_fullpath = os.path.join(path, backup_filename)
             log.info(f'Replicating {backup_fullpath} to {replication_fullpath}')
             copyfile(backup_fullpath, replication_fullpath)
         except Exception as e:

@@ -115,7 +115,7 @@ def _update_info_base(ib_name, dry=False):
         name_in_metadata = metadata[0]
         version_in_metadata = get_version_from_string(metadata[1])
         # Получает манифесты всех обновлений в указанной директории
-        path = updatePath + "**\\1cv8.mft"
+        path = os.path.join(updatePath, '**', '1cv8.mft')
         manifests = glob.glob(pathname=path, recursive=True)
         update_chain, is_multiupdate = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
         # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений

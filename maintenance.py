@@ -60,19 +60,19 @@ def _maintenance_info_base(ib_name):
     execute_v8_command(
         ib_name, v8_command, log_filename, timeout=600
     )
-    filename_pattern = "*" + ib_name + "_*.*"
+    filename_pattern = f'*{ib_name}_*.*'
     # Получает список резервных копий ИБ, удаляет старые
     log.info(f'Removing backups older than {backupRetentionDays} days')
-    path = backupPath + filename_pattern
+    path = os.path.join(backupPath, filename_pattern)
     remove_old_files_by_pattern(path, backupRetentionDays)
     # Удаляет старые резервные копии в местах репликации
     if backupReplicationEnabled:
         for replication_path in backupReplicationPaths:
-            path = replication_path + filename_pattern
+            path = os.path.join(replication_path, filename_pattern)
             remove_old_files_by_pattern(path, backupRetentionDays)
     # Получает список log-файлов, удаляет старые
     log.info(f'Removing logs older than {logRetentionDays} days')
-    path = logPath + filename_pattern
+    path = os.path.join(logPath, filename_pattern)
     remove_old_files_by_pattern(path, logRetentionDays)
     return result
 
