@@ -1,15 +1,14 @@
 import boto3
 import os
-import logging
 import math
-import ntpath
 import settings
 import time
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
-from filechunkio import FileChunkIO
 from multiprocessing.pool import ThreadPool
-from core.common import path_leaf
+
+import core.common as common_funcs
+import core.logging as logging
 
 
 session = boto3.Session(
@@ -23,6 +22,9 @@ bucket = s3.Bucket(settings.AWS_BUCKET_NAME)
 retention_days = settings.AWS_RETENTION_DAYS
 
 
+log = logging.getLogger(__name__)
+
+
 def sizeof_fmt(num, suffix='B'):
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
         if abs(num) < 1024.0:
@@ -31,6 +33,7 @@ def sizeof_fmt(num, suffix='B'):
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
+@logging.logaugment_operation(log, 'aws')
 def analyze_s3_result(result, workload, datetime_start, datetime_finish):
     succeeded = 0
     failed = 0
@@ -42,23 +45,24 @@ def analyze_s3_result(result, workload, datetime_start, datetime_finish):
                 size += e[2]
             else:
                 failed += 1
-                logging.error('[AWS] [{0}] FAILED'.format(e[0]))
+                log.error('[{0}] FAILED'.format(e[0]))
         diff = (datetime_finish - datetime_start).total_seconds()
-        logging.info('[AWS] {0} succeeded; {1} failed; Uploaded {2} in {3:.1f}s. Avg. speed {4}/s'
-                     .format(succeeded, failed, sizeof_fmt(size), diff, sizeof_fmt(size / diff)))
+        log.info('{0} succeeded; {1} failed; Uploaded {2} in {3:.1f}s. Avg. speed {4}/s'
+                 .format(succeeded, failed, sizeof_fmt(size), diff, sizeof_fmt(size / diff)))
         if len(result) != len(workload):
             processed_info_bases = [e[0] for e in result]
             missed = 0
             for w in workload:
                 if w not in processed_info_bases:
-                    logging.warning('[%s] MISSED' % w)
+                    log.warning('[%s] MISSED' % w)
                     missed += 1
-            logging.warning('[AWS] {0} required; {1} done; {2} missed'
-                            .format(len(workload), len(result), missed))
+            log.warning('{0} required; {1} done; {2} missed'
+                        .format(len(workload), len(result), missed))
     else:
-        logging.info('[AWS] Nothing done')
+        log.info('Nothing done')
 
 
+@logging.logaugment_ib_name_parameter_operation(log)
 def upload_infobase_to_s3(ib_name, full_backup_path):
     aws_retries = settings.AWS_RETRIES
     try:
@@ -72,21 +76,22 @@ def upload_infobase_to_s3(ib_name, full_backup_path):
                 if i == aws_retries:
                     raise e
                 else:
-                    logging.debug('[{0}] AWS upload failed, retrying'.format(ib_name))
+                    log.debug('AWS upload failed, retrying')
                     aws_retry_pause = settings.AWS_RETRY_PAUSE
-                    logging.debug('[{0}] wait for {1} seconds'.format(ib_name, aws_retry_pause))
+                    log.debug(f'wait for {aws_retry_pause} seconds')
                     time.sleep(aws_retry_pause)
     except Exception as e:
-        logging.exception('[{0}] Unknown exception occurred in AWS thread'.format(ib_name))
+        log.exception('Unknown exception occurred in AWS thread')
         return ib_name, False
 
 
+@logging.logaugment_ib_name_parameter_operation(log)
 def _upload_infobase_to_s3(ib_name, full_backup_path):
-    logging.info('[{0}] Start upload {1} to Amazon S3'.format(ib_name, full_backup_path))
+    log.info(f'Start upload {full_backup_path} to Amazon S3')
     bucket_name = settings.AWS_BUCKET_NAME
     bucket_obj = bucket
     file_mime = 'application/octet-stream'
-    filename = path_leaf(full_backup_path)
+    filename = common_funcs.path_leaf(full_backup_path)
     # Собираем инфу чтобы вывод в лог был полезным
     filestat = os.stat(full_backup_path)
     source_size = filestat.st_size
@@ -94,8 +99,10 @@ def _upload_infobase_to_s3(ib_name, full_backup_path):
     chunk_size = settings.AWS_CHUNK_SIZE
     if source_size > chunk_size:
         chunk_count = math.ceil(source_size / chunk_size)
-        logging.info('[{0}] File size is {1}, chunk size is {2}. Multipart upload for {3} chunks'
-            .format(ib_name, sizeof_fmt(source_size), sizeof_fmt(chunk_size), chunk_count))
+        log.info(
+            f'File size is {sizeof_fmt(source_size)}, chunk size is {sizeof_fmt(chunk_size)}. '
+            f'Multipart upload for {chunk_count} chunks'
+        )
     tc = boto3.s3.transfer.TransferConfig(
         multipart_threshold=chunk_size, 
         multipart_chunksize=chunk_size 
@@ -103,8 +110,7 @@ def _upload_infobase_to_s3(ib_name, full_backup_path):
     s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename, Config=tc)
     datetime_finish = datetime.now()
     diff = (datetime_finish - datetime_start).total_seconds()
-    logging.info('[{0}] Uploaded {1} in {2:.1f}s. Avg. speed {3}/s'
-                 .format(ib_name, sizeof_fmt(source_size), diff, sizeof_fmt(source_size / diff)))
+    log.info(f'Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
     # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
     # '_' добавляется к имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
     # при наличии имён вида infobase и infobase2
@@ -115,6 +121,7 @@ def _upload_infobase_to_s3(ib_name, full_backup_path):
     return ib_name, True, source_size
 
 
+@logging.logaugment_operation(log, 'aws')
 def upload_to_s3(infobases):
     """
     Загружает резервные копии информационных баз в Amazon S3.
@@ -124,14 +131,14 @@ def upload_to_s3(infobases):
     """
     if settings.AWS_ENABLED:
         threads = settings.AWS_THREADS
-        logging.debug('[AWS] Creating pool with {0} threads'.format(threads))
+        log.debug(f'Creating pool with {threads} threads')
         pool = ThreadPool(threads)
-        logging.debug('[AWS] Pool initialized, mapping workload: {0} items'.format(len(infobases)))
+        log.debug(f'Pool initialized, mapping workload: {len(infobases)} items')
         datetime_start = datetime.now()
         result = pool.starmap(upload_infobase_to_s3, infobases)
         datetime_finish = datetime.now()
-        logging.debug('[AWS] Closing pool')
+        log.debug('Closing pool')
         pool.close()
-        logging.debug('[AWS] Joining pool')
+        log.debug('Joining pool')
         pool.join()
         analyze_s3_result(result, datetime_start, datetime_finish)
