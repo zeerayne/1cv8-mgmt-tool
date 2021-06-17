@@ -1,17 +1,22 @@
+import os.path
 import re
 import glob
-import logging
 import pywintypes
 import settings
+
+import core.common as common_funcs
+import core.logging as logging
+
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command, execute_in_threadpool
-from core.common import get_platform_full_path, get_formatted_current_datetime, \
-    com_func_wrapper, get_info_bases, get_info_base_credentials, get_server_address
 from core.version import get_version_from_string
 
-server = get_server_address()
+server = common_funcs.get_server_address()
 logPath = settings.LOG_PATH
 updatePath = settings.UPDATE_PATH
+
+
+log = logging.getLogger(__name__)
 
 
 def _find_suitable_manifests(manifests, name_in_metadata, version_in_metadata):
@@ -84,6 +89,7 @@ def _get_update_chain(manifests, name_in_metadata, version_in_metadata):
     return update_chain, len(update_chain) > 1
 
 
+@logging.logaugment_ib_name_parameter_operation(log)
 def _update_info_base(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
@@ -93,10 +99,10 @@ def _update_info_base(ib_name, dry=False):
     5. Проверяет, есть ли ещё обновления, если есть, то возвращается на шаг №3
     6. Снимает блокировку фоновых заданий и сеансов
     """
-    logging.info('[%s] Initiate update' % ib_name)
+    log.info(f'Initiate update' % ib_name)
     result = True
     with ClusterControlInterface() as cci:
-        info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
+        info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
         # Получает тип конфигурации и её версию
         try:
             metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
@@ -109,35 +115,31 @@ def _update_info_base(ib_name, dry=False):
         name_in_metadata = metadata[0]
         version_in_metadata = get_version_from_string(metadata[1])
         # Получает манифесты всех обновлений в указанной директории
-        path = updatePath + "**\\1cv8.mft"
+        path = os.path.join(updatePath, '**', '1cv8.mft')
         manifests = glob.glob(pathname=path, recursive=True)
         update_chain, is_multiupdate = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
         # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений
         current_version = version_in_metadata
         if is_multiupdate:
             chain_str = " -> ".join([str(manifest[1]) for manifest in update_chain])
-            logging.info('[%s] Created update chain [%s]' % (ib_name, chain_str))
+            log.info(f'Created update chain [{chain_str}]')
         for selected_manifest in update_chain:
-            logging.info('[%s] Start update for [%s %s] -> [%s]' %
-                        (ib_name, name_in_metadata, current_version, selected_manifest[1])
-                        )
+            log.info(f'Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
             selected_update_filename = selected_manifest[0].replace('1cv8.mft', '1cv8.cfu')
             # Код блокировки новых сеансов
             permission_code = "0000"
             # Формирует команду для обновления
-            time_str = get_formatted_current_datetime()
-            ib_and_time_str = ib_name + '_' + time_str
-            log_filename = logPath + ib_and_time_str + '.log'
+            log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
-                f'"{get_platform_full_path()}" ' \
-                f'DESIGNER /S {server}\\{ib_name} ' \
-                f'/N"{info_base_user}" /P"{info_base_pwd}" ' \
-                f'/Out {log_filename} -NoTruncate ' \
-                f'/UC "{permission_code}" ' \
-                f'/DisableStartupDialogs /DisableStartupMessages ' \
-                f'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
-            logging.info(f'[{ib_name}] Created update command [{v8_command}]')
+                rf'"{common_funcs.get_platform_full_path()}" ' \
+                rf'DESIGNER /S {server}\{ib_name} ' \
+                rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+                rf'/Out {log_filename} -NoTruncate ' \
+                rf'/UC "{permission_code}" ' \
+                rf'/DisableStartupDialogs /DisableStartupMessages ' \
+                rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
+            log.info(f'Created update command [{v8_command}]')
             if not dry:
                 # Обновляет информационную базу и конфигурацию БД
                 execute_v8_command(
@@ -150,31 +152,36 @@ def _update_info_base(ib_name, dry=False):
                     metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
                     current_version = get_version_from_string(metadata[1])
                     if current_version == previous_version:
-                        logging.error('[%s] Update [%s %s] -> [%s] was not applied, next chain updates will not be applied' %
-                                    (ib_name, name_in_metadata, current_version, selected_manifest[1])
-                                    )
+                        log.error(
+                            f'Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
+                            f'was not applied, next chain updates will not be applied'
+                        )
                         result = False
         if not update_chain:
-            logging.info('[%s] No suitable update for [%s %s] was found' %
-                        (ib_name, name_in_metadata, version_in_metadata)
-                        )
-            logging.info('[%s] Skip update' % ib_name)
+            log.info(f'No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
+            log.info(f'Skip update')
     return result
 
 
+@logging.logaugment_ib_name_parameter_operation(log)
 def update_info_base(ib_name):
     try:
-        return com_func_wrapper(_update_info_base, ib_name)
+        return common_funcs.com_func_wrapper(_update_info_base, ib_name)
     except Exception as e:
-        logging.exception('[{0}] Unknown exception occurred in thread'.format(ib_name))
+        log.exception(f'Unknown exception occurred in thread')
         return ib_name, False
 
 
-if __name__ == "__main__":
+@logging.logaugment_operation(log, 'update')
+def main():
     try:
-        info_bases = get_info_bases()
+        info_bases = common_funcs.get_info_bases()
         updateThreads = settings.UPDATE_THREADS
         result = execute_in_threadpool(update_info_base, info_bases, updateThreads)
-        logging.info('Done')
+        log.info('Done')
     except Exception as e:
-        logging.exception('Unknown exception occured in main thread')
+        log.exception('Unknown exception occured in main thread')
+
+
+if __name__ == "__main__":
+    main()

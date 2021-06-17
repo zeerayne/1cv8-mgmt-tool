@@ -1,7 +1,9 @@
-import logging
 import win32com.client
 import settings
 import pythoncom
+
+
+import core.logging as logging
 
 """
 Для доступа к информационной базе из внешней программы используется COM объект COMConnector. 
@@ -15,6 +17,9 @@ import pythoncom
 Для того чтобы зарегистрировать ComConnector в 64 разрядной операционной системе Windows выполняется
 команда: regsvr32 "C:\Program Files (x86)\1cv8\[version]\bin\comcntr.dll" 
 """
+
+
+log = logging.getLogger(__name__)
 
 
 class ClusterControlInterface:
@@ -143,8 +148,8 @@ class ClusterControlInterface:
         try:
             working_process_connection.UpdateInfoBase(info_base)
         except Exception as e:
-            logging.exception('[{0}] Lock info base exception'.format(info_base.Name))
-        logging.debug('[{0}] Lock info base successfully'.format(info_base.Name))
+            log.exception('[{0}] Lock info base exception'.format(info_base.Name))
+        log.debug('[{0}] Lock info base successfully'.format(info_base.Name))
 
     def unlock_info_base(self, working_process_connection, info_base):
         """
@@ -156,7 +161,7 @@ class ClusterControlInterface:
         info_base.SessionsDenied = False
         info_base.DeniedMessage = ""
         working_process_connection.UpdateInfoBase(info_base)
-        logging.debug('[{0}] Unlock info base successfully'.format(info_base.Name))
+        log.debug('[{0}] Unlock info base successfully'.format(info_base.Name))
 
     def terminate_info_base_sessions(self, agent_connection, cluster, info_base_short):
         """

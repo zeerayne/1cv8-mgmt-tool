@@ -1,15 +1,20 @@
-import logging
 import subprocess
 import threading
 import time
 
 import settings
 
+import core.logging as logging
+
 from multiprocessing.pool import ThreadPool
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 
 
+log = logging.getLogger(__name__)
+
+
+@logging.logaugment_ib_name_parameter_operation(log)
 def execute_v8_command(
         ib_name, v8_command, log_filename, permission_code=None, timeout=None
 ):
@@ -20,7 +25,7 @@ def execute_v8_command(
     Если в результате выполнения операции в командном режиме результат выполнения отличный от 0, выбрасывает исключение
     :param ib_name: Имя информационной базы, для которой будет выполнен запуск 1С в командном режиме
     :param v8_command: Команда запуска 1С в командном режиме. В тексте команды должен быть указан код доступа и лог-файл
-    :param log_filename: Полный путь к файлу, куда 1С пишет результат свооей работы, для дублирования в python.logging
+    :param log_filename: Полный путь к файлу, куда 1С пишет результат свооей работы, для дублирования в python.log
     :param permission_code: Код, для блокировки новых сеансов, если параметр отсутвует, блокировка не будет установлена
     """
     # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
@@ -40,7 +45,7 @@ def execute_v8_command(
             # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
             # после включения блокировки регламентных заданий
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
-            logging.debug(f'[{ib_name}] Wait for {pause} seconds')
+            log.debug(f'Wait for {pause} seconds')
             time.sleep(pause)
             # Принудительно завершает текущие сеансы
             cci.terminate_info_base_sessions(agent_connection, cluster, ib_short)
@@ -49,12 +54,12 @@ def execute_v8_command(
             del ib_short
             del working_process_connection
         v8_process = subprocess.Popen(v8_command)
-        logging.debug('[%s] 1cv8.exe PID is %s' % (ib_name, str(v8_process.pid)))
+        log.debug(f'1cv8.exe PID is {str(v8_process.pid)}')
         try:
             v8_process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             v8_process.terminate()
-        logging.info('[%s] Return code is %s' % (ib_name, str(v8_process.returncode)))
+        log.info(f'Return code is {str(v8_process.returncode)}')
         if permission_code:
             # Снова получаем соединение с рабочим процессом, потому что за время работы скрипта оно может закрыться
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
@@ -66,12 +71,12 @@ def execute_v8_command(
         read_data = log_file.read()
         # remove a trailing newline
         read_data = read_data.rstrip()
-        msg = '[%s] Log message <<< %s >>>' % (ib_name, read_data)
+        msg = f'Log message <<< {read_data} >>>'
         if v8_process.returncode != 0:
-            logging.error(msg)
+            log.error(msg)
             raise V8Exception(read_data)
         else:
-            logging.info(msg)
+            log.info(msg)
 
 
 def pycom_threadpool_initializer():
@@ -80,7 +85,7 @@ def pycom_threadpool_initializer():
     import pythoncom
     pythoncom.CoInitialize()
     thread_id = threading.get_ident()
-    logging.debug('Thread #%d initialized' % thread_id)
+    log.debug('Thread #%d initialized' % thread_id)
 
 
 def execute_in_threadpool(func, iterable, threads):
@@ -91,13 +96,13 @@ def execute_in_threadpool(func, iterable, threads):
     :param threads:
     :return:
     """
-    logging.debug('Creating pool with %d threads' % threads)
+    log.debug('Creating pool with %d threads' % threads)
     pool = ThreadPool(threads, initializer=pycom_threadpool_initializer)
-    logging.debug('Pool initialized, mapping workload: %d items' % len(iterable))
+    log.debug('Pool initialized, mapping workload: %d items' % len(iterable))
     result = pool.map(func, iterable)
-    logging.debug('Closing pool')
+    log.debug('Closing pool')
     pool.close()
-    logging.debug('Joining pool')
+    log.debug('Joining pool')
     pool.join()
     succeeded = 0
     failed = 0
@@ -106,6 +111,6 @@ def execute_in_threadpool(func, iterable, threads):
             succeeded += 1
         else:
             failed += 1
-            logging.error('[%s] FAILED' % e[0])
-    logging.info('%d succeeded; %d failed' % (succeeded, failed))
+            log.error('[%s] FAILED' % e[0])
+    log.info('%d succeeded; %d failed' % (succeeded, failed))
     return [(e[0], e[1]) for e in result if e[1]]
