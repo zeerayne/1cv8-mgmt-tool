@@ -99,7 +99,7 @@ def _update_info_base(ib_name, dry=False):
     5. Проверяет, есть ли ещё обновления, если есть, то возвращается на шаг №3
     6. Снимает блокировку фоновых заданий и сеансов
     """
-    log.info(f'Initiate update' % ib_name)
+    log.info(f'Initiate update')
     result = True
     with ClusterControlInterface() as cci:
         info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
