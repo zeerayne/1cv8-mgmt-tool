@@ -16,8 +16,8 @@ session = boto3.Session(
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_REGION_NAME
     )
-s3 = session.resource('s3')
-s3c = session.client('s3')
+s3 = session.resource(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL)
+s3c = session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL)
 bucket = s3.Bucket(settings.AWS_BUCKET_NAME)
 retention_days = settings.AWS_RETENTION_DAYS
 
