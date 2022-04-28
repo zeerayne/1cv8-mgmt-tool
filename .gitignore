@@ -130,3 +130,6 @@ dmypy.json
 
 # IntelliJ IDE
 .idea
+
+# VS Code
+.vscode
