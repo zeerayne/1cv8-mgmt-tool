@@ -268,11 +268,16 @@ def main():
                         except concurrent.futures.process.BrokenProcessPool:
                             log.error('Got BrokenProcessPool exception')
             backup_datetime_finish = datetime.now()
-            for future in concurrent.futures.as_completed(aws_futures):
-                e = future.result()
-                aws_result.append(e)
+            try:
+                for future in concurrent.futures.as_completed(aws_futures, timeout=3*3600):
+                    e = future.result()
+                    aws_result.append(e)
+            except concurrent.futures.TimeoutError:
+                pass
             aws_datetime_finish = datetime.now()
+        log.debug('AWS pool closed')
         analyze_backup_result(backup_result, info_bases, backup_datetime_start, backup_datetime_finish)
+        log.debug('Backup result analyzed')
         if settings.AWS_ENABLED:
             analyze_s3_result(aws_result, info_bases, aws_datetime_start, aws_datetime_finish)
 

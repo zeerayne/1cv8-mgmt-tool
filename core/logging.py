@@ -2,6 +2,7 @@ import functools
 import logging
 
 import logaugment
+import settings
 
 
 logaugment_operation = functools.partial(
@@ -15,5 +16,12 @@ logaugment_ib_name_parameter_operation = functools.partial(
 )
 
 
+logFormatter = logging.Formatter(settings.LOG_AUGMENT_FORMAT)
+
+
 def getLogger(name):
-    return logging.LoggerAdapter(logging.getLogger(name), {'operation': ''})
+    logger = logging.getLogger(name)
+    for handler in logger.handlers:
+        handler.setFormatter(logFormatter)
+    adapter = logging.LoggerAdapter(logger, {'operation': ''})
+    return adapter
