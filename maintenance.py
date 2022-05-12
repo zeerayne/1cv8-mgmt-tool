@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import glob
 import os
-import _mssql
 import settings
 import subprocess
 
@@ -116,73 +115,6 @@ def _maintenance_vacuumdb(ib_name):
     log.info(f'vacuumdb completed')
     return True
 
-
-@logging.logaugment_ib_name_parameter_operation(log)
-def _maintenance_adaptive_index_defrag(conn, ib_name, db_name):
-    adaptive_index_defrag_exists = bool(conn.execute_scalar(
-        'SELECT CASE WHEN OBJECT_ID(\'msdb.dbo.usp_AdaptiveIndexDefrag\') IS NOT NULL THEN 1 ELSE 0 END'
-    ))
-    if not adaptive_index_defrag_exists:
-        server_net_addr = conn.execute_scalar('SELECT ConnectionProperty(\'local_net_address\')').decode('utf-8')
-        log.error(f'usp_AdaptiveIndexDefrag does not exists on server {server_net_addr}')
-        return False
-    usp_adaptive_index_defrag = conn.init_procedure('msdb.dbo.usp_AdaptiveIndexDefrag')
-    #
-    # @dbScope specifies a database name to defrag.
-    # If not specified, all non-system databases plus msdb and model will be defragmented
-    #
-    usp_adaptive_index_defrag.bind(name='@dbScope', value=db_name, dbtype=_mssql.SQLVARCHAR)
-
-
-@logging.logaugment_ib_name_parameter_operation(log)
-def _maintenance_shrink_transaction_log(conn, ib_name, db_name):
-    log.info(f'Shrink database transaction log')
-    conn.execute_query(
-        "SELECT mf.name as log_file FROM sys.master_files mf "
-        "inner join sys.databases d on mf.database_id = d.database_id "
-        "where d.name = %(db_name)s and mf.type_desc = 'LOG'"
-        , {'db_name': db_name}
-    )
-    log_files = [row for row in conn]
-    if len(log_files) > 0:
-        conn.execute_non_query('CHECKPOINT')
-        for row in log_files:
-            conn.execute_non_query(
-                'DBCC SHRINKFILE (%(log_file)s, %(log_size)d) WITH NO_INFOMSGS',
-                {'log_file': row['log_file'], 'log_size': settings.MSSQL_SHRINK_LOG_SIZE}
-            )
-    else:
-        log.warning(f'No log files found for database {db_name}')
-
-
-@logging.logaugment_ib_name_parameter_operation(log)
-def _maintenance_mssql_database(ib_name):
-    log.info(f'Start MSSQL database maintenance')
-    with ClusterControlInterface() as cci:
-        # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
-        # то не будет возможности получить данные, кроме имени ИБ
-        wpc = cci.get_working_process_connection_with_info_base_auth()
-        ib_info = cci.get_info_base(wpc, ib_name)
-        if ib_info.DBMS.lower() != 'MSSQLServer'.lower():
-            log.error(f'MSSQL database maintenance can not be performed for {ib_info.DBMS} DBMS')
-            return True
-        db_user = ib_info.dbUser
-        db_server = ib_info.dbServerName
-        db_name = ib_info.dbName
-    # Алиасы необходимы в случае, когда скрипт запускается из сетевого расположения, отличного от кластера 1С
-    if db_server in settings.MSSQL_ALIASES:
-        db_server = settings.MSSQL_ALIASES[db_server]
-    db_user_string = db_user + '@' + db_server
-    try:
-        db_pwd = settings.MSSQL_CREDENTIALS[db_user_string]
-    except KeyError:
-        log.error(f'password not found for user {db_user_string}')
-        return False
-    with _mssql.connect(server=db_server, user=db_user, password=db_pwd, database=db_name) as conn:
-        _maintenance_shrink_transaction_log(conn, ib_name, db_name)
-    return True
-
-
 def concat_bool_to_result(result, bool_value):
     if type(bool_value) == bool:
         bool_in_result = result[1]
@@ -202,9 +134,6 @@ def maintenance_info_base(ib_name):
         if settings.PG_MAINTENANCE_ENABLED:
             result_pg = _maintenance_vacuumdb(ib_name)
             result = concat_bool_to_result(result, result_pg)
-        if settings.MSSQL_MAINTENANCE_ENABLED:
-            result_ms = _maintenance_mssql_database(ib_name)
-            result = concat_bool_to_result(result, result_ms)
         return result
     except Exception as e:
         log.exception(f'Unknown exception occurred in thread')
