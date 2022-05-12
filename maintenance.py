@@ -107,7 +107,7 @@ def _maintenance_vacuumdb(ib_name):
     log.debug(f'vacuumdb PID is {str(vacuumdb_process.pid)}')
     vacuumdb_process.wait()
     if vacuumdb_process.returncode != 0:
-        with open(log_filename) as log_file:
+        with open(log_filename, 'r', encoding='utf-8') as log_file:
             read_data = log_file.read()
             # remove a trailing newline
             read_data = read_data.rstrip()

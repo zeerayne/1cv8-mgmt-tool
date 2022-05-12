@@ -141,7 +141,7 @@ def _backup_pgdump(ib_name):
     log.debug(f'pg_dump PID is {str(pgdump_process.pid)}')
     pgdump_process.wait()
     if pgdump_process.returncode != 0:
-        with open(log_filename) as log_file:
+        with open(log_filename, 'r', encoding='utf-8') as log_file:
             read_data = log_file.read()
             # remove a trailing newline
             read_data = read_data.rstrip()

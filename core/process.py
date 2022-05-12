@@ -67,7 +67,7 @@ def execute_v8_command(
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    with open(log_filename, encoding='utf-8') as log_file:
+    with open(log_filename, 'r', encoding='utf-8-sig') as log_file:
         read_data = log_file.read()
         # remove a trailing newline
         read_data = read_data.rstrip()
