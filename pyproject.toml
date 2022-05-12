@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "1cv8-mgmt-tool"
+version = "2022.04.28"
+description = ""
+authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+pywin32 = "^304"
+boto3 = "^1.22.12"
+pymssql = "<=2.1.5"
+filechunkio = "^1.8"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
