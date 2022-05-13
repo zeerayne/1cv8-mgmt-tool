@@ -11,8 +11,6 @@ from typing import Union
 from core import version
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
-from util.debug import is_debug
-from util.debug import DEBUG_MONKEY_PATCH
 
 platformPath = settings.V8_PLATFORM_PATH
 platformVersion = version.find_platform_last_version(platformPath)
@@ -63,13 +61,6 @@ def get_info_bases():
     Получает именя всех ИБ, кроме указанных в списке INFO_BASES_EXCLUDE
     :return: массив с именами ИБ
     """
-    if is_debug():
-        with open(DEBUG_MONKEY_PATCH, 'r', encoding='utf-8') as debug_file:
-            for line in debug_file:
-                if 'info_bases' in line:
-                    _locals = {}
-                    exec(line, globals(), _locals)
-                    return _locals['info_bases']
     with ClusterControlInterface() as cci:
         working_process_connection = cci.get_working_process_connection_with_info_base_auth()
 
