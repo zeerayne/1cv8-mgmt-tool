@@ -15,7 +15,7 @@ from core.exceptions import V8Exception
 from core.process import execute_v8_command
 from core.aws import analyze_s3_result, upload_infobase_to_s3
 from core.process import pycom_threadpool_initializer
-from util.notification import make_html_table, send_notification
+from utils.notification import make_html_table, send_notification
 
 server = common_funcs.get_server_address()
 backupPath = settings.BACKUP_PATH
