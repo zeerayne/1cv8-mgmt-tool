@@ -106,7 +106,7 @@ def com_func_wrapper(func, ib_name, **kwargs):
     try:
         result = func(ib_name, **kwargs)
     except pywintypes.com_error as e:
-        log.exception(f'[{ib_name}] COM Error occured')
+        log.exception(f'<{ib_name}> COM Error occured')
         # Если произошла ошибка, пытаемся снять блокировку ИБ
         try:
             with ClusterControlInterface() as cci:
@@ -115,9 +115,19 @@ def com_func_wrapper(func, ib_name, **kwargs):
                 cci.unlock_info_base(working_process_connection, ib)
                 del working_process_connection
         except pywintypes.com_error as e:
-            log.exception(f'[{ib_name}] COM Error occured during handling another COM Error')
+            log.exception(f'<{ib_name}> COM Error occured during handling another COM Error')
         # После разблокировки возвращаем неуспешный результат
         return ib_name, False
     except V8Exception as e:
         return ib_name, False
     return ib_name, result
+
+
+def read_file_content(filename, file_encoding='utf-8', output_encoding='utf-8'):
+    with open(filename, 'r', encoding='utf-8-sig') as file:
+        read_data = file.read()
+        # remove a trailing newline
+        read_data = read_data.rstrip()
+    if file_encoding != output_encoding:
+        read_data = read_data.encode(output_encoding)
+    return read_data

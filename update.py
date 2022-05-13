@@ -100,7 +100,7 @@ def _update_info_base(ib_name, dry=False):
     5. Проверяет, есть ли ещё обновления, если есть, то возвращается на шаг №3
     6. Снимает блокировку фоновых заданий и сеансов
     """
-    log.info(f'[{ib_name}] Initiate update')
+    log.info(f'<{ib_name}> Initiate update')
     result = True
     with ClusterControlInterface() as cci:
         info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
@@ -123,9 +123,9 @@ def _update_info_base(ib_name, dry=False):
         current_version = version_in_metadata
         if is_multiupdate:
             chain_str = " -> ".join([str(manifest[1]) for manifest in itertools.chain([current_version], update_chain)])
-            log.info(f'[{ib_name}] Created update chain [{chain_str}]')
+            log.info(f'<{ib_name}> Created update chain [{chain_str}]')
         for selected_manifest in update_chain:
-            log.info(f'[{ib_name}] Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
+            log.info(f'<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
             selected_update_filename = selected_manifest[0].replace('1cv8.mft', '1cv8.cfu')
             # Код блокировки новых сеансов
             permission_code = "0000"
@@ -154,13 +154,13 @@ def _update_info_base(ib_name, dry=False):
                     current_version = get_version_from_string(metadata[1])
                     if current_version == previous_version:
                         log.error(
-                            f'[{ib_name}] Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
+                            f'<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
                             f'was not applied, next chain updates will not be applied'
                         )
                         result = False
         if not update_chain:
-            log.info(f'[{ib_name}] No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
-            log.info(f'[{ib_name}] Skip update')
+            log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
+            log.info(f'<{ib_name}> Skip update')
     return result
 
 
@@ -168,7 +168,7 @@ def update_info_base(ib_name):
     try:
         return common_funcs.com_func_wrapper(_update_info_base, ib_name)
     except Exception as e:
-        log.exception(f'[{ib_name}] Unknown exception occurred in thread')
+        log.exception(f'<{ib_name}> Unknown exception occurred in thread')
         return ib_name, False
 
 
@@ -177,9 +177,9 @@ def main():
         info_bases = common_funcs.get_info_bases()
         updateThreads = settings.UPDATE_THREADS
         result = execute_in_threadpool(update_info_base, info_bases, updateThreads)
-        log.info(f'[{log_prefix}] Done')
+        log.info(f'<{log_prefix}> Done')
     except Exception as e:
-        log.exception(f'[{log_prefix}] Unknown exception occured in main thread')
+        log.exception(f'<{log_prefix}> Unknown exception occured in main thread')
 
 
 if __name__ == "__main__":
