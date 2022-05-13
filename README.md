@@ -12,13 +12,16 @@
 
 # Установка
 
+Утилиты взаимодействуют с кластером 1С Предприятие при помощи поставляемой в комплекте с платформой 1С Предприятие COM-компоненты, поэтому поддерживаются только ОС Windows
+
 ## Установка внешних зависимостей
 
 Для работы необходимы 
 - Python 3.7 или более новый 
 - [Poetry](https://python-poetry.org/)
+- Платформа 1С Предприятие
 
-### Установка Python
+### Python
 
 #### Установка Python с помощью winget
 
@@ -32,10 +35,20 @@ winget install Python.Python.3
 choco install python3
 ```
 
-### Установка poetry
+### poetry
 
 ```powershell
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+```
+
+### Регистрация COM-компоненты 1С Предприятие
+
+Регистрировать необходимо COM-компоненту той же версии, что и агент сервера, к которому будет выполнятся подключение
+
+Выполнить команду с правами администратора
+
+```powershell
+regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll" 
 ```
 
 ## Установка зависимостей проекта
