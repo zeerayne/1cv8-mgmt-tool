@@ -1,4 +1,5 @@
 import concurrent.futures
+import logging
 import os
 import pathlib
 import settings
@@ -8,7 +9,6 @@ from datetime import datetime
 from shutil import copyfile
 
 import core.common as common_funcs
-import core.logging as logging
 
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
@@ -25,6 +25,7 @@ logPath = settings.LOG_PATH
 
 
 log = logging.getLogger(__name__)
+log_prefix = 'Backup'
 
 
 def replicate_backup(backup_fullpath, replication_paths):
@@ -39,7 +40,6 @@ def replicate_backup(backup_fullpath, replication_paths):
             log.exception(f'Problems while replicating to {path}: {e}')
 
 
-@logging.logaugment_ib_name_parameter_operation(log)
 def _backup_info_base(ib_name):
     """
     1. Блокирует фоновые задания и новые сеансы
@@ -56,7 +56,7 @@ def _backup_info_base(ib_name):
 
     ?. Посмотреть как будет работать, если база в монопольном режиме.
     """
-    log.info(f'Start backup')
+    log.info(f'[{ib_name}] Start backup')
     # Код блокировки новых сеансов
     permission_code = "0000"
     # Формирует команду для выгрузки
@@ -72,7 +72,7 @@ def _backup_info_base(ib_name):
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/UC "{permission_code}" ' \
         rf'/DumpIB {dt_filename}'
-    log.info(f'Created dump command [{v8_command}]')
+    log.info(f'[{ib_name}] Created dump command [{v8_command}]')
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES
     # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
@@ -87,11 +87,10 @@ def _backup_info_base(ib_name):
             if i == backup_retries:
                 raise e
             else:
-                log.debug(f'Backup failed, retrying')
+                log.debug(f'[{ib_name}] Backup failed, retrying')
     return dt_filename
 
 
-@logging.logaugment_ib_name_parameter_operation(log)
 def _backup_pgdump(ib_name):
     """
     Выполняет резервное копирование ИБ средствами СУБД PostgreSQL при помощи утилиты pg_dump
@@ -101,14 +100,14 @@ def _backup_pgdump(ib_name):
     :param ib_name:
     :return:
     """
-    log.info(f'Start pgdump')
+    log.info(f'[{ib_name}] Start pgdump')
     with ClusterControlInterface() as cci:
         # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
         # то не будет возможности получить данные, кроме имени ИБ
         wpc = cci.get_working_process_connection_with_info_base_auth()
         ib_info = cci.get_info_base(wpc, ib_name)
         if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
-            log.error(f'pgdump can not be performed for {ib_info.DBMS} DBMS')
+            log.error(f'[{ib_name}] pgdump can not be performed for {ib_info.DBMS} DBMS')
             return False
         db_user = ib_info.dbUser
         db_server = ib_info.dbServerName
@@ -116,7 +115,7 @@ def _backup_pgdump(ib_name):
         try:
             db_pwd = settings.PG_CREDENTIALS[db_user_string]
         except KeyError:
-            log.error(f'password not found for user {db_user_string}')
+            log.error(f'[{ib_name}] password not found for user {db_user_string}')
             return False
         db_name = ib_info.dbName
     ib_and_time_str = common_funcs.get_ib_and_time_string(ib_name)
@@ -138,20 +137,19 @@ def _backup_pgdump(ib_name):
     pgdump_env = os.environ.copy()
     pgdump_env['PGPASSWORD'] = db_pwd
     pgdump_process = subprocess.Popen(pgdump_command, env=pgdump_env, shell=True)
-    log.debug(f'pg_dump PID is {str(pgdump_process.pid)}')
+    log.debug(f'[{ib_name}] pg_dump PID is {str(pgdump_process.pid)}')
     pgdump_process.wait()
     if pgdump_process.returncode != 0:
         with open(log_filename, 'r', encoding='utf-8') as log_file:
             read_data = log_file.read()
             # remove a trailing newline
             read_data = read_data.rstrip()
-        log.error(f'Log message <<< {read_data} >>>')
+        log.error(f'[{ib_name}] Log message <<< {read_data} >>>')
         return False
-    log.info(f'pg_dump completed')
+    log.info(f'[{ib_name}] pg_dump completed')
     return backup_filename
 
 
-@logging.logaugment_ib_name_parameter_operation(log)
 def backup_info_base(ib_name):
     try:
         if settings.PG_BACKUP_ENABLED:
@@ -165,11 +163,10 @@ def backup_info_base(ib_name):
             replicate_backup(backup_filename, backupReplicationPaths)
         return result
     except Exception as e:
-        log.exception(f'Unknown exception occurred in thread')
+        log.exception(f'[{ib_name}] Unknown exception occurred in thread')
         return ib_name, False
 
 
-@logging.logaugment_operation(log, 'backup')
 def analyze_backup_result(result, workload, datetime_start, datetime_finish):
     succeeded = 0
     failed = 0
@@ -178,20 +175,19 @@ def analyze_backup_result(result, workload, datetime_start, datetime_finish):
             succeeded += 1
         else:
             failed += 1
-            log.error(f'({e[0]}) FAILED')
+            log.error(f'[{log_prefix}] ({e[0]}) FAILED')
     diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'{succeeded} succeeded; {failed} failed; Avg. time {diff / len(result):.1f}s.')
+    log.info(f'[{log_prefix}] {succeeded} succeeded; {failed} failed; Avg. time {diff / len(result):.1f}s.')
     if len(result) != len(workload):
         processed_info_bases = [e[0] for e in result]
         missed = 0
         for w in workload:
             if w not in processed_info_bases:
-                log.warning(f'({w}) MISSED')
+                log.warning(f'[{log_prefix}] ({w}) MISSED')
                 missed += 1
-        log.warning(f'{len(workload)} required; {len(result)} done; {missed} missed')
+        log.warning(f'[{log_prefix}] {len(workload)} required; {len(result)} done; {missed} missed')
 
 
-@logging.logaugment_operation(log, 'backup')
 def main():
     MIN_PYTHON_VERSION = (3, 7)
     if sys.version_info < MIN_PYTHON_VERSION:
@@ -213,7 +209,7 @@ def main():
                 max_workers=aws_threads,
                 #thread_name_prefix='AWSThread'
             ) as aws_executor:
-            log.info(f'Thread pool executors initialized: {backup_threads} backup thread, {aws_threads} AWS threads')
+            log.info(f'[{log_prefix}] Thread pool executors initialized: {backup_threads} backup thread, {aws_threads} AWS threads')
             backup_futures = []
             backup_datetime_start = datetime.now()
             for ib_name in info_bases:
@@ -234,11 +230,11 @@ def main():
                             aws_executor.submit(upload_infobase_to_s3, e[0], e[1])
                         )
                 except concurrent.futures.process.BrokenProcessPool:
-                    log.error('Got BrokenProcessPool exception')
+                    log.error(f'[{log_prefix}] Got BrokenProcessPool exception')
             # при работе с большим количеством COM-объектов процессы питона крашатся,
             # часть резервных копий может быть не сделана, требуется пересоздать ProcessPoolExecutor
             if len(backup_result) != len(info_bases):
-                log.warning('Backup process pool had crashed, retrying')
+                log.warning(f'[{log_prefix}] Backup process pool had crashed, retrying')
                 processed_info_bases = [e[0] for e in backup_result]
                 missed = []
                 for w in info_bases:
@@ -248,7 +244,7 @@ def main():
                     max_workers=backup_threads,
                     initializer=pycom_threadpool_initializer
                 ) as fallback_backup_executor:
-                    log.info(f'Thread pool executors initialized: {backup_threads} backup thread')
+                    log.info(f'[{log_prefix}] Thread pool executors initialized: {backup_threads} backup thread')
                     backup_futures = []
                     for ib_name in missed:
                         backup_futures.append(
@@ -266,7 +262,7 @@ def main():
                                     aws_executor.submit(upload_infobase_to_s3, e[0], e[1])
                                 )
                         except concurrent.futures.process.BrokenProcessPool:
-                            log.error('Got BrokenProcessPool exception')
+                            log.error(f'[{log_prefix}] Got BrokenProcessPool exception')
             backup_datetime_finish = datetime.now()
             try:
                 for future in concurrent.futures.as_completed(aws_futures, timeout=3*3600):
@@ -275,23 +271,23 @@ def main():
             except concurrent.futures.TimeoutError:
                 pass
             aws_datetime_finish = datetime.now()
-        log.debug('AWS pool closed')
+        log.debug(f'[{log_prefix}] AWS pool closed')
         analyze_backup_result(backup_result, info_bases, backup_datetime_start, backup_datetime_finish)
-        log.debug('Backup result analyzed')
+        log.debug(f'[{log_prefix}] Backup result analyzed')
         if settings.AWS_ENABLED:
             analyze_s3_result(aws_result, info_bases, aws_datetime_start, aws_datetime_finish)
 
         if settings.EMAIL_NOTIFY_ENABLED:
-            log.info('Sending email notification')
+            log.info(f'[{log_prefix}] Sending email notification')
             msg = ''
             msg += make_html_table('Backup', backup_result)
             if settings.AWS_ENABLED:
                 msg += make_html_table('AWS upload', aws_result)
             send_notification('1cv8-mgmt backup', msg)
 
-        log.info('Done')
+        log.info(f'[{log_prefix}] Done')
     except Exception as e:
-        log.exception('Unknown exception occurred in main thread')
+        log.exception(f'[{log_prefix}] Unknown exception occurred in main thread')
 
 
 if __name__ == "__main__":

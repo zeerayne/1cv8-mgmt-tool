@@ -1,9 +1,8 @@
-import win32com.client
+import logging
 import settings
 import pythoncom
+import win32com.client
 
-
-import core.logging as logging
 
 """
 Для доступа к информационной базе из внешней программы используется COM объект COMConnector. 
