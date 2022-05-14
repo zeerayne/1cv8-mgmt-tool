@@ -206,7 +206,7 @@ def main():
                 max_workers=aws_threads,
                 #thread_name_prefix='AWSThread'
             ) as aws_executor:
-            log.info(f'<{log_prefix}> Thread pool executors initialized: {backup_threads} backup thread, {aws_threads} AWS threads')
+            log.info(f'<{log_prefix}> Thread pool executors initialized: {backup_threads} backup threads, {aws_threads} AWS threads')
             backup_futures = []
             backup_datetime_start = datetime.now()
             for ib_name in info_bases:
@@ -214,10 +214,8 @@ def main():
                     backup_executor.submit(backup_info_base, ib_name)
                 )
             aws_futures = []
-            aws_datetime_start = None
+            aws_datetime_start = datetime.now()
             for future in concurrent.futures.as_completed(backup_futures):
-                if not aws_datetime_start:
-                    aws_datetime_start = datetime.now()
                 try:
                     e = future.result()
                     backup_result.append(e)
@@ -241,15 +239,13 @@ def main():
                     max_workers=backup_threads,
                     initializer=pycom_threadpool_initializer
                 ) as fallback_backup_executor:
-                    log.info(f'<{log_prefix}> Thread pool executors initialized: {backup_threads} backup thread')
+                    log.info(f'<{log_prefix}> Thread pool executor initialized: {backup_threads} backup threads')
                     backup_futures = []
                     for ib_name in missed:
                         backup_futures.append(
                             fallback_backup_executor.submit(backup_info_base, ib_name)
                         )
                     for future in concurrent.futures.as_completed(backup_futures):
-                        if not aws_datetime_start:
-                            aws_datetime_start = datetime.now()
                         try:
                             e = future.result()
                             backup_result.append(e)
