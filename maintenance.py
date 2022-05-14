@@ -6,6 +6,7 @@ import settings
 import subprocess
 
 import core.common as common_funcs
+import core.types as core_types
 
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command, execute_in_threadpool
@@ -76,7 +77,7 @@ def _maintenance_info_base(ib_name):
     return result
 
 
-def _maintenance_vacuumdb(ib_name):
+def _maintenance_vacuumdb(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
     log.info(f'<{ib_name}> Start vacuumdb')
     cci = ClusterControlInterface()
     # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
@@ -85,7 +86,7 @@ def _maintenance_vacuumdb(ib_name):
     ib_info = cci.get_info_base(wpc, ib_name)
     if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
         log.error(f'<{ib_name}> vacuumdb can not be performed for {ib_info.DBMS} DBMS')
-        return True
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     db_user = ib_info.dbUser
     db_server = ib_info.dbServerName
     db_user_string = f'{db_user}@{db_server}'
@@ -93,7 +94,7 @@ def _maintenance_vacuumdb(ib_name):
         db_pwd = settings.PG_CREDENTIALS[db_user_string]
     except KeyError:
         log.error(f'<{ib_name}> password not found for user {db_user_string}')
-        return False
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     db_name = ib_info.dbName
     log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
     vacuumdb_command = \
@@ -107,32 +108,24 @@ def _maintenance_vacuumdb(ib_name):
     if vacuumdb_process.returncode != 0:
         log_file_content = common_funcs.read_file_content(log_filename)
         log.error(f'<{ib_name}> Log message :: {log_file_content}')
-        return False
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     log.info(f'<{ib_name}> vacuumdb completed')
-    return True
-
-def concat_bool_to_result(result, bool_value):
-    if type(bool_value) == bool:
-        bool_in_result = result[1]
-        bool_in_result = bool_in_result & bool_value
-        return result[0], bool_in_result
-    if type(bool_value) == tuple:
-        return concat_bool_to_result(result, bool_value[1])
+    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-def maintenance_info_base(ib_name):
-    result = ib_name, True
+def maintenance_info_base(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
+    succeeded = True
     try:
         if settings.V8_MAINTENANCE_ENABLED:
             result_v8 = common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
-            result = concat_bool_to_result(result, result_v8)
+            succeeded &= result_v8[1]
         if settings.PG_MAINTENANCE_ENABLED:
             result_pg = _maintenance_vacuumdb(ib_name)
-            result = concat_bool_to_result(result, result_pg)
-        return result
+            succeeded &= result_pg.succeeded
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
     except Exception as e:
         log.exception(f'<{ib_name}> Unknown exception occurred in thread')
-        return ib_name, False
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
 
 
 def main():
