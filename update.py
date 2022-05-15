@@ -7,6 +7,7 @@ import pywintypes
 import settings
 
 import core.common as common_funcs
+import core.types as core_types
 
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command, execute_in_threadpool
@@ -101,7 +102,7 @@ def _update_info_base(ib_name, dry=False):
     6. Снимает блокировку фоновых заданий и сеансов
     """
     log.info(f'<{ib_name}> Initiate update')
-    result = True
+    result = core_types.InfoBaseUpdateTaskResult(ib_name, True)
     with ClusterControlInterface() as cci:
         info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
         # Получает тип конфигурации и её версию
@@ -157,7 +158,7 @@ def _update_info_base(ib_name, dry=False):
                             f'<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
                             f'was not applied, next chain updates will not be applied'
                         )
-                        result = False
+                        result = core_types.InfoBaseUpdateTaskResult(ib_name, False)
         if not update_chain:
             log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
             log.info(f'<{ib_name}> Skip update')
@@ -176,7 +177,7 @@ def main():
     try:
         info_bases = common_funcs.get_info_bases()
         updateThreads = settings.UPDATE_THREADS
-        result = execute_in_threadpool(update_info_base, info_bases, updateThreads)
+        execute_in_threadpool(update_info_base, info_bases, updateThreads)
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
         log.exception(f'<{log_prefix}> Unknown exception occured in main thread')

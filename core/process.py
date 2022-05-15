@@ -96,18 +96,18 @@ def execute_in_threadpool(func, iterable, threads):
     log.debug('Creating pool with %d threads' % threads)
     pool = ThreadPool(threads, initializer=pycom_threadpool_initializer)
     log.debug('Pool initialized, mapping workload: %d items' % len(iterable))
-    result = pool.map(func, iterable)
+    resultset = pool.map(func, iterable)
     log.debug('Closing pool')
     pool.close()
     log.debug('Joining pool')
     pool.join()
     succeeded = 0
     failed = 0
-    for e in result:
-        if e[1]:
+    for task_result in resultset:
+        if task_result.succeeded:
             succeeded += 1
         else:
             failed += 1
-            log.error('[%s] FAILED' % e[0])
-    log.info('%d succeeded; %d failed' % (succeeded, failed))
-    return [(e[0], e[1]) for e in result if e[1]]
+            log.error(f'[{task_result.infobase_name}] FAILED')
+    log.info(f'{succeeded} succeeded; {failed} failed')
+    return resultset

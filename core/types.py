@@ -29,6 +29,12 @@ class InfoBaseMaintenanceTaskResult(InfoBaseTaskResultBase):
         super().__init__(infobase_name, succeeded, **kwargs)
 
 
+class InfoBaseUpdateTaskResult(InfoBaseTaskResultBase):
+
+    def __init__(self, infobase_name, succeeded, **kwargs):
+        super().__init__(infobase_name, succeeded, **kwargs)
+
+
 class InfoBaseAWSUploadTaskResult(InfoBaseTaskResultBase):
     upload_size: int = None
 
