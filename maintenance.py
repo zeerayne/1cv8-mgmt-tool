@@ -118,7 +118,7 @@ def maintenance_info_base(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
     try:
         if settings.V8_MAINTENANCE_ENABLED:
             result_v8 = common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
-            succeeded &= result_v8[1]
+            succeeded &= result_v8.succeeded
         if settings.PG_MAINTENANCE_ENABLED:
             result_pg = _maintenance_vacuumdb(ib_name)
             succeeded &= result_pg.succeeded

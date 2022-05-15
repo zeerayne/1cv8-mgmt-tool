@@ -2,6 +2,9 @@ import smtplib
 import settings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import List
+
+import core.types as core_types
 
 
 def make_message(caption, html_body):
@@ -17,22 +20,20 @@ def make_message(caption, html_body):
     return msg
 
 
-def make_html_table(caption, result):
-    style = """style='min-width: 100px; text-align: center; border: 1px solid black;'"""
-    table = """<table><caption style="white-space: nowrap;">{caption}</caption>{body}</table>"""
+def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]):
+    style = "style='min-width: 100px; text-align: center; border: 1px solid black;'"
+    table = "<table><caption style='white-space: nowrap;'>{caption}</caption>{body}</table>"
     table_body = ''
     succeeded = 0
-    for e in result:
-        if e[1]:
+    for task_result in resultset:
+        if task_result.succeeded:
             succeeded += 1
         else:
-            table_body += """<tr style='color:#aa0000'><td {style}>{first_column}</td><td {style}>FAILED</td></tr>"""\
-                .format(first_column=e[0], style=style)
+            table_body += f"<tr style='color:#aa0000'><td {style}>{task_result.infobase_name}</td><td {style}>FAILED</td></tr>"
     if succeeded > 0:
-        table_body = """<tr style='color:#00aa00'><td {style}>{first_column}</td><td {style}>SUCCEEDED</td></tr>"""\
-                         .format(first_column=succeeded, style=style) + table_body
-    result = table.format(caption=caption, body=table_body)
-    return result
+        table_body = f"<tr style='color:#00aa00'><td {style}>{succeeded}</td><td {style}>SUCCEEDED</td></tr>" + table_body
+    html = table.format(caption=caption, body=table_body)
+    return html
 
 
 def send_notification(caption, html_body):
