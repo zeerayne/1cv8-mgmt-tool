@@ -1,5 +1,6 @@
 import ntpath
 import datetime
+import logging
 import os
 
 import pywintypes
@@ -7,13 +8,10 @@ import settings
 
 from typing import Union
 
-import core.logging as logging
-
 from core import version
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
-from util.debug import is_debug
-from util.debug import DEBUG_MONKEY_PATCH
+import core.types as core_types
 
 platformPath = settings.V8_PLATFORM_PATH
 platformVersion = version.find_platform_last_version(platformPath)
@@ -64,13 +62,6 @@ def get_info_bases():
     Получает именя всех ИБ, кроме указанных в списке INFO_BASES_EXCLUDE
     :return: массив с именами ИБ
     """
-    if is_debug():
-        with open(DEBUG_MONKEY_PATCH, 'r', encoding='utf-8') as debug_file:
-            for line in debug_file:
-                if 'info_bases' in line:
-                    _locals = {}
-                    exec(line, globals(), _locals)
-                    return _locals['info_bases']
     with ClusterControlInterface() as cci:
         working_process_connection = cci.get_working_process_connection_with_info_base_auth()
 
@@ -106,8 +97,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-@logging.logaugment_ib_name_parameter_operation(log)
-def com_func_wrapper(func, ib_name, **kwargs):
+def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
@@ -117,7 +107,7 @@ def com_func_wrapper(func, ib_name, **kwargs):
     try:
         result = func(ib_name, **kwargs)
     except pywintypes.com_error as e:
-        log.exception(f'COM Error occured')
+        log.exception(f'<{ib_name}> COM Error occured')
         # Если произошла ошибка, пытаемся снять блокировку ИБ
         try:
             with ClusterControlInterface() as cci:
@@ -126,9 +116,19 @@ def com_func_wrapper(func, ib_name, **kwargs):
                 cci.unlock_info_base(working_process_connection, ib)
                 del working_process_connection
         except pywintypes.com_error as e:
-            log.exception(f'COM Error occured during handling another COM Error')
+            log.exception(f'<{ib_name}> COM Error occured during handling another COM Error')
         # После разблокировки возвращаем неуспешный результат
-        return ib_name, False
+        return core_types.InfoBaseTaskResultBase(ib_name, False)
     except V8Exception as e:
-        return ib_name, False
-    return ib_name, result
+        return core_types.InfoBaseTaskResultBase(ib_name, False)
+    return result
+
+
+def read_file_content(filename, file_encoding='utf-8', output_encoding='utf-8'):
+    with open(filename, 'r', encoding='utf-8-sig') as file:
+        read_data = file.read()
+        # remove a trailing newline
+        read_data = read_data.rstrip()
+    if file_encoding != output_encoding:
+        read_data = read_data.encode(output_encoding)
+    return read_data

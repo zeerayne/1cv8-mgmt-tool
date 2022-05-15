@@ -1,14 +1,17 @@
 import boto3
 import os
+import logging
 import math
 import settings
 import time
+from typing import List
+
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
 from multiprocessing.pool import ThreadPool
 
 import core.common as common_funcs
-import core.logging as logging
+import core.types as core_types
 
 
 session = boto3.Session(
@@ -23,71 +26,66 @@ retention_days = settings.AWS_RETENTION_DAYS
 
 
 log = logging.getLogger(__name__)
+log_prefix = 'AWS'
 
 
-def sizeof_fmt(num, suffix='B'):
+def sizeof_fmt(num, suffix='B', radix=1024.0):
     for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(num) < 1024.0:
+        if abs(num) < radix:
             return "%3.1f%s%s" % (num, unit, suffix)
-        num /= 1024.0
+        num /= radix
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
 
-@logging.logaugment_operation(log, 'aws')
-def analyze_s3_result(result, workload, datetime_start, datetime_finish):
+def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
     succeeded = 0
     failed = 0
     size = 0
-    if len(result) > 0:
-        for e in result:
-            if e[1]:
+    if len(resultset) > 0:
+        for task_result in resultset:
+            if task_result.succeeded:
                 succeeded += 1
-                size += e[2]
+                size += task_result.upload_size
             else:
                 failed += 1
-                log.error('[{0}] FAILED'.format(e[0]))
+                log.error(f'<{log_prefix}> [{task_result.infobase_name}] FAILED')
         diff = (datetime_finish - datetime_start).total_seconds()
-        log.info('{0} succeeded; {1} failed; Uploaded {2} in {3:.1f}s. Avg. speed {4}/s'
-                 .format(succeeded, failed, sizeof_fmt(size), diff, sizeof_fmt(size / diff)))
-        if len(result) != len(workload):
-            processed_info_bases = [e[0] for e in result]
+        log.info(f'<{log_prefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s')
+        if len(resultset) != len(workload):
+            processed_info_bases = [e[0] for e in resultset]
             missed = 0
             for w in workload:
                 if w not in processed_info_bases:
-                    log.warning('[%s] MISSED' % w)
+                    log.warning(f'<{log_prefix}> [{w}] MISSED')
                     missed += 1
-            log.warning('{0} required; {1} done; {2} missed'
-                        .format(len(workload), len(result), missed))
+            log.warning(f'<{log_prefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
     else:
-        log.info('Nothing done')
+        log.info(f'<{log_prefix}> Nothing done')
 
 
-@logging.logaugment_ib_name_parameter_operation(log)
-def upload_infobase_to_s3(ib_name, full_backup_path):
+def upload_infobase_to_s3(ib_name, full_backup_path) -> core_types.InfoBaseAWSUploadTaskResult:
     aws_retries = settings.AWS_RETRIES
     try:
         # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
         for i in range(0, aws_retries + 1):
             try:
-                result = _upload_infobase_to_s3(ib_name, full_backup_path)
-                return result
+                return _upload_infobase_to_s3(ib_name, full_backup_path)
             except EndpointConnectionError as e:
                 # Если количество попыток исчерпано, но ошибка по прежнему присутствует
                 if i == aws_retries:
                     raise e
                 else:
-                    log.debug('AWS upload failed, retrying')
+                    log.debug(f'<{ib_name}> AWS upload failed, retrying')
                     aws_retry_pause = settings.AWS_RETRY_PAUSE
-                    log.debug(f'wait for {aws_retry_pause} seconds')
+                    log.debug(f'<{ib_name}> wait for {aws_retry_pause} seconds')
                     time.sleep(aws_retry_pause)
     except Exception as e:
-        log.exception('Unknown exception occurred in AWS thread')
-        return ib_name, False
+        log.exception(f'<{ib_name}> Unknown exception occurred in AWS thread')
+        return core_types.InfoBaseAWSUploadTaskResult(ib_name, False)
 
 
-@logging.logaugment_ib_name_parameter_operation(log)
-def _upload_infobase_to_s3(ib_name, full_backup_path):
-    log.info(f'Start upload {full_backup_path} to Amazon S3')
+def _upload_infobase_to_s3(ib_name, full_backup_path) -> core_types.InfoBaseAWSUploadTaskResult:
+    log.info(f'<{ib_name}> Start upload {full_backup_path} to Amazon S3')
     bucket_name = settings.AWS_BUCKET_NAME
     bucket_obj = bucket
     file_mime = 'application/octet-stream'
@@ -100,7 +98,7 @@ def _upload_infobase_to_s3(ib_name, full_backup_path):
     if source_size > chunk_size:
         chunk_count = math.ceil(source_size / chunk_size)
         log.info(
-            f'File size is {sizeof_fmt(source_size)}, chunk size is {sizeof_fmt(chunk_size)}. '
+            f'<{ib_name}> File size is {sizeof_fmt(source_size)}, chunk size is {sizeof_fmt(chunk_size)}. '
             f'Multipart upload for {chunk_count} chunks'
         )
     tc = boto3.s3.transfer.TransferConfig(
@@ -110,7 +108,7 @@ def _upload_infobase_to_s3(ib_name, full_backup_path):
     s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename, Config=tc)
     datetime_finish = datetime.now()
     diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
+    log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
     # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
     # '_' добавляется к имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
     # при наличии имён вида infobase и infobase2
@@ -118,10 +116,9 @@ def _upload_infobase_to_s3(ib_name, full_backup_path):
     for o in objs:
         if o.last_modified < (datetime.now() - timedelta(days=retention_days)).replace(tzinfo=timezone.utc):
             o.delete()
-    return ib_name, True, source_size
+    return core_types.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
 
 
-@logging.logaugment_operation(log, 'aws')
 def upload_to_s3(infobases):
     """
     Загружает резервные копии информационных баз в Amazon S3.
@@ -131,14 +128,14 @@ def upload_to_s3(infobases):
     """
     if settings.AWS_ENABLED:
         threads = settings.AWS_THREADS
-        log.debug(f'Creating pool with {threads} threads')
+        log.debug(f'<{log_prefix}> Creating pool with {threads} threads')
         pool = ThreadPool(threads)
-        log.debug(f'Pool initialized, mapping workload: {len(infobases)} items')
+        log.debug(f'<{log_prefix}> Pool initialized, mapping workload: {len(infobases)} items')
         datetime_start = datetime.now()
         result = pool.starmap(upload_infobase_to_s3, infobases)
         datetime_finish = datetime.now()
-        log.debug('Closing pool')
+        log.debug(f'<{log_prefix}> Closing pool')
         pool.close()
-        log.debug('Joining pool')
+        log.debug(f'<{log_prefix}> Joining pool')
         pool.join()
         analyze_s3_result(result, datetime_start, datetime_finish)
