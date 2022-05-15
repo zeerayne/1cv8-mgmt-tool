@@ -30,7 +30,7 @@ log = logging.getLogger(__name__)
 log_prefix = 'Backup'
 
 
-def replicate_backup(backup_fullpath, replication_paths):
+def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
     backup_filename = common_funcs.path_leaf(backup_fullpath)
     for path in replication_paths:
         try:
@@ -42,7 +42,7 @@ def replicate_backup(backup_fullpath, replication_paths):
             log.exception(f'Problems while replicating to {path}: {e}')
 
 
-def _backup_info_base(ib_name):
+def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     """
     1. Блокирует фоновые задания и новые сеансы
     2. Принудительно завершает текущие сеансы
@@ -93,7 +93,7 @@ def _backup_info_base(ib_name):
     return core_types.InfoBaseBackupTaskResult(ib_name, True, dt_filename)
 
 
-def _backup_pgdump(ib_name):
+def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     """
     Выполняет резервное копирование ИБ средствами СУБД PostgreSQL при помощи утилиты pg_dump
     1. Проверяет, использует ли ИБ СУБД PostgreSQL
@@ -149,7 +149,7 @@ def _backup_pgdump(ib_name):
     return core_types.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 
-def backup_info_base(ib_name):
+def backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     try:
         if settings.PG_BACKUP_ENABLED:
             result = _backup_pgdump(ib_name)
@@ -185,6 +185,30 @@ def analyze_backup_result(resultset: List[core_types.InfoBaseBackupTaskResult], 
                 log.warning(f'<{log_prefix}> ({w}) MISSED')
                 missed += 1
         log.warning(f'<{log_prefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
+
+
+def analyze_results(
+    info_bases: List[str],
+    backup_result: List[core_types.InfoBaseBackupTaskResult],
+    backup_datetime_start: datetime,
+    backup_datetime_finish: datetime,
+    aws_result: List[core_types.InfoBaseAWSUploadTaskResult],
+    aws_datetime_start: datetime,
+    aws_datetime_finish: datetime
+):
+    analyze_backup_result(backup_result, info_bases, backup_datetime_start, backup_datetime_finish)
+    if settings.AWS_ENABLED:
+        analyze_s3_result(aws_result, info_bases, aws_datetime_start, aws_datetime_finish)
+
+
+def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskResult], aws_result: List[core_types.InfoBaseAWSUploadTaskResult]):
+    if settings.EMAIL_NOTIFY_ENABLED:
+        log.info(f'<{log_prefix}> Sending email notification')
+        msg = ''
+        msg += make_html_table('Backup', backup_result)
+        if settings.AWS_ENABLED:
+            msg += make_html_table('AWS upload', aws_result)
+        send_notification('1cv8-mgmt backup', msg)
 
 
 def main():
@@ -264,18 +288,10 @@ def main():
                 pass
             aws_datetime_finish = datetime.now()
         log.debug(f'<{log_prefix}> AWS pool closed')
-        analyze_backup_result(backup_result, info_bases, backup_datetime_start, backup_datetime_finish)
-        log.debug(f'<{log_prefix}> Backup result analyzed')
-        if settings.AWS_ENABLED:
-            analyze_s3_result(aws_result, info_bases, aws_datetime_start, aws_datetime_finish)
 
-        if settings.EMAIL_NOTIFY_ENABLED:
-            log.info(f'<{log_prefix}> Sending email notification')
-            msg = ''
-            msg += make_html_table('Backup', backup_result)
-            if settings.AWS_ENABLED:
-                msg += make_html_table('AWS upload', aws_result)
-            send_notification('1cv8-mgmt backup', msg)
+        analyze_results(info_bases, backup_result, backup_datetime_start, backup_datetime_finish, aws_result, aws_datetime_start, aws_datetime_finish)
+
+        send_email_notification(backup_result, aws_result)
 
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
