@@ -170,7 +170,7 @@ def update_info_base(ib_name):
         return common_funcs.com_func_wrapper(_update_info_base, ib_name)
     except Exception as e:
         log.exception(f'<{ib_name}> Unknown exception occurred in thread')
-        return ib_name, False
+        return core_types.InfoBaseUpdateTaskResult(ib_name, False)
 
 
 def main():
