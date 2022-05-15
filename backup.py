@@ -199,12 +199,10 @@ def main():
         aws_result = []
         with concurrent.futures.ProcessPoolExecutor(
                 max_workers=backup_threads,
-                #thread_name_prefix='BackupThread',
                 initializer=pycom_threadpool_initializer
             ) as backup_executor, \
             concurrent.futures.ProcessPoolExecutor(
                 max_workers=aws_threads,
-                #thread_name_prefix='AWSThread'
             ) as aws_executor:
             log.info(f'<{log_prefix}> Thread pool executors initialized: {backup_threads} backup threads, {aws_threads} AWS threads')
             backup_futures = []
@@ -259,8 +257,7 @@ def main():
             backup_datetime_finish = datetime.now()
             try:
                 for future in concurrent.futures.as_completed(aws_futures, timeout=3*3600):
-                    e = future.result()
-                    aws_result.append(e)
+                    aws_result.append(future.result())
             except concurrent.futures.TimeoutError:
                 pass
             aws_datetime_finish = datetime.now()
@@ -275,7 +272,7 @@ def main():
             msg = ''
             msg += make_html_table('Backup', backup_result)
             if settings.AWS_ENABLED:
-                msg += make_html_table('AWS upload', aws_result)
+                msg += make_html_table('AWS upload', [(e.infobase_name, e.succeeded) for e in aws_result])
             send_notification('1cv8-mgmt backup', msg)
 
         log.info(f'<{log_prefix}> Done')
