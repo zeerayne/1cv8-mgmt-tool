@@ -14,7 +14,7 @@ import win32com.client
 > Ошибка при вызове конструктора (COMObject): -2147221164(0x80040154): Класс не зарегистрирован.
 
 Для того чтобы зарегистрировать ComConnector в 64 разрядной операционной системе Windows выполняется
-команда: regsvr32 "C:\Program Files (x86)\1cv8\[version]\bin\comcntr.dll" 
+команда: regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll" 
 """
 
 

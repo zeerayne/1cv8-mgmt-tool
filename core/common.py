@@ -11,6 +11,7 @@ from typing import Union
 from core import version
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
+import core.types as core_types
 
 platformPath = settings.V8_PLATFORM_PATH
 platformVersion = version.find_platform_last_version(platformPath)
@@ -96,7 +97,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-def com_func_wrapper(func, ib_name, **kwargs):
+def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
@@ -106,7 +107,7 @@ def com_func_wrapper(func, ib_name, **kwargs):
     try:
         result = func(ib_name, **kwargs)
     except pywintypes.com_error as e:
-        log.exception(f'[{ib_name}] COM Error occured')
+        log.exception(f'<{ib_name}> COM Error occured')
         # Если произошла ошибка, пытаемся снять блокировку ИБ
         try:
             with ClusterControlInterface() as cci:
@@ -115,9 +116,19 @@ def com_func_wrapper(func, ib_name, **kwargs):
                 cci.unlock_info_base(working_process_connection, ib)
                 del working_process_connection
         except pywintypes.com_error as e:
-            log.exception(f'[{ib_name}] COM Error occured during handling another COM Error')
+            log.exception(f'<{ib_name}> COM Error occured during handling another COM Error')
         # После разблокировки возвращаем неуспешный результат
-        return ib_name, False
+        return core_types.InfoBaseTaskResultBase(ib_name, False)
     except V8Exception as e:
-        return ib_name, False
-    return ib_name, result
+        return core_types.InfoBaseTaskResultBase(ib_name, False)
+    return result
+
+
+def read_file_content(filename, file_encoding='utf-8', output_encoding='utf-8'):
+    with open(filename, 'r', encoding='utf-8-sig') as file:
+        read_data = file.read()
+        # remove a trailing newline
+        read_data = read_data.rstrip()
+    if file_encoding != output_encoding:
+        read_data = read_data.encode(output_encoding)
+    return read_data

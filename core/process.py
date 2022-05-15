@@ -1,14 +1,15 @@
+import logging
 import subprocess
 import threading
 import time
 
+from multiprocessing.pool import ThreadPool
+
 import settings
 
-import logging
-
-from multiprocessing.pool import ThreadPool
-from core.cluster import ClusterControlInterface
+import core.common as common_funcs
 from core.exceptions import V8Exception
+from core.cluster import ClusterControlInterface
 
 
 log = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ def execute_v8_command(
             # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
             # после включения блокировки регламентных заданий
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
-            log.debug(f'[{ib_name}] Wait for {pause} seconds')
+            log.debug(f'<{ib_name}> Wait for {pause} seconds')
             time.sleep(pause)
             # Принудительно завершает текущие сеансы
             cci.terminate_info_base_sessions(agent_connection, cluster, ib_short)
@@ -53,12 +54,12 @@ def execute_v8_command(
             del ib_short
             del working_process_connection
         v8_process = subprocess.Popen(v8_command)
-        log.debug(f'[{ib_name}] 1cv8.exe PID is {str(v8_process.pid)}')
+        log.debug(f'<{ib_name}> 1cv8.exe PID is {str(v8_process.pid)}')
         try:
             v8_process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
             v8_process.terminate()
-        log.info(f'[{ib_name}] Return code is {str(v8_process.returncode)}')
+        log.info(f'<{ib_name}> Return code is {str(v8_process.returncode)}')
         if permission_code:
             # Снова получаем соединение с рабочим процессом, потому что за время работы скрипта оно может закрыться
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
@@ -66,16 +67,13 @@ def execute_v8_command(
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    with open(log_filename, 'r', encoding='utf-8-sig') as log_file:
-        read_data = log_file.read()
-        # remove a trailing newline
-        read_data = read_data.rstrip()
-        msg = f'[{ib_name}] Log message <<< {read_data} >>>'
-        if v8_process.returncode != 0:
-            log.error(msg)
-            raise V8Exception(read_data)
-        else:
-            log.info(msg)
+    log_file_content = common_funcs.read_file_content(log_filename, 'utf-8-sig')
+    msg = f'<{ib_name}> Log message :: {log_file_content}'
+    if v8_process.returncode != 0:
+        log.error(msg)
+        raise V8Exception(log_file_content)
+    else:
+        log.info(msg)
 
 
 def pycom_threadpool_initializer():
@@ -98,18 +96,18 @@ def execute_in_threadpool(func, iterable, threads):
     log.debug('Creating pool with %d threads' % threads)
     pool = ThreadPool(threads, initializer=pycom_threadpool_initializer)
     log.debug('Pool initialized, mapping workload: %d items' % len(iterable))
-    result = pool.map(func, iterable)
+    resultset = pool.map(func, iterable)
     log.debug('Closing pool')
     pool.close()
     log.debug('Joining pool')
     pool.join()
     succeeded = 0
     failed = 0
-    for e in result:
-        if e[1]:
+    for task_result in resultset:
+        if task_result.succeeded:
             succeeded += 1
         else:
             failed += 1
-            log.error('[%s] FAILED' % e[0])
-    log.info('%d succeeded; %d failed' % (succeeded, failed))
-    return [(e[0], e[1]) for e in result if e[1]]
+            log.error(f'[{task_result.infobase_name}] FAILED')
+    log.info(f'{succeeded} succeeded; {failed} failed')
+    return resultset
