@@ -47,7 +47,7 @@ async def execute_v8_command(
             # после включения блокировки регламентных заданий
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
             log.debug(f'<{ib_name}> Wait for {pause} seconds')
-            asyncio.sleep(pause)
+            await asyncio.sleep(pause)
             # Принудительно завершает текущие сеансы
             cci.terminate_info_base_sessions(agent_connection, cluster, ib_short)
             del agent_connection
