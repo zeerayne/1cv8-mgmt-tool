@@ -6,7 +6,9 @@ authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-pywin32 = "^304"
+pywin32 = [
+    { version = "^304", platform = "win32" },
+]
 boto3 = "^1.22.12"
 filechunkio = "^1.8"
 
