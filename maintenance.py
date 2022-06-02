@@ -38,7 +38,7 @@ def remove_old_files_by_pattern(pattern, retention_days):
         os.remove(f)
 
 
-def _maintenance_info_base(ib_name):
+def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
     2. Удаляет старые резервные копии
@@ -76,7 +76,7 @@ def _maintenance_info_base(ib_name):
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-def _maintenance_vacuumdb(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
+def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     log.info(f'<{ib_name}> Start vacuumdb')
     cci = ClusterControlInterface()
     # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
@@ -112,7 +112,7 @@ def _maintenance_vacuumdb(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-def maintenance_info_base(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
+def maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     succeeded = True
     try:
         if settings.V8_MAINTENANCE_ENABLED:
