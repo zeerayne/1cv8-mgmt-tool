@@ -45,7 +45,6 @@ def _maintenance_info_base(ib_name):
     3. Удаляет старые log-файлы
     """
     log.info(f'<{ib_name}> Start maintenance')
-    result = True
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
     log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
@@ -74,7 +73,7 @@ def _maintenance_info_base(ib_name):
     log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
     path = os.path.join(logPath, filename_pattern)
     remove_old_files_by_pattern(path, logRetentionDays)
-    return result
+    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
 def _maintenance_vacuumdb(ib_name) -> core_types.InfoBaseMaintenanceTaskResult:
