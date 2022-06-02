@@ -97,7 +97,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
+async def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
@@ -105,7 +105,7 @@ def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBa
     :return: Массив ib_name, func_result
     """
     try:
-        result = func(ib_name, **kwargs)
+        result = await func(ib_name, **kwargs)
     except pywintypes.com_error as e:
         log.exception(f'<{ib_name}> COM Error occured')
         # Если произошла ошибка, пытаемся снять блокировку ИБ

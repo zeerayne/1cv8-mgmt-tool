@@ -9,7 +9,7 @@ python = "^3.7"
 pywin32 = [
     { version = "^304", platform = "win32" },
 ]
-boto3 = "^1.22.12"
+aioboto3 = "^9.6.0"
 filechunkio = "^1.8"
 
 [tool.poetry.dev-dependencies]
