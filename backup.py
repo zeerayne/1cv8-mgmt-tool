@@ -236,12 +236,13 @@ async def main():
                     aws_datetime_start = datetime.now()
                 aws_tasks.append(
                     asyncio.create_task(
-                        upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore)
+                        upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore),
+                        name=f'Task :: Upload {backup_result.infobase_name} to S3'
                 ))
 
         await asyncio.wait(aws_tasks)
         aws_datetime_finish = datetime.now()
-        aws_results.append(task.result() for task in aws_tasks)
+        aws_results = [task.result() for task in aws_tasks]
 
         analyze_results(
             info_bases, 
@@ -261,4 +262,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
+    # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
+    asyncio.get_event_loop().run_until_complete(main())
+        
