@@ -1,3 +1,4 @@
+import asyncio
 import os.path
 import re
 import glob
@@ -10,7 +11,7 @@ import core.common as common_funcs
 import core.types as core_types
 
 from core.cluster import ClusterControlInterface
-from core.process import execute_v8_command, execute_in_threadpool
+from core.process import execute_v8_command
 from core.version import get_version_from_string
 
 server = common_funcs.get_server_address()
@@ -92,7 +93,7 @@ def _get_update_chain(manifests, name_in_metadata, version_in_metadata):
     return update_chain, len(update_chain) > 1
 
 
-def _update_info_base(ib_name, dry=False):
+async def _update_info_base(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
     2. Блокирует фоновые задания и новые сеансы
@@ -144,7 +145,7 @@ def _update_info_base(ib_name, dry=False):
             log.info(f'Created update command [{v8_command}]')
             if not dry:
                 # Обновляет информационную базу и конфигурацию БД
-                execute_v8_command(
+                await execute_v8_command(
                     ib_name, v8_command, log_filename, permission_code
                 )
                 if is_multiupdate:
@@ -165,23 +166,25 @@ def _update_info_base(ib_name, dry=False):
     return result
 
 
-def update_info_base(ib_name):
-    try:
-        return common_funcs.com_func_wrapper(_update_info_base, ib_name)
-    except Exception as e:
-        log.exception(f'<{ib_name}> Unknown exception occurred in thread')
-        return core_types.InfoBaseUpdateTaskResult(ib_name, False)
+async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseUpdateTaskResult:
+    async with semaphore:
+        try:
+            return await common_funcs.com_func_wrapper(_update_info_base, ib_name)
+        except Exception as e:
+            log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')
+            return core_types.InfoBaseUpdateTaskResult(ib_name, False)
 
 
-def main():
+async def main():
     try:
         info_bases = common_funcs.get_info_bases()
-        updateThreads = settings.UPDATE_THREADS
-        execute_in_threadpool(update_info_base, info_bases, updateThreads)
+        update_concurrency = settings.UPDATE_CONCURRENCY
+        log.info(f'<{log_prefix}> Asyncio semaphore initialized: {update_concurrency} update concurrency')
+        await asyncio.gather(*[update_info_base(ib_name, update_concurrency) for ib_name in info_bases])
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
-        log.exception(f'<{log_prefix}> Unknown exception occured in main thread')
+        log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.get_event_loop().run_until_complete(main())
