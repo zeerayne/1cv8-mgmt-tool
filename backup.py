@@ -1,11 +1,8 @@
 import asyncio
-import concurrent.futures
 import logging
 import os
 import pathlib
 import settings
-import subprocess
-import sys
 from datetime import datetime
 from shutil import copyfile
 from typing import List
@@ -17,7 +14,6 @@ from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 from core.process import execute_v8_command
 from core.aws import analyze_s3_result, upload_infobase_to_s3
-from core.process import pycom_threadpool_initializer
 from utils.notification import make_html_table, send_notification
 
 server = common_funcs.get_server_address()
@@ -218,8 +214,8 @@ async def main():
         # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
         # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
         info_bases = common_funcs.get_info_bases()
-        backup_concurrency = settings.BACKUP_THREADS
-        aws_concurrency = settings.AWS_THREADS
+        backup_concurrency = settings.BACKUP_CONCURRENCY
+        aws_concurrency = settings.AWS_CONCURRENCY
         backup_results = []
         aws_results = []
 
@@ -261,7 +257,7 @@ async def main():
 
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
-        log.exception(f'<{log_prefix}> Unknown exception occurred in main thread')
+        log.exception(f'<{log_prefix}> Unknown exception occurred in main coroutine')
 
 
 if __name__ == "__main__":

@@ -1,16 +1,12 @@
 import asyncio
 import aioboto3
-import boto3
 import os
 import logging
-import math
 import settings
-import time
 from typing import List
 
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
-from multiprocessing.pool import ThreadPool
 
 import core.common as common_funcs
 import core.types as core_types
@@ -75,7 +71,7 @@ async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: 
                         log.debug(f'<{ib_name}> wait for {aws_retry_pause} seconds')
                         await asyncio.sleep(aws_retry_pause)
         except Exception as e:
-            log.exception(f'<{ib_name}> Unknown exception occurred in AWS thread')
+            log.exception(f'<{ib_name}> Unknown exception occurred in AWS coroutine')
             return core_types.InfoBaseAWSUploadTaskResult(ib_name, False)
 
 
@@ -114,7 +110,7 @@ async def upload_to_s3(backup_results: core_types.InfoBaseBackupTaskResult):
     Распаралеливает задачу т.к. одна загрузка ограничена скоростью ~8 Мбит/с
     """
     if settings.AWS_ENABLED:
-        concurrency = settings.AWS_THREADS
+        concurrency = settings.AWS_CONCURRENCY
         semaphore = asyncio.Semaphore(concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {concurrency} concurrent tasks')
         datetime_start = datetime.now()
