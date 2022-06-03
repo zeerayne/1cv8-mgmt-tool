@@ -52,10 +52,10 @@ async def execute_v8_command(
             del cluster
             del ib_short
             del working_process_connection
-        v8_process = await asyncio.create_subprocess_exec(v8_command)
+        v8_process = await asyncio.create_subprocess_shell(v8_command)
         log.debug(f'<{ib_name}> 1cv8.exe PID is {str(v8_process.pid)}')
         try:
-            await asyncio.wait_for(v8_process.communicate, timeout=timeout)
+            await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             await v8_process.terminate()
         log.info(f'<{ib_name}> Return code is {str(v8_process.returncode)}')
