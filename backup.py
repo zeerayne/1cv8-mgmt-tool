@@ -13,7 +13,8 @@ import core.types as core_types
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 from core.process import execute_v8_command
-from core.aws import analyze_s3_result, upload_infobase_to_s3
+from core.analyze import analyze_backup_result, analyze_s3_result
+from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
 
 server = common_funcs.get_server_address()
@@ -162,27 +163,6 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
         except Exception as e:
             log.exception(f'<{ib_name}> Unknown exception occurred in thread')
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
-
-
-def analyze_backup_result(resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
-    succeeded = 0
-    failed = 0
-    for task_result in resultset:
-        if task_result.succeeded:
-            succeeded += 1
-        else:
-            failed += 1
-            log.error(f'<{log_prefix}> ({task_result.infobase_name}) FAILED')
-    diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'<{log_prefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.')
-    if len(resultset) != len(workload):
-        processed_info_bases = [task_result.infobase_name for task_result in resultset]
-        missed = 0
-        for w in workload:
-            if w not in processed_info_bases:
-                log.warning(f'<{log_prefix}> ({w}) MISSED')
-                missed += 1
-        log.warning(f'<{log_prefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
 
 
 def analyze_results(

@@ -3,7 +3,6 @@ import glob
 import logging
 import os
 import settings
-import subprocess
 
 from datetime import datetime, timedelta
 
@@ -11,7 +10,7 @@ import core.common as common_funcs
 import core.types as core_types
 
 from core.cluster import ClusterControlInterface
-from core.process import execute_v8_command, execute_in_threadpool
+from core.process import execute_v8_command
 
 
 server = common_funcs.get_server_address()

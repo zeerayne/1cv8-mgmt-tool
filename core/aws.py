@@ -3,7 +3,6 @@ import aioboto3
 import os
 import logging
 import settings
-from typing import List
 
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
@@ -11,46 +10,15 @@ from datetime import datetime, timedelta, timezone
 import core.common as common_funcs
 import core.types as core_types
 
+from core.analyze import analyze_s3_result
+from utils.common import sizeof_fmt
+
 
 retention_days = settings.AWS_RETENTION_DAYS
 
 
 log = logging.getLogger(__name__)
 log_prefix = 'AWS'
-
-
-def sizeof_fmt(num, suffix='B', radix=1024.0):
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(num) < radix:
-            return "%3.1f%s%s" % (num, unit, suffix)
-        num /= radix
-    return "%.1f%s%s" % (num, 'Yi', suffix)
-
-
-def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
-    succeeded = 0
-    failed = 0
-    size = 0
-    if len(resultset) > 0:
-        for task_result in resultset:
-            if task_result.succeeded:
-                succeeded += 1
-                size += task_result.upload_size
-            else:
-                failed += 1
-                log.error(f'<{log_prefix}> [{task_result.infobase_name}] FAILED')
-        diff = (datetime_finish - datetime_start).total_seconds()
-        log.info(f'<{log_prefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s')
-        if len(resultset) != len(workload):
-            processed_info_bases = [task_result.infobase_name for task_result in resultset]
-            missed = 0
-            for w in workload:
-                if w not in processed_info_bases:
-                    log.warning(f'<{log_prefix}> [{w}] MISSED')
-                    missed += 1
-            log.warning(f'<{log_prefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
-    else:
-        log.info(f'<{log_prefix}> Nothing done')
 
 
 async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseAWSUploadTaskResult:
