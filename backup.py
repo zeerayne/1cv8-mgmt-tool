@@ -229,12 +229,10 @@ async def main():
         backup_semaphore = asyncio.Semaphore(backup_concurrency)
         aws_semaphore = asyncio.Semaphore(aws_concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency')
-        backup_datetime_start = None
+        backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
+        backup_datetime_start = datetime.now()
         aws_datetime_start = None
-        for ib_name in info_bases:
-            if backup_datetime_start is None:
-                backup_datetime_start = datetime.now()
-            backup_result = await backup_info_base(ib_name, backup_semaphore)
+        async for backup_result in asyncio.as_completed(backup_coroutines):
             backup_results.append(backup_result)
             backup_datetime_finish = datetime.now()
             # Только резервные копии, созданные без ошибок нужно загрузить на S3
