@@ -92,20 +92,9 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         # Собираем инфу чтобы вывод в лог был полезным
         filestat = os.stat(full_backup_path)
         source_size = filestat.st_size
-        chunk_size = settings.AWS_CHUNK_SIZE
-        if source_size > chunk_size:
-            chunk_count = math.ceil(source_size / chunk_size)
-            log.info(
-                f'<{ib_name}> File size is {sizeof_fmt(source_size)}, chunk size is {sizeof_fmt(chunk_size)}. '
-                f'Multipart upload for {chunk_count} chunks'
-            )
-        transfer_config = boto3.s3.transfer.TransferConfig(
-            multipart_threshold=chunk_size, 
-            multipart_chunksize=chunk_size 
-        )
         datetime_start = datetime.now()
         async with session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3c:
-            await s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename, Config=transfer_config)
+            await s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename)
         datetime_finish = datetime.now()
         diff = (datetime_finish - datetime_start).total_seconds()
         log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
