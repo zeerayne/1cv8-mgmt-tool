@@ -214,9 +214,6 @@ def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskRes
 
 
 async def main():
-    MIN_PYTHON_VERSION = (3, 7)
-    if sys.version_info < MIN_PYTHON_VERSION:
-        sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON_VERSION)
     try:
         # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
         # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
