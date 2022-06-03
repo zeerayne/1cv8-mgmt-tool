@@ -228,17 +228,24 @@ async def main():
         log.info(f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency')
         backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
         backup_datetime_start = datetime.now()
+        aws_tasks = []
         aws_datetime_start = None
-        async for backup_result in asyncio.as_completed(backup_coroutines):
+        for backup_coro in asyncio.as_completed(backup_coroutines):
+            backup_result = await backup_coro
             backup_results.append(backup_result)
             backup_datetime_finish = datetime.now()
             # Только резервные копии, созданные без ошибок нужно загрузить на S3
             if backup_result.succeeded and settings.AWS_ENABLED:
                 if aws_datetime_start is None:
                     aws_datetime_start = datetime.now()
-                aws_result = await upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore)
-                aws_results.append(aws_result)
-                aws_datetime_finish = datetime.now()
+                aws_tasks.append(
+                    asyncio.create_task(
+                        upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore)
+                ))
+
+        await asyncio.wait(aws_tasks)
+        aws_datetime_finish = datetime.now()
+        aws_results.append(task.result() for task in aws_tasks)
 
         analyze_results(
             info_bases, 

@@ -46,7 +46,7 @@ def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], w
         diff = (datetime_finish - datetime_start).total_seconds()
         log.info(f'<{log_prefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s')
         if len(resultset) != len(workload):
-            processed_info_bases = [e[0] for e in resultset]
+            processed_info_bases = [task_result.infobase_name for task_result in resultset]
             missed = 0
             for w in workload:
                 if w not in processed_info_bases:
@@ -73,7 +73,7 @@ async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: 
                         log.debug(f'<{ib_name}> AWS upload failed, retrying')
                         aws_retry_pause = settings.AWS_RETRY_PAUSE
                         log.debug(f'<{ib_name}> wait for {aws_retry_pause} seconds')
-                        time.sleep(aws_retry_pause)
+                        await asyncio.sleep(aws_retry_pause)
         except Exception as e:
             log.exception(f'<{ib_name}> Unknown exception occurred in AWS thread')
             return core_types.InfoBaseAWSUploadTaskResult(ib_name, False)
@@ -105,7 +105,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         )
         datetime_start = datetime.now()
         async with session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3c:
-            s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename, Config=transfer_config)
+            await s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename, Config=transfer_config)
         datetime_finish = datetime.now()
         diff = (datetime_finish - datetime_start).total_seconds()
         log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
@@ -114,7 +114,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         # при наличии имён вида infobase и infobase2
         bucket = await s3.Bucket(bucket_name)
         async for o in bucket.objects.filter(Prefix=ib_name + '_'):
-            if o.last_modified < (datetime.now() - timedelta(days=retention_days)).replace(tzinfo=timezone.utc):
+            if await o.last_modified < (datetime.now() - timedelta(days=retention_days)).replace(tzinfo=timezone.utc):
                 await o.delete()
     return core_types.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
 
