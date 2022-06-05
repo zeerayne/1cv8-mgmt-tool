@@ -2,12 +2,12 @@ import asyncio
 import glob
 import logging
 import os
-import settings
 import sys
 
 from datetime import datetime, timedelta
 from typing import List
 
+from conf import settings
 import core.common as common_funcs
 import core.types as core_types
 

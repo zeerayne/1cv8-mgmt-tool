@@ -5,6 +5,7 @@ from core import types as core_types
 
 def pytest_generate_tests(metafunc):
     os.environ['PYTHONPATH'] = '.'
+    os.environ['1CV8MGMT_SETTINGS_MODULE'] = 'tests.settings'
 
 
 @pytest.fixture
