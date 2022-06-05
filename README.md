@@ -68,7 +68,7 @@ git clone https://github.com/zeerayne/1cv8-mgmt-tool.git
 Создание виртуального окружения, установка сторонних зависимостей
 
 ```powershell
-$(cd 1cv8-mgmt-tool;$?) -and $(poetry install --no-root;$?)
+$(cd 1cv8-mgmt-tool;$?) -and $(poetry install --no-root --no-dev;$?)
 ```
 
 # Настройка
