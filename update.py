@@ -6,6 +6,7 @@ import glob
 import itertools
 import logging
 import pywintypes
+import random
 import settings
 
 from datetime import datetime
@@ -150,6 +151,11 @@ async def _update_info_base(ib_name, dry=False):
                 rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
             log.info(f'Created update command [{v8_command}]')
             if not dry:
+                # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае, 
+                # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
+                # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020): 
+                # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
+                await asyncio.sleep(random.randint(0, 10))
                 # Обновляет информационную базу и конфигурацию БД
                 await execute_v8_command(
                     ib_name, v8_command, log_filename, permission_code
