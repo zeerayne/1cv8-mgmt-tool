@@ -3,6 +3,7 @@ import glob
 import logging
 import os
 import settings
+import sys
 
 from datetime import datetime, timedelta
 
@@ -144,4 +145,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    if sys.version_info < (3, 10):
+        asyncio.get_event_loop().run_until_complete(main())
+    else:
+        asyncio.run(main())

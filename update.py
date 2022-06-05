@@ -1,15 +1,20 @@
 import asyncio
 import os.path
 import re
+import sys
 import glob
 import itertools
 import logging
 import pywintypes
 import settings
 
+from datetime import datetime
+from typing import List
+
 import core.common as common_funcs
 import core.types as core_types
 
+from core.analyze import analyze_update_result
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command
 from core.version import get_version_from_string
@@ -108,6 +113,7 @@ async def _update_info_base(ib_name, dry=False):
         info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
         # Получает тип конфигурации и её версию
         try:
+            # TODO: подумать, как сделать получение метаданных асинхронным
             metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
         except pywintypes.com_error as e:
             # Если начало сеанса с информационной базой запрещено, то можно снять блокировку и попробывать ещё раз
@@ -175,16 +181,39 @@ async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
             return core_types.InfoBaseUpdateTaskResult(ib_name, False)
 
 
+def analyze_results(
+    info_bases: List[str],
+    update_result: List[core_types.InfoBaseUpdateTaskResult],
+    update_datetime_start: datetime,
+    update_datetime_finish: datetime,
+):
+    analyze_update_result(update_result, info_bases, update_datetime_start, update_datetime_finish)
+
+
 async def main():
     try:
         info_bases = common_funcs.get_info_bases()
         update_concurrency = settings.UPDATE_CONCURRENCY
+        update_semaphore = asyncio.Semaphore(update_concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {update_concurrency} update concurrency')
-        await asyncio.gather(*[update_info_base(ib_name, update_concurrency) for ib_name in info_bases])
+        update_datetime_start = datetime.now()
+        update_results = await asyncio.gather(*[update_info_base(ib_name, update_semaphore) for ib_name in info_bases])
+        update_datetime_finish = datetime.now()
+
+        analyze_results(
+            info_bases, 
+            update_results, 
+            update_datetime_start, 
+            update_datetime_finish, 
+        )
+
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
         log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
 
 
 if __name__ == "__main__":
-    asyncio.get_event_loop().run_until_complete(main())
+    if sys.version_info < (3, 10):
+        asyncio.get_event_loop().run_until_complete(main())
+    else:
+        asyncio.run(main())

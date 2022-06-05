@@ -3,6 +3,8 @@ import logging
 import os
 import pathlib
 import settings
+import sys
+
 from datetime import datetime
 from typing import List
 
@@ -243,7 +245,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
-    # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
-    asyncio.get_event_loop().run_until_complete(main())
-        
+    if sys.version_info < (3, 10):
+        # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
+        # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
+        asyncio.get_event_loop().run_until_complete(main())
+    else:
+        asyncio.run(main())
