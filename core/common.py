@@ -4,10 +4,10 @@ import logging
 import os
 
 import pywintypes
-import settings
 
 from typing import Union
 
+from conf import settings
 from core import version
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
@@ -80,9 +80,9 @@ def get_info_base_credentials(ib_name):
     :return: tuple(login, pwd)
     """
     try:
-        creds = settings.V8_INFO_BASE_CREDENTIALS[ib_name]
+        creds = settings.V8_INFO_BASES_CREDENTIALS[ib_name]
     except KeyError:
-        creds = settings.V8_INFO_BASE_CREDENTIALS[settings.DEFAULT_DICT_KEY]
+        creds = settings.V8_INFO_BASES_CREDENTIALS['default']
     return creds
 
 

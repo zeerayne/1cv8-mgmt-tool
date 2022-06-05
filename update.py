@@ -7,7 +7,6 @@ import itertools
 import logging
 import pywintypes
 import random
-import settings
 
 from datetime import datetime
 from typing import List
@@ -15,6 +14,7 @@ from typing import List
 import core.common as common_funcs
 import core.types as core_types
 
+from conf import settings
 from core.analyze import analyze_update_result
 from core.cluster import ClusterControlInterface
 from core.process import execute_v8_command

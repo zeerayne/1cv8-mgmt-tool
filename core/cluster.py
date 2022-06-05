@@ -1,7 +1,8 @@
 import logging
-import settings
 import pythoncom
 import win32com.client
+
+from conf import settings
 
 
 """
@@ -35,9 +36,9 @@ class ClusterControlInterface:
             self.V8COMConnector = win32com.client.Dispatch("V82.COMConnector")
         self.server = settings.V8_SERVER_AGENT["address"]
         self.agentPort = str(settings.V8_SERVER_AGENT["port"])
-        self.clusterAdminName = settings.V8_CLUSTER_ADMIN_NAME
-        self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_PWD
-        self.infoBasesCredentials = settings.V8_INFO_BASE_CREDENTIALS
+        self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
+        self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
+        self.infoBasesCredentials = settings.V8_INFO_BASES_CREDENTIALS
 
     def __enter__(self):
         return self

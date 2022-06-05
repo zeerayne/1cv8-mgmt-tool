@@ -2,7 +2,6 @@ import asyncio
 import aioboto3
 import os
 import logging
-import settings
 
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
@@ -10,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 import core.common as common_funcs
 import core.types as core_types
 
+from conf import settings
 from core.analyze import analyze_s3_result
 from utils.common import sizeof_fmt
 

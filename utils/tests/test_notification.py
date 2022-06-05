@@ -1,6 +1,6 @@
 from xml.etree import ElementTree
 
-import settings
+from conf import settings
 
 from utils.notification import make_html_table, make_message, send_notification
 

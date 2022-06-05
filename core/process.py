@@ -4,9 +4,9 @@ import threading
 
 from multiprocessing.pool import ThreadPool
 
-import settings
-
 import core.common as common_funcs
+
+from conf import settings
 from core.exceptions import V8Exception
 from core.cluster import ClusterControlInterface
 

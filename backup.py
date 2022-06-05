@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import pathlib
-import settings
 import sys
 
 from datetime import datetime
@@ -13,6 +12,7 @@ from aioshutil import copyfile
 import core.common as common_funcs
 import core.types as core_types
 
+from conf import settings
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 from core.process import execute_v8_command

@@ -52,7 +52,7 @@ async def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenance
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
     log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
-    reduce_date = datetime.now() - timedelta(days=logRetentionDays)
+    reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = common_funcs.get_formatted_date(reduce_date)
     v8_command = \
         rf'"{common_funcs.get_platform_full_path()}" ' \
@@ -122,10 +122,10 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
     succeeded = True
     async with semaphore:
         try:
-            if settings.V8_MAINTENANCE_ENABLED:
+            if settings.MAINTENANCE_V8:
                 result_v8 = await common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
                 succeeded &= result_v8.succeeded
-            if settings.PG_MAINTENANCE_ENABLED:
+            if settings.MAINTENANCE_PG:
                 result_pg = await _maintenance_vacuumdb(ib_name)
                 succeeded &= result_pg.succeeded
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
