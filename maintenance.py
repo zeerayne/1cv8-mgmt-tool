@@ -1,15 +1,19 @@
-from datetime import datetime, timedelta
+import asyncio
 import glob
 import logging
 import os
 import settings
-import subprocess
+import sys
+
+from datetime import datetime, timedelta
+from typing import List
 
 import core.common as common_funcs
 import core.types as core_types
 
+from core.analyze import analyze_maintenance_result
 from core.cluster import ClusterControlInterface
-from core.process import execute_v8_command, execute_in_threadpool
+from core.process import execute_v8_command
 
 
 server = common_funcs.get_server_address()
@@ -38,7 +42,7 @@ def remove_old_files_by_pattern(pattern, retention_days):
         os.remove(f)
 
 
-def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
     2. Удаляет старые резервные копии
@@ -56,7 +60,7 @@ def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRe
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/ReduceEventLogSize {reduce_date_str}'
-    execute_v8_command(
+    await execute_v8_command(
         ib_name, v8_command, log_filename, timeout=600
     )
     filename_pattern = f'*{ib_name}_*.*'
@@ -76,7 +80,7 @@ def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRe
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     log.info(f'<{ib_name}> Start vacuumdb')
     cci = ClusterControlInterface()
     # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
@@ -101,9 +105,11 @@ def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
     vacuumdb_env = os.environ.copy()
     vacuumdb_env['PGPASSWORD'] = db_pwd
-    vacuumdb_process = subprocess.Popen(vacuumdb_command, env=vacuumdb_env, shell=True)
+    
+    vacuumdb_process = await asyncio.create_subprocess_shell(vacuumdb_command, env=vacuumdb_env)
     log.debug(f'<{ib_name}> vacuumdb PID is {str(vacuumdb_process.pid)}')
-    vacuumdb_process.wait()
+    await vacuumdb_process.communicate()
+
     if vacuumdb_process.returncode != 0:
         log_file_content = common_funcs.read_file_content(log_filename)
         log.error(f'<{ib_name}> Log message :: {log_file_content}')
@@ -112,30 +118,55 @@ def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-def maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
+async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseMaintenanceTaskResult:
     succeeded = True
-    try:
-        if settings.V8_MAINTENANCE_ENABLED:
-            result_v8 = common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
-            succeeded &= result_v8.succeeded
-        if settings.PG_MAINTENANCE_ENABLED:
-            result_pg = _maintenance_vacuumdb(ib_name)
-            succeeded &= result_pg.succeeded
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
-    except Exception as e:
-        log.exception(f'<{ib_name}> Unknown exception occurred in thread')
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+    async with semaphore:
+        try:
+            if settings.V8_MAINTENANCE_ENABLED:
+                result_v8 = await common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
+                succeeded &= result_v8.succeeded
+            if settings.PG_MAINTENANCE_ENABLED:
+                result_pg = await _maintenance_vacuumdb(ib_name)
+                succeeded &= result_pg.succeeded
+            return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
+        except Exception as e:
+            log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')
+            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
 
 
-def main():
+def analyze_results(
+    info_bases: List[str],
+    update_result: List[core_types.InfoBaseUpdateTaskResult],
+    update_datetime_start: datetime,
+    update_datetime_finish: datetime,
+):
+    analyze_maintenance_result(update_result, info_bases, update_datetime_start, update_datetime_finish)
+
+
+async def main():
     try:
         info_bases = common_funcs.get_info_bases()
-        maintenanceThreads = settings.MAINTENANCE_THREADS
-        execute_in_threadpool(maintenance_info_base, info_bases, maintenanceThreads)
+        maintenance_concurrency = settings.MAINTENANCE_CONCURRENCY
+        maintenance_semaphore = asyncio.Semaphore(maintenance_concurrency)
+        log.info(f'<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency')
+        maintenance_datetime_start = datetime.now()
+        maintenance_results = await asyncio.gather(*[maintenance_info_base(ib_name, maintenance_semaphore) for ib_name in info_bases])
+        maintenance_datetime_finish = datetime.now()
+
+        analyze_results(
+            info_bases, 
+            maintenance_results, 
+            maintenance_datetime_start, 
+            maintenance_datetime_finish, 
+        )
+
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
-        log.exception(f'<{log_prefix}> Unknown exception occured in main thread')
+        log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
 
 
 if __name__ == "__main__":
-    main()
+    if sys.version_info < (3, 10):
+        asyncio.get_event_loop().run_until_complete(main())
+    else:
+        asyncio.run(main())

@@ -13,14 +13,13 @@ from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 import core.types as core_types
 
-platformPath = settings.V8_PLATFORM_PATH
-platformVersion = version.find_platform_last_version(platformPath)
-
 
 log = logging.getLogger(__name__)
 
 
 def get_platform_full_path() -> str:
+    platformPath = settings.V8_PLATFORM_PATH
+    platformVersion = version.find_platform_last_version(platformPath)
     full_path = os.path.join(platformPath, platformVersion, 'bin', '1cv8.exe')
     return full_path
 
@@ -97,7 +96,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
+async def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
@@ -105,7 +104,7 @@ def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBa
     :return: Массив ib_name, func_result
     """
     try:
-        result = func(ib_name, **kwargs)
+        result = await func(ib_name, **kwargs)
     except pywintypes.com_error as e:
         log.exception(f'<{ib_name}> COM Error occured')
         # Если произошла ошибка, пытаемся снять блокировку ИБ

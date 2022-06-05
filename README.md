@@ -17,25 +17,31 @@
 ## Установка внешних зависимостей
 
 Для работы необходимы 
-- Python 3.7 или более новый 
+- Python 3.8 или более новый 
 - [Poetry](https://python-poetry.org/)
 - Платформа 1С Предприятие
 
 ### Python
 
-#### Установка Python с помощью winget
+#### Установка Python с помощью [winget](https://github.com/microsoft/winget-cli)
 
 ```powershell
 winget install Python.Python.3
 ```
 
-#### Установка Python с помощью chocolatey
+#### Установка Python с помощью [chocolatey](https://chocolatey.org/)
 
 ```powershell
 choco install python3
 ```
 
-### poetry
+#### Установка Python с помощью [scoop](https://scoop.sh/)
+
+```powershell
+scoop install python
+```
+
+### Poetry
 
 ```powershell
 (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
@@ -43,18 +49,26 @@ choco install python3
 
 ### Регистрация COM-компоненты 1С Предприятие
 
-Регистрировать необходимо COM-компоненту той же версии, что и агент сервера, к которому будет выполнятся подключение
+Регистрировать необходимо COM-компоненту той же версии, что и агент сервера, к которому будет выполняться подключение
 
-Выполнить команду с правами администратора
+Выполнить команду с **правами администратора**
 
 ```powershell
-regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll" 
+regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll"
 ```
 
 ## Установка зависимостей проекта
 
+Клонирование git-репозитория
+
 ```powershell
-poetry install --no-root
+git clone https://github.com/zeerayne/1cv8-mgmt-tool.git
+```
+
+Создание виртуального окружения, установка сторонних зависимостей
+
+```powershell
+$(cd 1cv8-mgmt-tool;$?) -and $(poetry install --no-root;$?)
 ```
 
 # Настройка
