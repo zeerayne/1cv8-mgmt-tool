@@ -4,8 +4,9 @@ import os
 import pathlib
 import settings
 from datetime import datetime
-from shutil import copyfile
 from typing import List
+
+from aioshutil import copyfile
 
 import core.common as common_funcs
 import core.types as core_types
@@ -28,14 +29,14 @@ log = logging.getLogger(__name__)
 log_prefix = 'Backup'
 
 
-def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
+async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
     backup_filename = common_funcs.path_leaf(backup_fullpath)
     for path in replication_paths:
         try:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             replication_fullpath = os.path.join(path, backup_filename)
             log.info(f'Replicating {backup_fullpath} to {replication_fullpath}')
-            copyfile(backup_fullpath, replication_fullpath)
+            await copyfile(backup_fullpath, replication_fullpath)
         except Exception as e:
             log.exception(f'Problems while replicating to {path}: {e}')
 

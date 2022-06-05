@@ -43,12 +43,10 @@ python-versions = ">=3.6"
 [package.dependencies]
 aiosignal = ">=1.1.2"
 async-timeout = ">=4.0.0a3,<5.0"
-asynctest = {version = "0.13.0", markers = "python_version < \"3.8\""}
 attrs = ">=17.3.0"
 charset-normalizer = ">=2.0,<3.0"
 frozenlist = ">=1.1.1"
 multidict = ">=4.5,<7.0"
-typing-extensions = {version = ">=3.7.4", markers = "python_version < \"3.8\""}
 yarl = ">=1.0,<2.0"
 
 [package.extras]
@@ -64,6 +62,14 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 typing_extensions = {version = ">=4.0", markers = "python_version < \"3.10\""}
+
+[[package]]
+name = "aioshutil"
+version = "1.1"
+description = "Asynchronous shutil module."
+category = "main"
+optional = false
+python-versions = ">=3.7"
 
 [[package]]
 name = "aiosignal"
@@ -83,17 +89,6 @@ description = "Timeout context manager for asyncio programs"
 category = "main"
 optional = false
 python-versions = ">=3.6"
-
-[package.dependencies]
-typing-extensions = {version = ">=3.6.5", markers = "python_version < \"3.8\""}
-
-[[package]]
-name = "asynctest"
-version = "0.13.0"
-description = "Enhance the standard unittest package with features for testing asyncio libraries"
-category = "main"
-optional = false
-python-versions = ">=3.5"
 
 [[package]]
 name = "attrs"
@@ -273,12 +268,11 @@ python-versions = ">=3.6"
 [package.dependencies]
 idna = ">=2.0"
 multidict = ">=4.0"
-typing-extensions = {version = ">=3.7.4", markers = "python_version < \"3.8\""}
 
 [metadata]
 lock-version = "1.1"
-python-versions = "^3.7"
-content-hash = "e8f1b7f8ab3abc407c74a8f6859ec42bd9b6011332c166feba3d022769329370"
+python-versions = "^3.8"
+content-hash = "0a0b8650ea9079f3ccb8d6e6ab2c0e41de4d7d1f8a15f8cbd30aaefda87d81e9"
 
 [metadata.files]
 aioboto3 = [
@@ -366,6 +360,10 @@ aioitertools = [
     {file = "aioitertools-0.10.0-py3-none-any.whl", hash = "sha256:a2ea2a39ebf272a2fbb58bfdb73e1daeeb6686edbbc8082215dfc8b8ffffa6e8"},
     {file = "aioitertools-0.10.0.tar.gz", hash = "sha256:7d1d1d4a03d462c5a0840787d3df098f125847e0d38b833b30f8f8cbc45a1420"},
 ]
+aioshutil = [
+    {file = "aioshutil-1.1-py3-none-any.whl", hash = "sha256:4c17e1da55cf928b4a85bd6ff5e4f1560cf21db7a16b5da5844f8f3edf3e2895"},
+    {file = "aioshutil-1.1.tar.gz", hash = "sha256:d2e8d6baddab13137410b27ce24f39ce9889684cb47503d5af182ea8d038b0f1"},
+]
 aiosignal = [
     {file = "aiosignal-1.2.0-py3-none-any.whl", hash = "sha256:26e62109036cd181df6e6ad646f91f0dcfd05fe16d0cb924138ff2ab75d64e3a"},
     {file = "aiosignal-1.2.0.tar.gz", hash = "sha256:78ed67db6c7b7ced4f98e495e572106d5c432a93e1ddd1bf475e1dc05f5b7df2"},
@@ -373,10 +371,6 @@ aiosignal = [
 async-timeout = [
     {file = "async-timeout-4.0.2.tar.gz", hash = "sha256:2163e1640ddb52b7a8c80d0a67a08587e5d245cc9c553a74a847056bc2976b15"},
     {file = "async_timeout-4.0.2-py3-none-any.whl", hash = "sha256:8ca1e4fcf50d07413d66d1a5e416e42cfdf5851c981d679a09851a6853383b3c"},
-]
-asynctest = [
-    {file = "asynctest-0.13.0-py3-none-any.whl", hash = "sha256:5da6118a7e6d6b54d83a8f7197769d046922a44d2a99c21382f0a6e4fadae676"},
-    {file = "asynctest-0.13.0.tar.gz", hash = "sha256:c27862842d15d83e6a34eb0b2866c323880eb3a75e4485b079ea11748fd77fac"},
 ]
 attrs = [
     {file = "attrs-21.4.0-py2.py3-none-any.whl", hash = "sha256:2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4"},

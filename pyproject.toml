@@ -11,6 +11,7 @@ pywin32 = [
 ]
 aioboto3 = "^9.6.0"
 filechunkio = "^1.8"
+aioshutil = "^1.1"
 
 [tool.poetry.dev-dependencies]
 
