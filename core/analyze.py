@@ -10,11 +10,14 @@ log = logging.getLogger(__name__)
 log_prefix = 'Analyze'
 
 
-def _log_message(resultset, datetime_start, succeeded, failed, datetime_finish, log_subprefix):
-    size = 0
-    for task_result in resultset:
-        if task_result.succeeded:
-            size += task_result.upload_size
+def _log_message(
+    resultset: List[core_types.InfoBaseTaskResultBase], 
+    succeeded: int, 
+    failed: int, 
+    datetime_start: datetime, 
+    datetime_finish: datetime, 
+    log_subprefix: str
+):
     diff = (datetime_finish - datetime_start).total_seconds()
     log.info(f'<{log_prefix} | {log_subprefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.')
 
@@ -75,7 +78,13 @@ def analyze_result(
 def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
     log_subprefix = 'AWS'
     
-    def log_message(resultset, datetime_start, succeeded, failed, datetime_finish):
+    def log_message(    
+        resultset: List[core_types.InfoBaseTaskResultBase], 
+        succeeded: int, 
+        failed: int, 
+        datetime_start: datetime, 
+        datetime_finish: datetime
+    ):
         size = 0
         for task_result in resultset:
             if task_result.succeeded:
