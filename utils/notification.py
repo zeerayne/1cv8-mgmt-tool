@@ -20,7 +20,7 @@ def make_message(caption, html_body):
     return msg
 
 
-def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]):
+def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]) -> str:
     style = "style='min-width: 100px; text-align: center; border: 1px solid black;'"
     table = "<table><caption style='white-space: nowrap;'>{caption}</caption>{body}</table>"
     table_body = ''
@@ -37,18 +37,7 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
 
 
 def send_notification(caption, html_body):
-    server = smtplib.SMTP(
-        settings.EMAIL_SMTP_HOST,
-        settings.EMAIL_SMTP_PORT
-    )
-    server.login(
-        settings.EMAIL_LOGIN,
-        settings.EMAIL_PASSWORD
-    )
-    msg = make_message(caption, html_body)
-    server.sendmail(
-        settings.EMAIL_FROM,
-        settings.EMAIL_TO,
-        msg.as_string()
-    )
-    server.quit()
+    with smtplib.SMTP(settings.EMAIL_SMTP_HOST, settings.EMAIL_SMTP_PORT) as server:
+        server.login(settings.EMAIL_LOGIN,settings.EMAIL_PASSWORD)
+        msg = make_message(caption, html_body)
+        server.sendmail(settings.EMAIL_FROM, settings.EMAIL_TO, msg.as_string())
