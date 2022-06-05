@@ -13,14 +13,13 @@ from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 import core.types as core_types
 
-platformPath = settings.V8_PLATFORM_PATH
-platformVersion = version.find_platform_last_version(platformPath)
-
 
 log = logging.getLogger(__name__)
 
 
 def get_platform_full_path() -> str:
+    platformPath = settings.V8_PLATFORM_PATH
+    platformVersion = version.find_platform_last_version(platformPath)
     full_path = os.path.join(platformPath, platformVersion, 'bin', '1cv8.exe')
     return full_path
 

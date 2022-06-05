@@ -66,7 +66,7 @@ async def execute_v8_command(
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    log_file_content = common_funcs.read_file_content(log_filename, 'utf-8-sig')
+    log_file_content = common_funcs.read_file_content(log_filename, 'utf-8')
     msg = f'<{ib_name}> Log message :: {log_file_content}'
     if v8_process.returncode != 0:
         log.error(msg)
