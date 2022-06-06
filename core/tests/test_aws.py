@@ -44,6 +44,5 @@ async def test_internal_upload_infobase_to_s3_call(infobases, success_backup_res
     """
     boto3.Session.client.upload_file inside should be called when uploading files to AWS
     """
-    aws_semaphore = asyncio.Semaphore(1)
     await _upload_infobase_to_s3(infobases[0], success_backup_result[0].backup_filename)
     mock_aioboto3_session.return_value.client.return_value.__aenter__.return_value.upload_file.assert_called_once()
