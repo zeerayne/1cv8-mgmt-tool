@@ -41,7 +41,7 @@ def _analyze_result(
     log_subprefix = _wrap_log_subprefix(log_subprefix)
     succeeded = 0
     failed = 0
-    if len(resultset) > 0:
+    if resultset:
         for task_result in resultset:
             if task_result.succeeded:
                 succeeded += 1
@@ -50,15 +50,15 @@ def _analyze_result(
                 log.error(f'<{log_prefix}{log_subprefix}> [{task_result.infobase_name}] FAILED')
         if custom_log_message_func:
             custom_log_message_func(resultset, succeeded, failed, datetime_start, datetime_finish)
-        if len(resultset) != len(workload):
-            processed_info_bases = [task_result.infobase_name for task_result in resultset]
-            missed = 0
-            for w in workload:
-                if w not in processed_info_bases:
-                    log.warning(f'<{log_prefix}{log_subprefix}> [{w}] MISSED')
-                    missed += 1
-            log.warning(f'<{log_prefix}{log_subprefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
-    else:
+    if len(resultset) != len(workload):
+        processed_info_bases = [task_result.infobase_name for task_result in resultset]
+        missed = 0
+        for w in workload:
+            if w not in processed_info_bases:
+                log.warning(f'<{log_prefix}{log_subprefix}> [{w}] MISSED')
+                missed += 1
+        log.warning(f'<{log_prefix}{log_subprefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
+    if not (resultset and workload):
         log.info(f'<{log_prefix}{log_subprefix}> Nothing was done')
 
 
