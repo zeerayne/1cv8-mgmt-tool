@@ -91,3 +91,21 @@ def test_send_notification_calls_smtp_sendmail(mock_smtp, mock_smtp_login, mock_
     """
     send_notification('', '')
     mock_smtp_sendmail.assert_called_with(settings.EMAIL_FROM, settings.EMAIL_TO, mock_email_message())
+
+
+def test_make_message_includes_content():
+    """
+    Email message should include content
+    """
+    content = 'test_content'
+    result = make_message('', content)
+    assert content in result.as_string()
+
+
+def test_make_message_includes_caption():
+    """
+    Email message should include caption
+    """
+    caption = 'test_caption'
+    result = make_message(caption, '')
+    assert caption in result.as_string()

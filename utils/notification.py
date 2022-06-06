@@ -1,6 +1,7 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from datetime import datetime
 from typing import List
 
 import core.types as core_types
@@ -9,7 +10,6 @@ from conf import settings
 
 
 def make_message(caption, html_body):
-    from datetime import datetime
     now = datetime.now()
     msg = MIMEMultipart('alternative')
     msg['Subject'] = '{0} {1}'.format(caption, now.strftime('%d.%m.%Y'))
