@@ -3,6 +3,8 @@ import aioboto3
 import os
 import logging
 
+import boto3
+
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
 
@@ -12,9 +14,6 @@ import core.types as core_types
 from conf import settings
 from core.analyze import analyze_s3_result
 from utils.common import sizeof_fmt
-
-
-retention_days = settings.AWS_RETENTION_DAYS
 
 
 log = logging.getLogger(__name__)
@@ -50,26 +49,29 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_REGION_NAME
     )
-    async with session.resource(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3:
-        bucket_name = settings.AWS_BUCKET_NAME
-        filename = common_funcs.path_leaf(full_backup_path)
-        # Собираем инфу чтобы вывод в лог был полезным
-        filestat = os.stat(full_backup_path)
-        source_size = filestat.st_size
-        datetime_start = datetime.now()
-        async with session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3c:
-            await s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename)
-        datetime_finish = datetime.now()
-        diff = (datetime_finish - datetime_start).total_seconds()
-        log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
-        # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
-        # '_' добавляется к имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
-        # при наличии имён вида infobase и infobase2
-        bucket = await s3.Bucket(bucket_name)
-        async for o in bucket.objects.filter(Prefix=ib_name + '_'):
-            if await o.last_modified < (datetime.now() - timedelta(days=retention_days)).replace(tzinfo=timezone.utc):
-                await o.delete()
+    filename = common_funcs.path_leaf(full_backup_path)
+    # Собираем инфу чтобы вывод в лог был полезным
+    filestat = os.stat(full_backup_path)
+    source_size = filestat.st_size
+    datetime_start = datetime.now()
+    async with session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3c:
+        await s3c.upload_file(Filename=full_backup_path, Bucket=settings.AWS_BUCKET_NAME, Key=filename)
+    datetime_finish = datetime.now()
+    diff = (datetime_finish - datetime_start).total_seconds()
+    log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
+    await _remove_old_infobase_backups_from_s3(ib_name, session)
     return core_types.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
+
+
+async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Session):
+    # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
+    # '_' добавляется к имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
+    # при наличии имён вида infobase и infobase2
+    async with session.resource(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3_resource:
+        bucket = await s3_resource.Bucket(settings.AWS_BUCKET_NAME)
+        async for o in bucket.objects.filter(Prefix=ib_name + '_'):
+            if await o.last_modified < (datetime.now() - timedelta(days=settings.AWS_RETENTION_DAYS)).replace(tzinfo=timezone.utc):
+                await o.delete()
 
 
 async def upload_to_s3(backup_results: core_types.InfoBaseBackupTaskResult):
