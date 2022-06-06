@@ -1,4 +1,3 @@
-import socket
 import pytest
 from pytest_mock import MockerFixture
 
