@@ -1,13 +1,14 @@
-import concurrent.futures
+import asyncio
 import logging
 import os
 import pathlib
 import settings
-import subprocess
 import sys
+
 from datetime import datetime
-from shutil import copyfile
 from typing import List
+
+from aioshutil import copyfile
 
 import core.common as common_funcs
 import core.types as core_types
@@ -15,8 +16,8 @@ import core.types as core_types
 from core.cluster import ClusterControlInterface
 from core.exceptions import V8Exception
 from core.process import execute_v8_command
-from core.aws import analyze_s3_result, upload_infobase_to_s3
-from core.process import pycom_threadpool_initializer
+from core.analyze import analyze_backup_result, analyze_s3_result
+from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
 
 server = common_funcs.get_server_address()
@@ -30,19 +31,19 @@ log = logging.getLogger(__name__)
 log_prefix = 'Backup'
 
 
-def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
+async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
     backup_filename = common_funcs.path_leaf(backup_fullpath)
     for path in replication_paths:
         try:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             replication_fullpath = os.path.join(path, backup_filename)
             log.info(f'Replicating {backup_fullpath} to {replication_fullpath}')
-            copyfile(backup_fullpath, replication_fullpath)
+            await copyfile(backup_fullpath, replication_fullpath)
         except Exception as e:
             log.exception(f'Problems while replicating to {path}: {e}')
 
 
-def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
+async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     """
     1. Блокирует фоновые задания и новые сеансы
     2. Принудительно завершает текущие сеансы
@@ -80,7 +81,7 @@ def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            execute_v8_command(
+            await execute_v8_command(
                 ib_name, v8_command, log_filename, permission_code, 1200
             )
             break
@@ -93,7 +94,7 @@ def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     return core_types.InfoBaseBackupTaskResult(ib_name, True, dt_filename)
 
 
-def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
+async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     """
     Выполняет резервное копирование ИБ средствами СУБД PostgreSQL при помощи утилиты pg_dump
     1. Проверяет, использует ли ИБ СУБД PostgreSQL
@@ -138,9 +139,9 @@ def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
     pgdump_env = os.environ.copy()
     pgdump_env['PGPASSWORD'] = db_pwd
-    pgdump_process = subprocess.Popen(pgdump_command, env=pgdump_env, shell=True)
+    pgdump_process = await asyncio.create_subprocess_shell(pgdump_command, env=pgdump_env)
     log.debug(f'<{ib_name}> pg_dump PID is {str(pgdump_process.pid)}')
-    pgdump_process.wait()
+    await pgdump_process.communicate()
     if pgdump_process.returncode != 0:
         log_file_content = common_funcs.read_file_content(log_filename)
         log.error(f'<{ib_name}> Log message :: {log_file_content}')
@@ -149,42 +150,22 @@ def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     return core_types.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 
-def backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
-    try:
-        if settings.PG_BACKUP_ENABLED:
-            result = _backup_pgdump(ib_name)
-        else:
-            result = common_funcs.com_func_wrapper(_backup_info_base, ib_name)
-        # Если включена репликация и результат выгрузки успешен
-        if backupReplicationEnabled and result.succeeded:
-            backup_filename = result.backup_filename
-            # Копирует файл бэкапа в дополнительные места
-            replicate_backup(backup_filename, backupReplicationPaths)
-        return result
-    except Exception as e:
-        log.exception(f'<{ib_name}> Unknown exception occurred in thread')
-        return core_types.InfoBaseBackupTaskResult(ib_name, False)
-
-
-def analyze_backup_result(resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
-    succeeded = 0
-    failed = 0
-    for task_result in resultset:
-        if task_result.succeeded:
-            succeeded += 1
-        else:
-            failed += 1
-            log.error(f'<{log_prefix}> ({task_result.infobase_name}) FAILED')
-    diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'<{log_prefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.')
-    if len(resultset) != len(workload):
-        processed_info_bases = [task_result.infobase_name for task_result in resultset]
-        missed = 0
-        for w in workload:
-            if w not in processed_info_bases:
-                log.warning(f'<{log_prefix}> ({w}) MISSED')
-                missed += 1
-        log.warning(f'<{log_prefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
+async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseBackupTaskResult:
+    async with semaphore:
+        try:
+            if settings.PG_BACKUP_ENABLED:
+                result = await _backup_pgdump(ib_name)
+            else:
+                result = await common_funcs.com_func_wrapper(_backup_info_base, ib_name)
+            # Если включена репликация и результат выгрузки успешен
+            if backupReplicationEnabled and result.succeeded:
+                backup_filename = result.backup_filename
+                # Копирует файл бэкапа в дополнительные места
+                await replicate_backup(backup_filename, backupReplicationPaths)
+            return result
+        except Exception as e:
+            log.exception(f'<{ib_name}> Unknown exception occurred in thread')
+            return core_types.InfoBaseBackupTaskResult(ib_name, False)
 
 
 def analyze_results(
@@ -211,92 +192,62 @@ def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskRes
         send_notification('1cv8-mgmt backup', msg)
 
 
-def main():
-    MIN_PYTHON_VERSION = (3, 7)
-    if sys.version_info < MIN_PYTHON_VERSION:
-        sys.exit("Python %s.%s or later is required.\n" % MIN_PYTHON_VERSION)
+async def main():
     try:
         # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
         # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
         info_bases = common_funcs.get_info_bases()
-        backup_threads = settings.BACKUP_THREADS
-        aws_threads = settings.AWS_THREADS
-        backup_result = []
-        aws_result = []
-        with concurrent.futures.ProcessPoolExecutor(
-                max_workers=backup_threads,
-                initializer=pycom_threadpool_initializer
-            ) as backup_executor, \
-            concurrent.futures.ProcessPoolExecutor(
-                max_workers=aws_threads,
-            ) as aws_executor:
-            log.info(f'<{log_prefix}> Thread pool executors initialized: {backup_threads} backup threads, {aws_threads} AWS threads')
-            backup_futures = []
-            backup_datetime_start = datetime.now()
-            for ib_name in info_bases:
-                backup_futures.append(
-                    backup_executor.submit(backup_info_base, ib_name)
-                )
-            aws_futures = []
-            aws_datetime_start = datetime.now()
-            for future in concurrent.futures.as_completed(backup_futures):
-                try:
-                    task_result = future.result()
-                    backup_result.append(task_result)
-                    # Только резервные копии, созданные без ошибок нужно загрузить на S3
-                    if task_result.succeeded and settings.AWS_ENABLED:
-                        aws_futures.append(
-                            aws_executor.submit(upload_infobase_to_s3, task_result.infobase_name, task_result.backup_filename)
-                        )
-                except concurrent.futures.process.BrokenProcessPool:
-                    log.error(f'<{log_prefix}> Got BrokenProcessPool exception')
-            # при работе с большим количеством COM-объектов процессы питона крашатся,
-            # часть резервных копий может быть не сделана, требуется пересоздать ProcessPoolExecutor
-            if len(backup_result) != len(info_bases):
-                log.warning(f'<{log_prefix}> Backup process pool had crashed, retrying')
-                processed_info_bases = [task_result.infobase_name for task_result in backup_result]
-                missed = []
-                for w in info_bases:
-                    if w not in processed_info_bases:
-                        missed.append(w)
-                with concurrent.futures.ProcessPoolExecutor(
-                    max_workers=backup_threads,
-                    initializer=pycom_threadpool_initializer
-                ) as fallback_backup_executor:
-                    log.info(f'<{log_prefix}> Thread pool executor initialized: {backup_threads} backup threads')
-                    backup_futures = []
-                    for ib_name in missed:
-                        backup_futures.append(
-                            fallback_backup_executor.submit(backup_info_base, ib_name)
-                        )
-                    for future in concurrent.futures.as_completed(backup_futures):
-                        try:
-                            task_result = future.result()
-                            backup_result.append(task_result)
-                            # Только резервные копии, созданные без ошибок нужно загрузить на S3
-                            if task_result.succeeded and settings.AWS_ENABLED:
-                                aws_futures.append(
-                                    aws_executor.submit(upload_infobase_to_s3, task_result.infobase_name, task_result.backup_filename)
-                                )
-                        except concurrent.futures.process.BrokenProcessPool:
-                            log.error(f'<{log_prefix}> Got BrokenProcessPool exception')
+        backup_concurrency = settings.BACKUP_CONCURRENCY
+        aws_concurrency = settings.AWS_CONCURRENCY
+        backup_results = []
+        aws_results = []
+
+        backup_semaphore = asyncio.Semaphore(backup_concurrency)
+        aws_semaphore = asyncio.Semaphore(aws_concurrency)
+        log.info(f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency')
+        backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
+        backup_datetime_start = datetime.now()
+        aws_tasks = []
+        aws_datetime_start = None
+        for backup_coro in asyncio.as_completed(backup_coroutines):
+            backup_result = await backup_coro
+            backup_results.append(backup_result)
             backup_datetime_finish = datetime.now()
-            try:
-                for future in concurrent.futures.as_completed(aws_futures, timeout=3*3600):
-                    aws_result.append(future.result())
-            except concurrent.futures.TimeoutError:
-                pass
-            aws_datetime_finish = datetime.now()
-        log.debug(f'<{log_prefix}> AWS pool closed')
+            # Только резервные копии, созданные без ошибок нужно загрузить на S3
+            if backup_result.succeeded and settings.AWS_ENABLED:
+                if aws_datetime_start is None:
+                    aws_datetime_start = datetime.now()
+                aws_tasks.append(
+                    asyncio.create_task(
+                        upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore),
+                        name=f'Task :: Upload {backup_result.infobase_name} to S3'
+                ))
 
-        analyze_results(info_bases, backup_result, backup_datetime_start, backup_datetime_finish, aws_result, aws_datetime_start, aws_datetime_finish)
+        await asyncio.wait(aws_tasks)
+        aws_datetime_finish = datetime.now()
+        aws_results = [task.result() for task in aws_tasks]
 
-        send_email_notification(backup_result, aws_result)
+        analyze_results(
+            info_bases, 
+            backup_results, 
+            backup_datetime_start, 
+            backup_datetime_finish, 
+            aws_results, 
+            aws_datetime_start, 
+            aws_datetime_finish
+        )
+
+        send_email_notification(backup_results, aws_results)
 
         log.info(f'<{log_prefix}> Done')
     except Exception as e:
-        log.exception(f'<{log_prefix}> Unknown exception occurred in main thread')
+        log.exception(f'<{log_prefix}> Unknown exception occurred in main coroutine')
 
 
 if __name__ == "__main__":
-    main()
+    if sys.version_info < (3, 10):
+        # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
+        # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
+        asyncio.get_event_loop().run_until_complete(main())
+    else:
+        asyncio.run(main())

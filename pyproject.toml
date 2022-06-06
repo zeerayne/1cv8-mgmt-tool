@@ -1,14 +1,17 @@
 [tool.poetry]
 name = "1cv8-mgmt-tool"
-version = "2022.04.28"
+version = "2022.05.15"
 description = ""
 authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
-pywin32 = "^304"
-boto3 = "^1.22.12"
+python = "^3.8"
+pywin32 = [
+    { version = "^304", platform = "win32" },
+]
+aioboto3 = "^9.6.0"
 filechunkio = "^1.8"
+aioshutil = "^1.1"
 
 [tool.poetry.dev-dependencies]
 
