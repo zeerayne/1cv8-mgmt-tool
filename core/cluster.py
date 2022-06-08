@@ -1,11 +1,17 @@
 import logging
-import pythoncom
-import win32com.client
+from typing import List
+
+try:
+    import win32com.client as win32com_client
+except ImportError:
+    from core.surrogate import surrogate
+    surrogate('win32com.client').prepare()
+    import win32com.client as win32com_client
 
 from conf import settings
 
 
-"""
+r"""
 Для доступа к информационной базе из внешней программы используется COM объект COMConnector. 
 В зависимости от версии платформы используется V82.COMConnector или V83.COMConnector. При установке платформы 1С, 
 операционной системе автоматически регистрируется класс COMConnector. 
@@ -31,9 +37,9 @@ class ClusterControlInterface:
     def __init__(self):
         # В зависимости от версии платформы используется V82.COMConnector или V83.COMConnector
         try:
-            self.V8COMConnector = win32com.client.Dispatch("V83.COMConnector")
-        except pythoncom.com_error:
-            self.V8COMConnector = win32com.client.Dispatch("V82.COMConnector")
+            self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
+        except:
+            self.V8COMConnector = win32com_client.Dispatch("V82.COMConnector")
         self.server = settings.V8_SERVER_AGENT["address"]
         self.agentPort = str(settings.V8_SERVER_AGENT["port"])
         self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
@@ -94,7 +100,7 @@ class ClusterControlInterface:
             working_process_connection.AddAuthentication(c[0], c[1])
         return working_process_connection
 
-    def _get_info_base(self, info_bases, name):
+    def _get_info_base(self, info_bases: List, name: str):
         for ib in info_bases:
             if ib.Name.lower() == name.lower():
                 return ib
@@ -111,11 +117,11 @@ class ClusterControlInterface:
         info_bases_short = agent_connection.GetInfoBases(cluster)
         return info_bases_short
 
-    def get_info_base_short(self, agent_connection, cluster, name):
+    def get_info_base_short(self, agent_connection, cluster, name: str):
         info_bases_short = self.get_info_bases_short(agent_connection, cluster)
         return self._get_info_base(info_bases_short, name)
 
-    def get_info_base_metadata(self, info_base, info_base_user, info_base_pwd):
+    def get_info_base_metadata(self, info_base, info_base_user: str, info_base_pwd: str):
         """
         Получает наименование и версию конфигурации
         :param info_base: COM-Объект типа IInfoBaseShort или IInfoBaseInfo. Подойдёт любой объект, имеющий поле Name
@@ -131,8 +137,8 @@ class ClusterControlInterface:
         del external_connection
         return name, version
 
-    def lock_info_base(self, working_process_connection, info_base, permission_code='0000',
-                       message='Выполняется обслуживание ИБ'):
+    def lock_info_base(self, working_process_connection, info_base, permission_code: str = '0000',
+                       message: str = 'Выполняется обслуживание ИБ'):
         """
         Блокирует фоновые задания и новые сеансы информационной базы
         :param working_process_connection: Соединение с рабочим процессом
