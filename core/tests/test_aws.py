@@ -49,7 +49,7 @@ async def test_internal_upload_infobase_to_s3_call(mocker: MockerFixture, infoba
     """
     mocker.patch('core.aws._remove_old_infobase_backups_from_s3', AsyncMock())
     await _upload_infobase_to_s3(infobases[0], success_backup_result[0].backup_filename)
-    mock_aioboto3_session.return_value.client.return_value.__aenter__.return_value.upload_file.assert_called_once()
+    mock_aioboto3_session.return_value.client.return_value.__aenter__.return_value.upload_file.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -58,7 +58,7 @@ async def test_old_infobase_backups_from_s3_are_removed(mock_aioboto3_session, m
     Backups older than `settings.AWS_RETENTION_DAYS` are removed from S3
     """
     await _remove_old_infobase_backups_from_s3('', mock_aioboto3_session)
-    mock_aioboto3_bucket_objects_old.delete.assert_called_once()
+    mock_aioboto3_bucket_objects_old.delete.assert_awaited()
 
 
 @pytest.mark.asyncio
@@ -67,7 +67,7 @@ async def test_new_infobase_backups_from_s3_are_not_removed(mock_aioboto3_sessio
     Backups newer than `settings.AWS_RETENTION_DAYS` are not removed from S3
     """
     await _remove_old_infobase_backups_from_s3('', mock_aioboto3_session)
-    mock_aioboto3_bucket_objects_new.delete.assert_not_called()
+    mock_aioboto3_bucket_objects_new.delete.assert_not_awaited()
 
 
 @pytest.mark.asyncio
