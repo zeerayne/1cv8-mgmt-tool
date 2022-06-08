@@ -6,6 +6,7 @@ from botocore.exceptions import EndpointConnectionError
 from pytest_mock import MockerFixture
 
 from core import types as core_types
+from core.surrogate import surrogate
 
 
 @pytest.fixture
@@ -94,3 +95,31 @@ def mock_os_stat(mocker: MockerFixture):
     os_stat_mock = Mock()
     os_stat_mock.st_size = 1000
     return mocker.patch('os.stat', return_value=os_stat_mock)
+
+
+@surrogate('win32com.client')
+@pytest.fixture
+def mock_win32com_client_dispatch(mocker: MockerFixture):
+    import win32com.client as win32com_client
+    return mocker.patch.object(win32com_client, 'Dispatch', create=True, return_value=Mock())
+
+
+@pytest.fixture
+def mock_connect_agent(mock_win32com_client_dispatch):
+    mock = Mock()
+    type(mock_win32com_client_dispatch.return_value).ConnectAgent = mock
+    return mock
+
+
+@pytest.fixture
+def mock_get_clusters(mock_connect_agent):
+    mock = Mock(return_value=['test_cluster01', 'test_cluster02'])
+    type(mock_connect_agent.return_value).GetClusters = mock
+    return mock
+
+
+@pytest.fixture
+def mock_cluster_auth(mock_connect_agent):
+    mock = Mock()
+    type(mock_connect_agent.return_value).Authenticate = mock
+    return mock
