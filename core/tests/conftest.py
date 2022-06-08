@@ -1,3 +1,5 @@
+import random
+
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock
 
@@ -7,6 +9,9 @@ from pytest_mock import MockerFixture
 
 from core import types as core_types
 from core.surrogate import surrogate
+
+
+random.seed(0)
 
 
 @pytest.fixture
@@ -106,20 +111,25 @@ def mock_win32com_client_dispatch(mocker: MockerFixture):
 
 @pytest.fixture
 def mock_connect_agent(mock_win32com_client_dispatch):
-    mock = Mock()
-    type(mock_win32com_client_dispatch.return_value).ConnectAgent = mock
-    return mock
+    agent_connection_mock = Mock()
+    type(agent_connection_mock.return_value).Authenticate = Mock()
+    type(agent_connection_mock.return_value).GetClusters = Mock(return_value=['test_cluster01', 'test_cluster02'])
+    
+    working_process_mock = Mock()
+    type(working_process_mock).MainPort = random.randint(1000, 2000)
+    type(agent_connection_mock.return_value).GetWorkingProcesses = Mock(return_value=[working_process_mock])
+
+    type(mock_win32com_client_dispatch.return_value).ConnectAgent = agent_connection_mock
+    return agent_connection_mock
 
 
 @pytest.fixture
-def mock_get_clusters(mock_connect_agent):
-    mock = Mock(return_value=['test_cluster01', 'test_cluster02'])
-    type(mock_connect_agent.return_value).GetClusters = mock
-    return mock
+def mock_connect_working_process(mock_win32com_client_dispatch):
+    working_process_connection_mock = Mock()
+    type(working_process_connection_mock.return_value).AuthenticateAdmin = Mock()
+    type(working_process_connection_mock.return_value).AddAuthentication = Mock()
+    type(working_process_connection_mock.return_value).GetInfoBases = Mock()
+    type(working_process_connection_mock.return_value).UpdateInfoBase = Mock()
 
-
-@pytest.fixture
-def mock_cluster_auth(mock_connect_agent):
-    mock = Mock()
-    type(mock_connect_agent.return_value).Authenticate = mock
-    return mock
+    type(mock_win32com_client_dispatch.return_value).ConnectWorkingProcess = working_process_connection_mock
+    return working_process_connection_mock
