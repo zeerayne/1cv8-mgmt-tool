@@ -1,8 +1,5 @@
 import asyncio
 import logging
-import threading
-
-from multiprocessing.pool import ThreadPool
 
 import core.common as common_funcs
 
@@ -73,40 +70,3 @@ async def execute_v8_command(
         raise V8Exception(log_file_content)
     else:
         log.info(msg)
-
-
-def pycom_threadpool_initializer():
-    # Чтобы создавать COM-объекты в потоках, отличных от MainThread,
-    # необходимо инициализировать win32com для кажодго потока
-    import pythoncom
-    pythoncom.CoInitialize()
-    thread_id = threading.get_ident()
-    log.debug('Thread #%d initialized' % thread_id)
-
-
-def execute_in_threadpool(func, iterable, threads):
-    """
-
-    :param func:
-    :param iterable:
-    :param threads:
-    :return:
-    """
-    log.debug('Creating pool with %d threads' % threads)
-    pool = ThreadPool(threads, initializer=pycom_threadpool_initializer)
-    log.debug('Pool initialized, mapping workload: %d items' % len(iterable))
-    resultset = pool.map(func, iterable)
-    log.debug('Closing pool')
-    pool.close()
-    log.debug('Joining pool')
-    pool.join()
-    succeeded = 0
-    failed = 0
-    for task_result in resultset:
-        if task_result.succeeded:
-            succeeded += 1
-        else:
-            failed += 1
-            log.error(f'[{task_result.infobase_name}] FAILED')
-    log.info(f'{succeeded} succeeded; {failed} failed')
-    return resultset
