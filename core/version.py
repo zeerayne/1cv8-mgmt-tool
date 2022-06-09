@@ -2,14 +2,14 @@ import os
 from distutils.version import LooseVersion
 
 
-def find_last_version(versions):
-    loose_versions = [LooseVersion(v) for v in versions]
-    max_version = max(loose_versions)
-    return str(max_version)
-
-
 def get_version_from_string(version_str):
     return LooseVersion(version_str)
+
+
+def find_last_version(versions):
+    loose_versions = [get_version_from_string(v) for v in versions]
+    max_version = max(loose_versions)
+    return str(max_version)
 
 
 def find_platform_last_version(platform_path):
