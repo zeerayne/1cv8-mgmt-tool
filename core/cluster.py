@@ -121,10 +121,10 @@ class ClusterControlInterface:
         info_bases_short = self.get_info_bases_short(agent_connection, cluster)
         return self._get_info_base(info_bases_short, name)
 
-    def get_info_base_metadata(self, info_base, info_base_user: str, info_base_pwd: str):
+    def get_info_base_metadata(self, info_base: str, info_base_user: str, info_base_pwd: str):
         """
         Получает наименование и версию конфигурации
-        :param info_base: COM-Объект типа IInfoBaseShort или IInfoBaseInfo. Подойдёт любой объект, имеющий поле Name
+        :param info_base: Имя информационной базы
         :param info_base_user: Пользователь ИБ с правами администратора
         :param info_base_pwd: Пароль пользователя ИБ
         :return: tuple(Наименование, Версия информационной базы)
