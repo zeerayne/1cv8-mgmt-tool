@@ -22,7 +22,9 @@ def mock_analyze_result(mocker: MockerFixture):
 
 @pytest.fixture
 async def mock_upload_infobase_to_s3(mocker: MockerFixture):
-    async_mock = AsyncMock(side_effect=lambda ib_name, full_backup_path: core_types.InfoBaseAWSUploadTaskResult(ib_name, True, 1000))
+    async_mock = AsyncMock(
+        side_effect=lambda ib_name, full_backup_path: core_types.InfoBaseAWSUploadTaskResult(ib_name, True, 1000)
+    )
     return mocker.patch('core.aws._upload_infobase_to_s3', side_effect=async_mock)
 
 
@@ -54,7 +56,6 @@ async def mock_aioboto3_session(mocker: MockerFixture):
 
 
 def create_bucket_object(mock_aioboto3_session, last_modified: datetime):
-
     class AsyncIteratorStub:
         def __init__(self, seq):
             self.iter = iter(seq)
@@ -131,6 +132,10 @@ def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
     working_process_mock = Mock()
     type(working_process_mock).MainPort = random.randint(1000, 2000)
     type(agent_connection_mock.return_value).GetWorkingProcesses = Mock(return_value=[working_process_mock])
+
+    type(agent_connection_mock.return_value).GetInfoBaseSessions = Mock(
+        side_effect=lambda cluster, info_base_short: [f'test_{info_base_short.Name}_session_{i}' for i in range(1,5)]
+    )
 
     type(mock_win32com_client_dispatch.return_value).ConnectAgent = agent_connection_mock
     return agent_connection_mock

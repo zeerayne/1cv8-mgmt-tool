@@ -144,3 +144,128 @@ def test_cluster_control_interface_get_info_base_metadata_connects_to_correct_in
     cci = ClusterControlInterface()
     metadata = cci.get_info_base_metadata(infobase_name, '', '')
     assert metadata[0] == infobase_name
+
+
+def test_cluster_control_interface_lock_info_base(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `lock_info_base` calls `IWorkingProcessConnection.UpdateInfoBase`
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.lock_info_base(working_process_connection, infobase_com_obj)
+    mock_connect_working_process.return_value.UpdateInfoBase.assert_called_with(infobase_com_obj)
+
+
+def test_cluster_control_interface_lock_info_base_set_sessions_denied(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `lock_info_base` sets `SessionsDenied` param to True
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.lock_info_base(working_process_connection, infobase_com_obj)
+    assert infobase_com_obj.SessionsDenied == True
+
+
+def test_cluster_control_interface_lock_info_base_set_scheduled_jobs_denied(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `lock_info_base` sets `ScheduledJobsDenied` param to True
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.lock_info_base(working_process_connection, infobase_com_obj)
+    assert infobase_com_obj.ScheduledJobsDenied == True
+
+
+def test_cluster_control_interface_lock_info_base_set_permission_code(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `lock_info_base` sets `PermissionCode` param
+    """
+    infobase_name = infobases[0]
+    permission_code = 'test_permission_code'
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.lock_info_base(working_process_connection, infobase_com_obj, permission_code)
+    assert infobase_com_obj.PermissionCode == permission_code
+
+
+def test_cluster_control_interface_lock_info_base_set_denied_message(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `lock_info_base` sets `DeniedMessage` param
+    """
+    infobase_name = infobases[0]
+    denied_message = 'test_denied_message'
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.lock_info_base(working_process_connection, infobase_com_obj, message=denied_message)
+    assert infobase_com_obj.DeniedMessage == denied_message
+
+
+def test_cluster_control_interface_unlock_info_base(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `unlock_info_base` calls `IWorkingProcessConnection.UpdateInfoBase`
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.unlock_info_base(working_process_connection, infobase_com_obj)
+    mock_connect_working_process.return_value.UpdateInfoBase.assert_called_with(infobase_com_obj)
+
+
+def test_cluster_control_interface_unlock_info_base_set_sessions_denied(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `unlock_info_base` sets `SessionsDenied` param to False
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.unlock_info_base(working_process_connection, infobase_com_obj)
+    assert infobase_com_obj.SessionsDenied == False
+
+
+def test_cluster_control_interface_unlock_info_base_set_scheduled_jobs_denied(infobases, mock_connect_agent, mock_connect_working_process):
+    """
+    `unlock_info_base` sets `ScheduledJobsDenied` param to False
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    working_process_connection = cci.get_working_process_connection()
+    infobase_com_obj = cci.get_info_base(working_process_connection, infobase_name)
+    cci.unlock_info_base(working_process_connection, infobase_com_obj)
+    assert infobase_com_obj.ScheduledJobsDenied == False
+
+
+def test_cluster_control_interface_terminate_info_base_sessions_get_infobase_session(infobases, mock_connect_agent):
+    """
+    `terminate_info_base_sessions` calls `IServerAgentConnection.GetInfoBaseSessions`
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    agent_connection = cci.get_agent_connection()
+    cluster = cci.get_cluster_with_auth(agent_connection)
+    infobase_com_obj = cci.get_info_base_short(agent_connection, cluster, infobase_name)
+    cci.terminate_info_base_sessions(agent_connection, cluster, infobase_com_obj)
+    mock_connect_agent.return_value.GetInfoBaseSessions.assert_called()
+
+
+
+def test_cluster_control_interface_terminate_info_base_sessions_terminate_session(infobases, mock_connect_agent):
+    """
+    `terminate_info_base_sessions` calls `IServerAgentConnection.TerminateSession`
+    """
+    infobase_name = infobases[0]
+    cci = ClusterControlInterface()
+    agent_connection = cci.get_agent_connection()
+    cluster = cci.get_cluster_with_auth(agent_connection)
+    infobase_com_obj = cci.get_info_base_short(agent_connection, cluster, infobase_name)
+    cci.terminate_info_base_sessions(agent_connection, cluster, infobase_com_obj)
+    mock_connect_agent.return_value.TerminateSession.assert_called()
