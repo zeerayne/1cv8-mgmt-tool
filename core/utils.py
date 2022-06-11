@@ -11,7 +11,7 @@ except ImportError:
     import pywintypes
     pywintypes.com_error = Exception
 
-from typing import Union
+from typing import Union, List, Tuple
 
 from conf import settings
 from core import version
@@ -40,13 +40,11 @@ def get_formatted_date(datetime_value: Union[datetime.datetime, datetime.date]) 
 
 def get_ib_and_time_string(ib_name: str) -> str:
     time_str = get_formatted_current_datetime()
-    ib_and_time_str = f'{ib_name}_{time_str}'
-    return ib_and_time_str
+    return f'{ib_name}_{time_str}'
 
 
 def append_file_extension_to_string(string: str, file_ext: str) -> str:
-    string_with_extension = f'{string}.{file_ext}'
-    return string_with_extension
+    return f'{string}.{file_ext}'
 
 
 def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
@@ -55,7 +53,7 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
     return ib_and_time_filename
 
 
-def get_info_bases():
+def get_info_bases() -> List[str]:
     """
     Получает именя всех ИБ, кроме указанных в списке INFO_BASES_EXCLUDE
     :return: массив с именами ИБ
@@ -71,7 +69,7 @@ def get_info_bases():
         return info_bases
 
 
-def get_info_base_credentials(ib_name):
+def get_info_base_credentials(ib_name) -> Tuple[str, str]:
     """
     Получает имя пользователя и пароль для инфомационной базы. Поиск производится в настройках.
     Если пара логин/пароль не найдена, возвращает пару по умолчанию
@@ -85,7 +83,7 @@ def get_info_base_credentials(ib_name):
     return creds
 
 
-def path_leaf(path):
+def path_leaf(path: str) -> str:
     """
     Из полного пути к файлу получает только имя файла
     :param path: Полный путь к файлу
@@ -95,7 +93,7 @@ def path_leaf(path):
     return tail or ntpath.basename(head)
 
 
-async def com_func_wrapper(func, ib_name, **kwargs) -> core_types.InfoBaseTaskResultBase:
+async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseTaskResultBase:
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
