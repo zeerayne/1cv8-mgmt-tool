@@ -104,6 +104,26 @@ def mock_os_stat(mocker: MockerFixture):
     return mocker.patch('os.stat', return_value=os_stat_mock)
 
 
+@pytest.fixture
+def mock_infobase_version():
+    return f'{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}'
+
+
+@pytest.fixture
+def mock_platform_version():
+    return f'8.3.{random.randint(15,25)}.{random.randint(1000,3000)}'
+
+
+@pytest.fixture
+def mock_platform_last_version():
+    return f'8.3.99.{random.randint(1000,3000)}'
+
+
+@pytest.fixture
+def mock_platform_versions(mock_platform_version, mock_platform_last_version):
+    return [mock_platform_version, mock_platform_last_version]
+
+
 @surrogate('win32com.client')
 @pytest.fixture
 def mock_win32com_client_dispatch(mocker: MockerFixture):
@@ -154,11 +174,11 @@ def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_c
 
 
 @pytest.fixture
-def mock_external_connection(mock_win32com_client_dispatch):
+def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_version):
     def external_connection_mock_side_effect(connection_string):
         infobase_name = re.search(r'Ref="(?P<ref>[\w\d\-_]+)"', connection_string).group('ref')
         side_effect_mock = Mock()
-        side_effect_mock.Metadata.Version = '3.0.96'
+        side_effect_mock.Metadata.Version = mock_infobase_version
         side_effect_mock.Metadata.Name = infobase_name
         return side_effect_mock
     external_connection_mock = Mock(side_effect=external_connection_mock_side_effect)
