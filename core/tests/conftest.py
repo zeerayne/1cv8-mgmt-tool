@@ -105,6 +105,12 @@ def mock_os_stat(mocker: MockerFixture):
 
 
 @pytest.fixture
+def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
+    mocker.patch('os.path.isdir', return_value=True)
+    return mocker.patch('os.listdir', return_value=mock_platform_versions + ['test_common', 'test_conf', 'test_srvinfo'])
+
+
+@pytest.fixture
 def mock_infobase_version():
     return f'{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}'
 
