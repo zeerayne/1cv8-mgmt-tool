@@ -28,6 +28,14 @@ r"""
 log = logging.getLogger(__name__)
 
 
+def get_server_address() -> str:
+    return settings.V8_SERVER_AGENT['address']
+
+
+def get_server_port() -> str:
+    return str(settings.V8_SERVER_AGENT['port'])
+
+
 class ClusterControlInterface:
     """
     Примечание: любые COM-объекты не могут быть переданы между потоками,
@@ -40,8 +48,8 @@ class ClusterControlInterface:
             self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
         except:
             self.V8COMConnector = win32com_client.Dispatch("V82.COMConnector")
-        self.server = settings.V8_SERVER_AGENT["address"]
-        self.agentPort = str(settings.V8_SERVER_AGENT["port"])
+        self.server = get_server_address()
+        self.agentPort = get_server_port()
         self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
         self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
         self.infoBasesCredentials = settings.V8_INFO_BASES_CREDENTIALS

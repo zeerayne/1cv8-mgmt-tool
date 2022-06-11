@@ -9,18 +9,18 @@ from typing import List
 
 from aioshutil import copyfile
 
-import core.common as common_funcs
 import core.types as core_types
 
 from conf import settings
-from core.cluster import ClusterControlInterface
+from core import utils
+from core.cluster import ClusterControlInterface, get_server_address
 from core.exceptions import V8Exception
 from core.process import execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
 
-server = common_funcs.get_server_address()
+server = get_server_address()
 backupPath = settings.BACKUP_PATH
 backupReplicationEnabled = settings.BACKUP_REPLICATION_ENABLED
 backupReplicationPaths = settings.BACKUP_REPLICATION_PATHS
@@ -32,7 +32,7 @@ log_prefix = 'Backup'
 
 
 async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
-    backup_filename = common_funcs.path_leaf(backup_fullpath)
+    backup_filename = utils.path_leaf(backup_fullpath)
     for path in replication_paths:
         try:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
@@ -63,13 +63,13 @@ async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult
     # Код блокировки новых сеансов
     permission_code = "0000"
     # Формирует команду для выгрузки
-    info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
-    ib_and_time_str = common_funcs.get_ib_and_time_string(ib_name)
-    dt_filename = os.path.join(backupPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'dt'))
-    log_filename = os.path.join(logPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'log'))
+    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
+    ib_and_time_str = utils.get_ib_and_time_string(ib_name)
+    dt_filename = os.path.join(backupPath, utils.append_file_extension_to_string(ib_and_time_str, 'dt'))
+    log_filename = os.path.join(logPath, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
-        rf'"{common_funcs.get_platform_full_path()}" ' \
+        rf'"{utils.get_platform_full_path()}" ' \
         rf'DESIGNER /S {server}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
@@ -121,9 +121,9 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
             log.error(f'<{ib_name}> password not found for user {db_user_string}')
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
         db_name = ib_info.dbName
-    ib_and_time_str = common_funcs.get_ib_and_time_string(ib_name)
-    backup_filename = os.path.join(backupPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
-    log_filename = os.path.join(logPath, common_funcs.append_file_extension_to_string(ib_and_time_str, 'log'))
+    ib_and_time_str = utils.get_ib_and_time_string(ib_name)
+    backup_filename = os.path.join(backupPath, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
+    log_filename = os.path.join(logPath, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
     # --blobs
     # Include large objects in the dump.
     # This is the default behavior except when --schema, --table, or --schema-only is specified.
@@ -143,7 +143,7 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     log.debug(f'<{ib_name}> pg_dump PID is {str(pgdump_process.pid)}')
     await pgdump_process.communicate()
     if pgdump_process.returncode != 0:
-        log_file_content = common_funcs.read_file_content(log_filename)
+        log_file_content = utils.read_file_content(log_filename)
         log.error(f'<{ib_name}> Log message :: {log_file_content}')
         return core_types.InfoBaseBackupTaskResult(ib_name, False)
     log.info(f'<{ib_name}> pg_dump completed')
@@ -156,7 +156,7 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
             if settings.PG_BACKUP_ENABLED:
                 result = await _backup_pgdump(ib_name)
             else:
-                result = await common_funcs.com_func_wrapper(_backup_info_base, ib_name)
+                result = await utils.com_func_wrapper(_backup_info_base, ib_name)
             # Если включена репликация и результат выгрузки успешен
             if backupReplicationEnabled and result.succeeded:
                 backup_filename = result.backup_filename
@@ -196,7 +196,7 @@ async def main():
     try:
         # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
         # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
-        info_bases = common_funcs.get_info_bases()
+        info_bases = utils.get_info_bases()
         backup_concurrency = settings.BACKUP_CONCURRENCY
         aws_concurrency = settings.AWS_CONCURRENCY
         backup_results = []

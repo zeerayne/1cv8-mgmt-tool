@@ -7,16 +7,16 @@ import sys
 from datetime import datetime, timedelta
 from typing import List
 
-from conf import settings
-import core.common as common_funcs
 import core.types as core_types
 
+from conf import settings
+from core import utils
 from core.analyze import analyze_maintenance_result
-from core.cluster import ClusterControlInterface
+from core.cluster import ClusterControlInterface, get_server_address
 from core.process import execute_v8_command
 
 
-server = common_funcs.get_server_address()
+server = get_server_address()
 logPath = settings.LOG_PATH
 logRetentionDays = settings.LOG_RETENTION_DAYS
 backupPath = settings.BACKUP_PATH
@@ -50,12 +50,12 @@ async def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenance
     """
     log.info(f'<{ib_name}> Start maintenance')
     # Формирует команду для урезания журнала регистрации
-    info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
-    log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
+    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
+    log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
-    reduce_date_str = common_funcs.get_formatted_date(reduce_date)
+    reduce_date_str = utils.get_formatted_date(reduce_date)
     v8_command = \
-        rf'"{common_funcs.get_platform_full_path()}" ' \
+        rf'"{utils.get_platform_full_path()}" ' \
         rf'DESIGNER /S {server}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
@@ -99,7 +99,7 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
         log.error(f'<{ib_name}> password not found for user {db_user_string}')
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     db_name = ib_info.dbName
-    log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
+    log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
     vacuumdb_command = \
         f'{settings.PG_VACUUMDB_PATH} --host={db_server} --port=5432 --username={db_user} ' \
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
@@ -111,7 +111,7 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
     await vacuumdb_process.communicate()
 
     if vacuumdb_process.returncode != 0:
-        log_file_content = common_funcs.read_file_content(log_filename)
+        log_file_content = utils.read_file_content(log_filename)
         log.error(f'<{ib_name}> Log message :: {log_file_content}')
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     log.info(f'<{ib_name}> vacuumdb completed')
@@ -123,7 +123,7 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
     async with semaphore:
         try:
             if settings.MAINTENANCE_V8:
-                result_v8 = await common_funcs.com_func_wrapper(_maintenance_info_base, ib_name)
+                result_v8 = await utils.com_func_wrapper(_maintenance_info_base, ib_name)
                 succeeded &= result_v8.succeeded
             if settings.MAINTENANCE_PG:
                 result_pg = await _maintenance_vacuumdb(ib_name)
@@ -145,7 +145,7 @@ def analyze_results(
 
 async def main():
     try:
-        info_bases = common_funcs.get_info_bases()
+        info_bases = utils.get_info_bases()
         maintenance_concurrency = settings.MAINTENANCE_CONCURRENCY
         maintenance_semaphore = asyncio.Semaphore(maintenance_concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency')

@@ -1,6 +1,32 @@
 from unittest.mock import Mock
 from pytest_mock import MockerFixture
-from core.cluster import ClusterControlInterface
+
+from core.cluster import ClusterControlInterface, get_server_address, get_server_port
+from conf import settings
+
+
+def test_get_server_address_returns_exact_address_from_settings():
+    """
+    Server address is exact same as is settings
+    """
+    result = get_server_address()
+    assert result == settings.V8_SERVER_AGENT['address']
+
+
+def test_get_server_port_returns_exact_port_from_settings():
+    """
+    Server port is exact same as is settings
+    """
+    result = get_server_port()
+    assert result == settings.V8_SERVER_AGENT['port']
+
+
+def test_get_server_port_is_str():
+    """
+    Server port is string type
+    """
+    result = get_server_port()
+    assert type(result) == str
 
 
 def test_cluster_control_interface_initialization(mock_win32com_client_dispatch):

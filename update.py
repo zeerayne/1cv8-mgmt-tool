@@ -11,16 +11,16 @@ import random
 from datetime import datetime
 from typing import List
 
-import core.common as common_funcs
 import core.types as core_types
 
 from conf import settings
+from core import utils
 from core.analyze import analyze_update_result
-from core.cluster import ClusterControlInterface
+from core.cluster import ClusterControlInterface, get_server_address
 from core.process import execute_v8_command
 from core.version import get_version_from_string
 
-server = common_funcs.get_server_address()
+server = get_server_address()
 logPath = settings.LOG_PATH
 updatePath = settings.UPDATE_PATH
 
@@ -111,7 +111,7 @@ async def _update_info_base(ib_name, dry=False):
     log.info(f'<{ib_name}> Initiate update')
     result = core_types.InfoBaseUpdateTaskResult(ib_name, True)
     with ClusterControlInterface() as cci:
-        info_base_user, info_base_pwd = common_funcs.get_info_base_credentials(ib_name)
+        info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
         # Получает тип конфигурации и её версию
         try:
             # TODO: подумать, как сделать получение метаданных асинхронным
@@ -139,10 +139,10 @@ async def _update_info_base(ib_name, dry=False):
             # Код блокировки новых сеансов
             permission_code = "0000"
             # Формирует команду для обновления
-            log_filename = os.path.join(logPath, common_funcs.get_ib_and_time_filename(ib_name, 'log'))
+            log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
-                rf'"{common_funcs.get_platform_full_path()}" ' \
+                rf'"{utils.get_platform_full_path()}" ' \
                 rf'DESIGNER /S {server}\{ib_name} ' \
                 rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
                 rf'/Out {log_filename} -NoTruncate ' \
@@ -181,7 +181,7 @@ async def _update_info_base(ib_name, dry=False):
 async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseUpdateTaskResult:
     async with semaphore:
         try:
-            return await common_funcs.com_func_wrapper(_update_info_base, ib_name)
+            return await utils.com_func_wrapper(_update_info_base, ib_name)
         except Exception as e:
             log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')
             return core_types.InfoBaseUpdateTaskResult(ib_name, False)
@@ -198,7 +198,7 @@ def analyze_results(
 
 async def main():
     try:
-        info_bases = common_funcs.get_info_bases()
+        info_bases = utils.get_info_bases()
         update_concurrency = settings.UPDATE_CONCURRENCY
         update_semaphore = asyncio.Semaphore(update_concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {update_concurrency} update concurrency')

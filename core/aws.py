@@ -8,7 +8,7 @@ import boto3
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
 
-import core.common as common_funcs
+from core import utils
 import core.types as core_types
 
 from conf import settings
@@ -49,7 +49,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         region_name=settings.AWS_REGION_NAME
     )
-    filename = common_funcs.path_leaf(full_backup_path)
+    filename = utils.path_leaf(full_backup_path)
     # Собираем инфу чтобы вывод в лог был полезным
     filestat = os.stat(full_backup_path)
     source_size = filestat.st_size

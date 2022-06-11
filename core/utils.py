@@ -3,7 +3,13 @@ import datetime
 import logging
 import os
 
-import pywintypes
+try:
+    import pywintypes
+except ImportError:
+    from core.surrogate import surrogate
+    surrogate('pywintypes').prepare()
+    import pywintypes
+    pywintypes.com_error = Exception
 
 from typing import Union
 
@@ -20,23 +26,16 @@ log = logging.getLogger(__name__)
 def get_platform_full_path() -> str:
     platformPath = settings.V8_PLATFORM_PATH
     platformVersion = version.find_platform_last_version(platformPath)
-    full_path = os.path.join(platformPath, platformVersion, 'bin', '1cv8.exe')
+    full_path = os.path.join(platformPath, str(platformVersion), 'bin', '1cv8.exe')
     return full_path
 
 
-def get_server_address() -> str:
-    address = settings.V8_SERVER_AGENT['address']
-    return address
-
-
 def get_formatted_current_datetime() -> str:
-    time_str = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    return time_str
+    return datetime.datetime.now().strftime(settings.DATETIME_FORMAT)
 
 
 def get_formatted_date(datetime_value: Union[datetime.datetime, datetime.date]) -> str:
-    time_str = datetime_value.strftime("%Y-%m-%d")
-    return time_str
+    return datetime_value.strftime(settings.DATE_FORMAT)
 
 
 def get_ib_and_time_string(ib_name: str) -> str:
