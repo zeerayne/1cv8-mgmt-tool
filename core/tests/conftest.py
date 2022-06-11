@@ -47,10 +47,10 @@ async def mock_aioboto3_session(mocker: MockerFixture):
     aioboto3_session_mock = Mock()
 
     resource = MagicMock(AsyncContextManagerStub())
-    aioboto3_session_mock.resource = resource
+    type(aioboto3_session_mock).resource = resource
 
     client = MagicMock(AsyncContextManagerStub())
-    aioboto3_session_mock.client = client
+    type(aioboto3_session_mock).client = client
 
     return mocker.patch('aioboto3.Session', return_value=aioboto3_session_mock)
 
