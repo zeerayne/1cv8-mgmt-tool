@@ -172,6 +172,17 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "freezegun"
+version = "1.2.1"
+description = "Let your Python tests travel through time"
+category = "dev"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+python-dateutil = ">=2.7"
+
+[[package]]
 name = "frozenlist"
 version = "1.3.0"
 description = "A list-like structure which implements collections.abc.MutableSequence"
@@ -287,6 +298,18 @@ pytest = ">=6.1.0"
 
 [package.extras]
 testing = ["coverage (==6.2)", "hypothesis (>=5.7.1)", "flaky (>=3.5.0)", "mypy (==0.931)", "pytest-trio (>=0.7.0)"]
+
+[[package]]
+name = "pytest-freezegun"
+version = "0.4.2"
+description = "Wrap tests with fixtures in freeze_time"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+freezegun = ">0.3"
+pytest = ">=3.0.0"
 
 [[package]]
 name = "pytest-mock"
@@ -406,7 +429,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "be2892f1a32695bb362d4d4f0a3671ded560075e648aecbe27f5d84363c8401e"
+content-hash = "1700c2162f638a141df76ca163876b4af0cb88a218b93532ca37483f2de012fc"
 
 [metadata.files]
 aioboto3 = [
@@ -532,6 +555,10 @@ colorama = [
 ]
 filechunkio = [
     {file = "filechunkio-1.8.tar.gz", hash = "sha256:c8540c2d27e851d3a475b2e14ac109d66c777dd43ab67031891c826e82026745"},
+]
+freezegun = [
+    {file = "freezegun-1.2.1-py3-none-any.whl", hash = "sha256:15103a67dfa868ad809a8f508146e396be2995172d25f927e48ce51c0bf5cb09"},
+    {file = "freezegun-1.2.1.tar.gz", hash = "sha256:b4c64efb275e6bc68dc6e771b17ffe0ff0f90b81a2a5189043550b6519926ba4"},
 ]
 frozenlist = [
     {file = "frozenlist-1.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d2257aaba9660f78c7b1d8fea963b68f3feffb1a9d5d05a18401ca9eb3e8d0a3"},
@@ -691,6 +718,10 @@ pytest-asyncio = [
     {file = "pytest-asyncio-0.18.3.tar.gz", hash = "sha256:7659bdb0a9eb9c6e3ef992eef11a2b3e69697800ad02fb06374a210d85b29f91"},
     {file = "pytest_asyncio-0.18.3-1-py3-none-any.whl", hash = "sha256:16cf40bdf2b4fb7fc8e4b82bd05ce3fbcd454cbf7b92afc445fe299dabb88213"},
     {file = "pytest_asyncio-0.18.3-py3-none-any.whl", hash = "sha256:8fafa6c52161addfd41ee7ab35f11836c5a16ec208f93ee388f752bea3493a84"},
+]
+pytest-freezegun = [
+    {file = "pytest-freezegun-0.4.2.zip", hash = "sha256:19c82d5633751bf3ec92caa481fb5cffaac1787bd485f0df6436fd6242176949"},
+    {file = "pytest_freezegun-0.4.2-py2.py3-none-any.whl", hash = "sha256:5318a6bfb8ba4b709c8471c94d0033113877b3ee02da5bfcd917c1889cde99a7"},
 ]
 pytest-mock = [
     {file = "pytest-mock-3.7.0.tar.gz", hash = "sha256:5112bd92cc9f186ee96e1a92efc84969ea494939c3aead39c50f421c4cc69534"},

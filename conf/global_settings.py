@@ -3,6 +3,9 @@ import os
 
 AWS_RETRY_PAUSE = 600
 
+DATE_FORMAT = '%Y-%m-%d'
+DATETIME_FORMAT = '%Y-%m-%d-%H-%M-%S'
+
 V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', '')
 V8_INFO_BASES_CREDENTIALS = {
     'default': ('Администратор', ''),

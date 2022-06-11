@@ -18,6 +18,7 @@ pytest = "^7.1.2"
 pytest-spec = "^3.2.0"
 pytest-mock = "^3.7.0"
 pytest-asyncio = "^0.18.3"
+pytest-freezegun = "^0.4.2"
 
 [tool.pytest.ini_options]
 spec_header_format = "Case: {test_case}\nPath: {module_path}"

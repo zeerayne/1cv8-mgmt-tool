@@ -1,6 +1,6 @@
 .PHONY: test
 test:
-	poetry run pytest --spec
+	poetry run pytest --spec -W ignore::DeprecationWarning:pytest_freezegun
 
 .PHONY: install
 install:

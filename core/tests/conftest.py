@@ -190,3 +190,8 @@ def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_versio
     external_connection_mock = Mock(side_effect=external_connection_mock_side_effect)
     type(mock_win32com_client_dispatch.return_value).Connect = external_connection_mock
     return external_connection_mock
+
+
+@pytest.fixture
+def mock_datetime():
+    return datetime(2022, 1, 1, 12, 1, 1)
