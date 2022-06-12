@@ -1,7 +1,8 @@
 from datetime import datetime
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, mock_open
 
 import pytest
+from pytest_mock import MockerFixture
 
 try:
     import pywintypes
@@ -18,7 +19,7 @@ from core.utils import (
     get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
     get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string,
     get_ib_and_time_filename, get_info_bases, get_info_base_credentials, path_leaf,
-    com_func_wrapper
+    com_func_wrapper, read_file_content
 )
 
 
@@ -280,3 +281,34 @@ async def test_com_func_wrapper_handle_v8_exception(infobase, mock_connect_agent
     coroutine_mock = AsyncMock(side_effect=raise_v8_exception)
     result = await com_func_wrapper(coroutine_mock, infobase)
     assert result.infobase_name == infobase and result.succeeded == False
+
+
+def test_read_file_content_returns_content(mocker: MockerFixture):
+    """
+    Content is returned from readed file
+    """
+    content = 'test_file_content'
+    mocker.patch('builtins.open', mock_open(read_data=content))
+    result = read_file_content('')
+    assert result == content
+
+
+def test_read_file_content_rstrips_content(mocker: MockerFixture):
+    """
+    Content readed from file is rstripped
+    """
+    content = 'test_file_content\n'
+    mocker.patch('builtins.open', mock_open(read_data=content))
+    result = read_file_content('')
+    assert result == content.rstrip()
+
+
+def test_read_file_content_rstrips_content(mocker: MockerFixture):
+    """
+    File encoding is passed to `open`
+    """
+    content = 'test_file_content'
+    encoding = 'test_encoding'
+    builtin_open_mock = mocker.patch('builtins.open', mock_open(read_data=content))
+    read_file_content('', encoding)
+    builtin_open_mock.assert_called_with('', 'r', encoding=encoding)
