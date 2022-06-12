@@ -2,7 +2,7 @@ import random
 import re
 
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock
 
 import pytest
 from botocore.exceptions import EndpointConnectionError
@@ -195,3 +195,12 @@ def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_versio
 @pytest.fixture
 def mock_datetime():
     return datetime(2022, 1, 1, 12, 1, 1)
+
+
+@pytest.fixture
+def mock_excluded_infobases(mocker: MockerFixture, infobases):
+    excluded_infobase = infobases[-1]
+    infobases_exclude_mock = PropertyMock()
+    infobases_exclude_mock.return_value = [excluded_infobase]
+    mocker.patch('conf.settings.V8_INFO_BASES_EXCLUDE', new_callable=infobases_exclude_mock)
+    return [excluded_infobase]

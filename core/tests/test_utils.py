@@ -5,7 +5,8 @@ import pytest
 from conf import settings
 from core.utils import (
     get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
-    get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string
+    get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string,
+    get_ib_and_time_filename, get_info_bases
 )
 
 
@@ -108,3 +109,71 @@ def test_append_file_extension_to_string_contains_dot():
     """
     result = append_file_extension_to_string('test_filename', 'testext')
     assert '.' in result
+
+
+def test_get_ib_and_time_filename_starts_with_ib_name(infobase):
+    """
+    Infobase filename with time starts with infobase name
+    """
+    result = get_ib_and_time_filename(infobase, 'testext')
+    assert result.startswith(infobase)
+
+
+@pytest.mark.freeze_time('2022-01-01 12:01:01')
+def test_get_ib_and_time_filename_contains_formatted_datetime(infobase):
+    """
+    Infobase filename with time contains properly formatted datetime
+    """
+    result = get_ib_and_time_filename(infobase, 'testext')
+    assert get_formatted_current_datetime() in result
+
+
+def test_get_ib_and_time_filename_contains_filename_separator(infobase):
+    """
+    Infobase filename with time contains filename separator
+    """
+    result = get_ib_and_time_filename(infobase, 'testext')
+    assert settings.FILENAME_SEPARATOR in result
+
+
+def test_get_ib_and_time_filename_contains_dot(infobase):
+    """
+    Infobase filename with time contains dot
+    """
+    result = get_ib_and_time_filename(infobase, 'testext')
+    assert '.' in result
+
+
+def test_get_ib_and_time_filename_ends_with_file_extension(infobase):
+    """
+    Infobase filename with time ends with extension
+    """
+    extension = 'testext'
+    result = append_file_extension_to_string(infobase, extension)
+    assert result.endswith(extension)
+
+
+def test_get_info_bases_not_returns_excluded_infobases(
+    infobases,
+    mock_excluded_infobases,
+    mock_connect_agent,
+    mock_connect_working_process
+):
+    """
+    `get_info_bases` not returns excluded infobases
+    """
+    result = get_info_bases()
+    assert all(excluded_infobase not in result for excluded_infobase in mock_excluded_infobases)
+
+
+def test_get_info_bases_returns_all_but_excluded_infobases(
+    infobases,
+    mock_excluded_infobases,
+    mock_connect_agent,
+    mock_connect_working_process
+):
+    """
+    `get_info_bases` returns all but excluded infobases
+    """
+    result = get_info_bases()
+    assert all(infobase in result for infobase in set(infobases) - set(mock_excluded_infobases))
