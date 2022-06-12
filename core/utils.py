@@ -123,11 +123,9 @@ async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseT
     return result
 
 
-def read_file_content(filename, file_encoding='utf-8', output_encoding='utf-8'):
-    with open(filename, 'r', encoding='utf-8-sig') as file:
+def read_file_content(filename, file_encoding='utf-8'):
+    with open(filename, 'r', encoding=file_encoding) as file:
         read_data = file.read()
         # remove a trailing newline
         read_data = read_data.rstrip()
-    if file_encoding != output_encoding:
-        read_data = read_data.encode(output_encoding)
     return read_data
