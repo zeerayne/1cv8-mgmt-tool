@@ -42,49 +42,44 @@ def test_get_formatted_date(mock_datetime):
     assert result == mock_datetime.strftime(settings.DATE_FORMAT)
 
 
-def test_get_ib_name_with_separator_contains_ib_name(infobases):
+def test_get_ib_name_with_separator_contains_ib_name(infobase):
     """
     Infobase name exists in `ib_name_with_separator` string
     """
-    infobase = infobases[0]
     result = get_ib_name_with_separator(infobase)
     assert f'{infobase}' in result
 
 
-def test_get_ib_name_with_separator_containt_separator(infobases):
+def test_get_ib_name_with_separator_containt_separator(infobase):
     """
     `settings.FILE_SEPARATOR` exists at the end of `ib_name_with_separator` string
     """
-    infobase = infobases[0]
     result = get_ib_name_with_separator(infobase)
     assert result.endswith(settings.FILENAME_SEPARATOR)
 
 
-def test_get_ib_and_time_string_has_infobase_name_in_result_string(infobases):
+def test_get_ib_and_time_string_has_infobase_name_in_result_string(infobase):
     """
     Infobase name exists in `ib_and_time` string
     """
-    infobase = infobases[0]
     result = get_ib_and_time_string(infobase)
     assert f'{infobase}' in result
 
 
 @pytest.mark.freeze_time('2022-01-01 12:01:01')
-def test_get_ib_and_time_string_has_properly_formatted_datetime_in_result_string(infobases):
+def test_get_ib_and_time_string_has_properly_formatted_datetime_in_result_string(infobase):
     """
     Datetime is properly formatted in `ib_and_time` string
     """
-    infobase = infobases[0]
     result = get_ib_and_time_string(infobase)
     assert get_formatted_current_datetime() in result
 
 
 @pytest.mark.freeze_time('2022-01-01 12:01:01')
-def test_get_ib_and_time_string_uses_underscore(infobases):
+def test_get_ib_and_time_string_uses_underscore(infobase):
     """
     Between infobase name and datetime `settings.FILENAME_SEPARATOR` is used
     """
-    infobase = infobases[0]
     result = get_ib_and_time_string(infobase)
     assert f'{infobase}{settings.FILENAME_SEPARATOR}{get_formatted_current_datetime()}' in result
 

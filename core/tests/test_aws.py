@@ -1,6 +1,6 @@
 import asyncio
 from functools import reduce
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, PropertyMock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -11,44 +11,44 @@ from core import types as core_types
 
 
 @pytest.mark.asyncio
-async def test_upload_infobase_to_s3_return_success_result(infobases, success_backup_result, mock_upload_infobase_to_s3):
+async def test_upload_infobase_to_s3_return_success_result(infobase, success_backup_result, mock_upload_infobase_to_s3):
     """
     AWS uploader should return InfoBaseAWSUploadTaskResult with `success=True` if no errors
     """
     aws_semaphore = asyncio.Semaphore(1)
-    result = await upload_infobase_to_s3(infobases[0], success_backup_result[0].backup_filename, aws_semaphore)
-    compare = core_types.InfoBaseAWSUploadTaskResult(infobases[0], True)
+    result = await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
+    compare = core_types.InfoBaseAWSUploadTaskResult(infobase, True)
     assert result.infobase_name == compare.infobase_name and result.succeeded == compare.succeeded
 
 
 @pytest.mark.asyncio
-async def test_upload_infobase_to_s3_return_failed_result(infobases, success_backup_result, mock_upload_infobase_to_s3_connection_error):
+async def test_upload_infobase_to_s3_return_failed_result(infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error):
     """
     AWS uploader should return InfoBaseAWSUploadTaskResult with `success=False` if can't upload
     """
     aws_semaphore = asyncio.Semaphore(1)
-    result = await upload_infobase_to_s3(infobases[0], success_backup_result[0].backup_filename, aws_semaphore)
-    compare = core_types.InfoBaseAWSUploadTaskResult(infobases[0], False)
+    result = await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
+    compare = core_types.InfoBaseAWSUploadTaskResult(infobase, False)
     assert result.infobase_name == compare.infobase_name and result.succeeded == compare.succeeded
 
 
 @pytest.mark.asyncio
-async def test_upload_infobase_to_s3_make_retries(infobases, success_backup_result, mock_upload_infobase_to_s3_connection_error):
+async def test_upload_infobase_to_s3_make_retries(infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error):
     """
     AWS uploader should retry if there is connection issues during upload
     """
     aws_semaphore = asyncio.Semaphore(1)
-    await upload_infobase_to_s3(infobases[0], success_backup_result[0].backup_filename, aws_semaphore)
+    await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
     assert mock_upload_infobase_to_s3_connection_error.call_count == settings.AWS_RETRIES + 1  # + 1 is for non-retry call
 
 
 @pytest.mark.asyncio
-async def test_internal_upload_infobase_to_s3_call(mocker: MockerFixture, infobases, success_backup_result, mock_aioboto3_session, mock_os_stat):
+async def test_internal_upload_infobase_to_s3_call(mocker: MockerFixture, infobase, success_backup_result, mock_aioboto3_session, mock_os_stat):
     """
     boto3.Session.client.upload_file inside should be called when uploading files to AWS
     """
     mocker.patch('core.aws._remove_old_infobase_backups_from_s3', AsyncMock())
-    await _upload_infobase_to_s3(infobases[0], success_backup_result[0].backup_filename)
+    await _upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename)
     mock_aioboto3_session.return_value.client.return_value.__aenter__.return_value.upload_file.assert_awaited_once()
 
 
@@ -76,6 +76,8 @@ async def test_upload_to_s3(mocker: MockerFixture, mock_upload_infobase_to_s3, m
     When uploading infobases backups to s3 `upload_infobase_to_s3` should be called for every successful backup result
     """
     mocker.patch('core.analyze._analyze_result')
-    mocker.patch('conf.settings.AWS_ENABLED', return_value=True)
+    aws_enabled_mock = PropertyMock()
+    aws_enabled_mock.return_value = True
+    mocker.patch('conf.settings.AWS_ENABLED', new_callable=aws_enabled_mock)
     await upload_to_s3(mixed_backup_result)
-    assert mock_upload_infobase_to_s3.await_count == reduce(lambda prev, curr: int(curr.succeeded), mixed_backup_result)
+    assert mock_upload_infobase_to_s3.await_count == reduce(lambda prev, curr: int(getattr(prev, 'succeeded', prev)) + int(curr.succeeded), mixed_backup_result)

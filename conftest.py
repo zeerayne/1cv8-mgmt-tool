@@ -16,7 +16,12 @@ def pytest_generate_tests(metafunc):
 
 @pytest.fixture
 def infobases():
-    return ['infobase_test_01', 'infobase_test_02']
+    return ['infobase_test_01', 'infobase_test_02', 'infobase_test_03']
+
+
+@pytest.fixture
+def infobase(infobases):
+    return infobases[0]
 
 
 @pytest.fixture
