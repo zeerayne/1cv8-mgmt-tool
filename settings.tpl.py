@@ -59,8 +59,20 @@ V8_SERVER_AGENT = {
 }
 V8_PLATFORM_PATH = os.path.join('C:\\', 'Program Files', '1cv8')
 
-# rootLogger = logging.getLogger()
-# fileHandler = logging.FileHandler(os.path.join(LOG_PATH, '1cv8-mgmt-tool.log'))
-# fileHandler.setFormatter(logging.getLogger().handlers[0].format)
-# fileHandler.setLevel(logging.DEBUG)
-# rootLogger.addHandler(fileHandler)
+log_format = '%(asctime)s [%(levelname)-3.3s] %(message)s'
+logFormatter = logging.Formatter(log_format)
+rootLogger = logging.getLogger()
+rootLogger.setLevel(logging.DEBUG)
+
+consoleHandler = logging.StreamHandler()
+consoleHandler.setFormatter(logFormatter)
+consoleHandler.setLevel(logging.DEBUG)
+rootLogger.addHandler(consoleHandler)
+
+fileHandler = logging.FileHandler(os.path.join(LOG_PATH, '1cv8-mgmt-tool.log'))
+fileHandler.setFormatter(logging.getLogger().handlers[0].format)
+fileHandler.setLevel(logging.DEBUG)
+rootLogger.addHandler(fileHandler)
+
+for logger_name in ['aioboto3', 'aiobotocore', 'botocore', 'boto3', 'urllib3']:
+    logging.getLogger(logger_name).setLevel(logging.INFO)

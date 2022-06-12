@@ -49,6 +49,7 @@ V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', '')
 V8_INFO_BASES_CREDENTIALS = {
     'default': ('Администратор', ''),
 }
+V8_LOCK_INFO_BASE_PAUSE = 0
 V8_SERVER_AGENT = {
     'address': 'localhost',
     'port': '1540',
