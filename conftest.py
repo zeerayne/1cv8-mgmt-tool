@@ -9,11 +9,6 @@ from core import types as core_types
 random.seed(0)
 
 
-def pytest_generate_tests(metafunc):
-    os.environ['PYTHONPATH'] = '.'
-    os.environ['1CV8MGMT_SETTINGS_MODULE'] = 'tests.settings'
-
-
 @pytest.fixture
 def infobases():
     return ['infobase_test_01', 'infobase_test_02', 'infobase_test_03']
