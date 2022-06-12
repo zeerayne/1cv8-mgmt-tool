@@ -6,7 +6,7 @@ import os
 try:
     import pywintypes
 except ImportError:
-    from core.surrogate import surrogate
+    from surrogate import surrogate
     surrogate('pywintypes').prepare()
     import pywintypes
     pywintypes.com_error = Exception

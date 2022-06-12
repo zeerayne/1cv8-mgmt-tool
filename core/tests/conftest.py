@@ -9,7 +9,7 @@ from botocore.exceptions import EndpointConnectionError
 from pytest_mock import MockerFixture
 
 from core import types as core_types
-from core.surrogate import surrogate
+from surrogate import surrogate
 
 
 random.seed(0)

@@ -3,10 +3,14 @@ from typing import List
 
 try:
     import win32com.client as win32com_client
+    import pythoncom
 except ImportError:
-    from core.surrogate import surrogate
+    from surrogate import surrogate
     surrogate('win32com.client').prepare()
+    surrogate('pythoncom').prepare()
     import win32com.client as win32com_client
+    import pythoncom
+    pythoncom.com_error = Exception
 
 from conf import settings
 
@@ -46,7 +50,7 @@ class ClusterControlInterface:
         # В зависимости от версии платформы используется V82.COMConnector или V83.COMConnector
         try:
             self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
-        except:
+        except pythoncom.com_error:
             self.V8COMConnector = win32com_client.Dispatch("V82.COMConnector")
         self.server = get_server_address()
         self.agentPort = get_server_port()

@@ -1,5 +1,6 @@
 import unittest
-from core.surrogate import surrogate
+from surrogate import surrogate
+
 
 def imports():
     import my
@@ -9,6 +10,7 @@ def imports():
     from my import module
     from my.module import one, two
     return True
+
 
 class TestSurrogateModuleStubs(unittest.TestCase):
 
