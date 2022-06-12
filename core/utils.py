@@ -38,9 +38,12 @@ def get_formatted_date(datetime_value: Union[datetime.datetime, datetime.date]) 
     return datetime_value.strftime(settings.DATE_FORMAT)
 
 
+def get_ib_name_with_separator(ib_name: str):
+    return f'{ib_name}{settings.FILENAME_SEPARATOR}'
+
+
 def get_ib_and_time_string(ib_name: str) -> str:
-    time_str = get_formatted_current_datetime()
-    return f'{ib_name}_{time_str}'
+    return f'{get_ib_name_with_separator(ib_name)}{get_formatted_current_datetime()}'
 
 
 def append_file_extension_to_string(string: str, file_ext: str) -> str:

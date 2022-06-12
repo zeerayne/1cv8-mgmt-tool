@@ -63,7 +63,7 @@ async def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenance
     await execute_v8_command(
         ib_name, v8_command, log_filename, timeout=600
     )
-    filename_pattern = f'*{ib_name}_*.*'
+    filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
     # Получает список резервных копий ИБ, удаляет старые
     log.info(f'<{ib_name}> Removing backups older than {backupRetentionDays} days')
     path = os.path.join(backupPath, filename_pattern)

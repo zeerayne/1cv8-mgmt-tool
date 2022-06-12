@@ -6,6 +6,8 @@ AWS_RETRY_PAUSE = 600
 DATE_FORMAT = '%Y-%m-%d'
 DATETIME_FORMAT = '%Y-%m-%d-%H-%M-%S'
 
+FILENAME_SEPARATOR = '_'
+
 V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', '')
 V8_INFO_BASES_CREDENTIALS = {
     'default': ('Администратор', ''),

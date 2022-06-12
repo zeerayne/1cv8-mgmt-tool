@@ -3,8 +3,10 @@ from datetime import datetime
 import pytest
 
 from conf import settings
-
-from core.utils import get_platform_full_path, get_formatted_current_datetime, get_formatted_date, get_ib_and_time_string
+from core.utils import (
+    get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
+    get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string
+)
 
 
 def test_get_platform_full_path_contains_platform_version(mock_os_platform_path, mock_platform_last_version):
@@ -40,6 +42,24 @@ def test_get_formatted_date(mock_datetime):
     assert result == mock_datetime.strftime(settings.DATE_FORMAT)
 
 
+def test_get_ib_name_with_separator_contains_ib_name(infobases):
+    """
+    Infobase name exists in `ib_name_with_separator` string
+    """
+    infobase = infobases[0]
+    result = get_ib_name_with_separator(infobase)
+    assert f'{infobase}' in result
+
+
+def test_get_ib_name_with_separator_containt_separator(infobases):
+    """
+    `settings.FILE_SEPARATOR` exists at the end of `ib_name_with_separator` string
+    """
+    infobase = infobases[0]
+    result = get_ib_name_with_separator(infobase)
+    assert result.endswith(settings.FILENAME_SEPARATOR)
+
+
 def test_get_ib_and_time_string_has_infobase_name_in_result_string(infobases):
     """
     Infobase name exists in `ib_and_time` string
@@ -62,8 +82,34 @@ def test_get_ib_and_time_string_has_properly_formatted_datetime_in_result_string
 @pytest.mark.freeze_time('2022-01-01 12:01:01')
 def test_get_ib_and_time_string_uses_underscore(infobases):
     """
-    Between infobase name and datetime underscore is used
+    Between infobase name and datetime `settings.FILENAME_SEPARATOR` is used
     """
     infobase = infobases[0]
     result = get_ib_and_time_string(infobase)
-    assert f'{infobase}_{get_formatted_current_datetime()}' in result
+    assert f'{infobase}{settings.FILENAME_SEPARATOR}{get_formatted_current_datetime()}' in result
+
+
+def test_append_file_extension_to_string_starts_with_filename():
+    """
+    Filename with extension starts with filename
+    """
+    filename = 'test_filename'
+    result = append_file_extension_to_string(filename, 'testext')
+    assert result.startswith(filename)
+
+
+def test_append_file_extension_to_string_ends_with_filename():
+    """
+    Filename with extension ends with extension
+    """
+    extension = 'testext'
+    result = append_file_extension_to_string('test_filename', extension)
+    assert result.endswith(extension)
+
+
+def test_append_file_extension_to_string_contains_dot():
+    """
+    Filename with extension contains dot
+    """
+    result = append_file_extension_to_string('test_filename', 'testext')
+    assert '.' in result

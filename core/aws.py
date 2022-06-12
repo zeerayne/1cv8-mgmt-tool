@@ -24,7 +24,7 @@ async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: 
     aws_retries = settings.AWS_RETRIES
     async with semaphore:
         try:
-            # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
+            # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
             for i in range(0, aws_retries + 1):
                 try:
                     return await _upload_infobase_to_s3(ib_name, full_backup_path)
@@ -50,7 +50,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         region_name=settings.AWS_REGION_NAME
     )
     filename = utils.path_leaf(full_backup_path)
-    # Собираем инфу чтобы вывод в лог был полезным
+    # Собирает инфу чтобы вывод в лог был полезным
     filestat = os.stat(full_backup_path)
     source_size = filestat.st_size
     datetime_start = datetime.now()
@@ -65,11 +65,11 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
 
 async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Session):
     # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
-    # '_' добавляется к имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
+    # `get_ib_name_with_separator` используется вместо имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
     # при наличии имён вида infobase и infobase2
     async with session.resource(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3_resource:
         bucket = await s3_resource.Bucket(settings.AWS_BUCKET_NAME)
-        async for o in bucket.objects.filter(Prefix=ib_name + '_'):
+        async for o in bucket.objects.filter(Prefix=f'{utils.get_ib_name_with_separator(ib_name)}'):
             if await o.last_modified < (datetime.now() - timedelta(days=settings.AWS_RETENTION_DAYS)).replace(tzinfo=timezone.utc):
                 await o.delete()
 
