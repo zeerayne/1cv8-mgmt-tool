@@ -1,12 +1,24 @@
 from datetime import datetime
+from unittest.mock import AsyncMock
 
 import pytest
 
+try:
+    import pywintypes
+except ImportError:
+    from surrogate import surrogate
+    surrogate('pywintypes').prepare()
+    import pywintypes
+    pywintypes.com_error = Exception
+
 from conf import settings
+from core import types as core_types
+from core.exceptions import V8Exception
 from core.utils import (
     get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
     get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string,
-    get_ib_and_time_filename, get_info_bases
+    get_ib_and_time_filename, get_info_bases, get_info_base_credentials, path_leaf,
+    com_func_wrapper
 )
 
 
@@ -177,3 +189,94 @@ def test_get_info_bases_returns_all_but_excluded_infobases(
     """
     result = get_info_bases()
     assert all(infobase in result for infobase in set(infobases) - set(mock_excluded_infobases))
+
+
+def test_get_info_base_credentials_for_infobase(infobase, mock_infobases_credentials):
+    """
+    Infobase credentials are gained for proper infobase
+    """
+    result = get_info_base_credentials(infobase)
+    assert result == mock_infobases_credentials[infobase]
+
+
+def test_get_info_base_credentials_fallback_to_default(infobase):
+    """
+    Infobase credentials falls back yo default if no explicit record for infobase
+    """
+    result = get_info_base_credentials(infobase)
+    assert result == settings.V8_INFO_BASES_CREDENTIALS['default']
+
+
+def test_path_leaf_on_full_path():
+    """
+    Filename extracted correctly from full path
+    """
+    filename = 'test.exe'
+    path = rf'C:\Test Folder\{filename}'
+    result = path_leaf(path)
+    assert result == filename
+
+
+def test_path_leaf_on_relative_path():
+    """
+    Filename extracted correctly from relative path
+    """
+    filename = 'test.exe'
+    path = rf'Test Folder\{filename}'
+    result = path_leaf(path)
+    assert result == filename
+
+
+def test_path_leaf_on_filename():
+    """
+    Filename extracted correctly if only filename passed
+    """
+    filename = 'test.exe'
+    result = path_leaf(filename)
+    assert result == filename
+
+
+@pytest.mark.asyncio
+async def test_com_func_wrapper_awaits_inner_func(infobase):
+    """
+    `com_func_wrapper` awaits inner coroutine
+    """
+    coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_types.InfoBaseTaskResultBase(ib_name, True))
+    await com_func_wrapper(coroutine_mock, infobase)
+    coroutine_mock.assert_awaited()
+
+
+@pytest.mark.asyncio
+async def test_com_func_wrapper_returns_value_of_inner_func(infobase):
+    """
+    `com_func_wrapper` returns value from inner coroutine
+    """
+    coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_types.InfoBaseTaskResultBase(ib_name, True))
+    result = await com_func_wrapper(coroutine_mock, infobase)
+    assert result.infobase_name == infobase and result.succeeded == True
+
+
+@pytest.mark.asyncio
+async def test_com_func_wrapper_handle_com_error(infobase, mock_connect_agent, mock_connect_working_process):
+    """
+    `com_func_wrapper` returns value when com error raised
+    """
+    def raise_com_error(*args):
+        raise pywintypes.com_error
+
+    coroutine_mock = AsyncMock(side_effect=raise_com_error)
+    result = await com_func_wrapper(coroutine_mock, infobase)
+    assert result.infobase_name == infobase and result.succeeded == False
+
+
+@pytest.mark.asyncio
+async def test_com_func_wrapper_handle_v8_exception(infobase, mock_connect_agent, mock_connect_working_process):
+    """
+    `com_func_wrapper` returns value when V8Exception raised
+    """
+    def raise_v8_exception(*args):
+        raise V8Exception
+
+    coroutine_mock = AsyncMock(side_effect=raise_v8_exception)
+    result = await com_func_wrapper(coroutine_mock, infobase)
+    assert result.infobase_name == infobase and result.succeeded == False

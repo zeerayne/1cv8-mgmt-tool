@@ -8,6 +8,7 @@ import pytest
 from botocore.exceptions import EndpointConnectionError
 from pytest_mock import MockerFixture
 
+from conf import settings
 from core import types as core_types
 from surrogate import surrogate
 
@@ -204,3 +205,13 @@ def mock_excluded_infobases(mocker: MockerFixture, infobases):
     infobases_exclude_mock.return_value = [excluded_infobase]
     mocker.patch('conf.settings.V8_INFO_BASES_EXCLUDE', new_callable=infobases_exclude_mock)
     return [excluded_infobase]
+
+
+@pytest.fixture
+def mock_infobases_credentials(mocker: MockerFixture, infobases):
+    creds = { infobase: (f'test_{infobase}_login', f'test_{infobase}_password') for infobase in infobases}
+    creds.update(settings.V8_INFO_BASES_CREDENTIALS)
+    infobases_creds_mock = PropertyMock()
+    infobases_creds_mock.return_value = creds
+    mocker.patch('conf.settings.V8_INFO_BASES_CREDENTIALS', new_callable=infobases_creds_mock)
+    return creds
