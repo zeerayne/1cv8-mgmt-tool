@@ -1,5 +1,4 @@
 import asyncio
-import glob
 import logging
 import os
 import sys
@@ -16,33 +15,22 @@ from core.cluster import ClusterControlInterface, get_server_address
 from core.process import execute_v8_command
 
 
-server = get_server_address()
-logPath = settings.LOG_PATH
-logRetentionDays = settings.LOG_RETENTION_DAYS
-backupPath = settings.BACKUP_PATH
-backupReplicationEnabled = settings.BACKUP_REPLICATION_ENABLED
-backupReplicationPaths = settings.BACKUP_REPLICATION_PATHS
-backupRetentionDays = settings.BACKUP_RETENTION_DAYS
-
-
 log = logging.getLogger(__name__)
 log_prefix = 'Maintenance'
+logPath = settings.LOG_PATH
 
 
-def remove_old_files_by_pattern(pattern, retention_days):
-    """
-    Удаляет файлы, дата изменения которых более чем <retention_days> назад
-    :param pattern: паттерн пути и имени файлов для модуля glob https://docs.python.org/3/library/glob.html
-    :param retention_days: определяет, насколько старые файлы будут удалены
-    """
-    files = glob.glob(pathname=pattern, recursive=False)
-    ts = (datetime.now() - timedelta(days=retention_days)).timestamp()
-    files_to_remove = [b for b in files if ts - os.path.getmtime(b) > 0]
-    for f in files_to_remove:
-        os.remove(f)
+async def rotate_logs(ib_name):
+    logRetentionDays = settings.LOG_RETENTION_DAYS
+    filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
+    # Получает список log-файлов, удаляет старые
+    log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
+    path = os.path.join(logPath, filename_pattern)
+    await utils.remove_old_files_by_pattern(path, logRetentionDays)
+    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
     2. Удаляет старые резервные копии
@@ -56,27 +44,13 @@ async def _maintenance_info_base(ib_name: str) -> core_types.InfoBaseMaintenance
     reduce_date_str = utils.get_formatted_date(reduce_date)
     v8_command = \
         rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {server}\{ib_name} ' \
+        rf'DESIGNER /S {get_server_address()}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/ReduceEventLogSize {reduce_date_str}'
     await execute_v8_command(
         ib_name, v8_command, log_filename, timeout=600
     )
-    filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
-    # Получает список резервных копий ИБ, удаляет старые
-    log.info(f'<{ib_name}> Removing backups older than {backupRetentionDays} days')
-    path = os.path.join(backupPath, filename_pattern)
-    remove_old_files_by_pattern(path, backupRetentionDays)
-    # Удаляет старые резервные копии в местах репликации
-    if backupReplicationEnabled:
-        for replication_path in backupReplicationPaths:
-            path = os.path.join(replication_path, filename_pattern)
-            remove_old_files_by_pattern(path, backupRetentionDays)
-    # Получает список log-файлов, удаляет старые
-    log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
-    path = os.path.join(logPath, filename_pattern)
-    remove_old_files_by_pattern(path, logRetentionDays)
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
@@ -123,11 +97,13 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
     async with semaphore:
         try:
             if settings.MAINTENANCE_V8:
-                result_v8 = await utils.com_func_wrapper(_maintenance_info_base, ib_name)
+                result_v8 = await utils.com_func_wrapper(_maintenance_v8, ib_name)
                 succeeded &= result_v8.succeeded
             if settings.MAINTENANCE_PG:
                 result_pg = await _maintenance_vacuumdb(ib_name)
                 succeeded &= result_pg.succeeded
+            result_logs = await rotate_logs(ib_name)
+            succeeded &= result_logs.succeeded
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
         except Exception as e:
             log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')

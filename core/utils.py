@@ -1,7 +1,12 @@
+import glob
 import ntpath
-import datetime
 import logging
 import os
+
+from datetime import datetime, date, timedelta
+from typing import Union, List, Tuple
+
+import aiofiles.os
 
 try:
     import pywintypes
@@ -10,8 +15,6 @@ except ImportError:
     surrogate('pywintypes').prepare()
     import pywintypes
     pywintypes.com_error = Exception
-
-from typing import Union, List, Tuple
 
 from conf import settings
 from core import version
@@ -31,10 +34,10 @@ def get_platform_full_path() -> str:
 
 
 def get_formatted_current_datetime() -> str:
-    return datetime.datetime.now().strftime(settings.DATETIME_FORMAT)
+    return datetime.now().strftime(settings.DATETIME_FORMAT)
 
 
-def get_formatted_date(datetime_value: Union[datetime.datetime, datetime.date]) -> str:
+def get_formatted_date(datetime_value: Union[datetime, date]) -> str:
     return datetime_value.strftime(settings.DATE_FORMAT)
 
 
@@ -129,3 +132,16 @@ def read_file_content(filename, file_encoding='utf-8'):
         # remove a trailing newline
         read_data = read_data.rstrip()
     return read_data
+
+
+async def remove_old_files_by_pattern(pattern: str, retention_days: int):
+    """
+    Удаляет файлы, дата изменения которых более чем <retention_days> назад
+    :param pattern: паттерн пути и имени файлов для модуля glob https://docs.python.org/3/library/glob.html
+    :param retention_days: определяет, насколько старые файлы будут удалены
+    """
+    files = glob.glob(pathname=pattern, recursive=False)
+    ts = (datetime.now() - timedelta(days=retention_days)).timestamp()
+    files_to_remove = [b for b in files if ts - os.path.getmtime(b) > 0]
+    for f in files_to_remove:
+        await aiofiles.os.remove(f)

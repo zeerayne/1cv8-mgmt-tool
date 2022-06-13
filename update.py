@@ -20,13 +20,10 @@ from core.cluster import ClusterControlInterface, get_server_address
 from core.process import execute_v8_command
 from core.version import get_version_from_string
 
-server = get_server_address()
-logPath = settings.LOG_PATH
-updatePath = settings.UPDATE_PATH
-
 
 log = logging.getLogger(__name__)
 log_prefix = 'Update'
+logPath = settings.LOG_PATH
 
 
 def _find_suitable_manifests(manifests, name_in_metadata, version_in_metadata):
@@ -109,6 +106,7 @@ async def _update_info_base(ib_name, dry=False):
     6. Снимает блокировку фоновых заданий и сеансов
     """
     log.info(f'<{ib_name}> Initiate update')
+    updatePath = settings.UPDATE_PATH
     result = core_types.InfoBaseUpdateTaskResult(ib_name, True)
     with ClusterControlInterface() as cci:
         info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
@@ -143,7 +141,7 @@ async def _update_info_base(ib_name, dry=False):
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
                 rf'"{utils.get_platform_full_path()}" ' \
-                rf'DESIGNER /S {server}\{ib_name} ' \
+                rf'DESIGNER /S {get_server_address()}\{ib_name} ' \
                 rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
                 rf'/Out {log_filename} -NoTruncate ' \
                 rf'/UC "{permission_code}" ' \

@@ -20,15 +20,13 @@ from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
 
-server = get_server_address()
+
+log = logging.getLogger(__name__)
+log_prefix = 'Backup'
 backupPath = settings.BACKUP_PATH
 backupReplicationEnabled = settings.BACKUP_REPLICATION_ENABLED
 backupReplicationPaths = settings.BACKUP_REPLICATION_PATHS
 logPath = settings.LOG_PATH
-
-
-log = logging.getLogger(__name__)
-log_prefix = 'Backup'
 
 
 async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
@@ -43,7 +41,21 @@ async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
             log.exception(f'Problems while replicating to {path}: {e}')
 
 
-async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
+async def rotate_backups(ib_name):
+    backupRetentionDays = settings.BACKUP_RETENTION_DAYS
+    filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
+    # Получает список резервных копий ИБ, удаляет старые
+    log.info(f'<{ib_name}> Removing backups older than {backupRetentionDays} days')
+    path = os.path.join(backupPath, filename_pattern)
+    await utils.remove_old_files_by_pattern(path, backupRetentionDays)
+    # Удаляет старые резервные копии в местах репликации
+    if backupReplicationEnabled:
+        for replication_path in backupReplicationPaths:
+            path = os.path.join(replication_path, filename_pattern)
+            await utils.remove_old_files_by_pattern(path, backupRetentionDays)
+
+
+async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     """
     1. Блокирует фоновые задания и новые сеансы
     2. Принудительно завершает текущие сеансы
@@ -70,7 +82,7 @@ async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
         rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {server}\{ib_name} ' \
+        rf'DESIGNER /S {get_server_address()}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/UC "{permission_code}" ' \
@@ -150,18 +162,23 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     return core_types.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 
+async def _backup_info_base(ib_name: str):
+    if settings.PG_BACKUP_ENABLED:
+        result = await _backup_pgdump(ib_name)
+    else:
+        result = await utils.com_func_wrapper(_backup_v8, ib_name)
+    return result
+
+
 async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseBackupTaskResult:
     async with semaphore:
         try:
-            if settings.PG_BACKUP_ENABLED:
-                result = await _backup_pgdump(ib_name)
-            else:
-                result = await utils.com_func_wrapper(_backup_info_base, ib_name)
-            # Если включена репликация и результат выгрузки успешен
+            result = await _backup_info_base(ib_name)
+            # Если включена репликация и результат бэкапа успешен
             if backupReplicationEnabled and result.succeeded:
-                backup_filename = result.backup_filename
-                # Копирует файл бэкапа в дополнительные места
-                await replicate_backup(backup_filename, backupReplicationPaths)
+                await replicate_backup(result.backup_filename, backupReplicationPaths)
+            # Ротация бэкапов, удаляет старые
+            await rotate_backups(ib_name)
             return result
         except Exception as e:
             log.exception(f'<{ib_name}> Unknown exception occurred in thread')
