@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, mock_open
 
 import pytest
@@ -19,7 +19,7 @@ from core.utils import (
     get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
     get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string,
     get_ib_and_time_filename, get_info_bases, get_info_base_credentials, path_leaf,
-    com_func_wrapper, read_file_content
+    com_func_wrapper, read_file_content, remove_old_files_by_pattern
 )
 
 
@@ -312,3 +312,31 @@ def test_read_file_content_rstrips_content(mocker: MockerFixture):
     builtin_open_mock = mocker.patch('builtins.open', mock_open(read_data=content))
     read_file_content('', encoding)
     builtin_open_mock.assert_called_with('', 'r', encoding=encoding)
+
+
+@pytest.mark.asyncio
+async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixture):
+    """
+    Old files are removed according to retention policy
+    """
+    retention_days = 1
+    files = ['test_file1', 'test_file2']
+    mocker.patch('glob.glob', return_value=files)
+    mocker.patch('os.path.getmtime', return_value=(datetime.now() - timedelta(days=retention_days + 1)).timestamp())
+    aioremove_mock = mocker.patch('aiofiles.os.remove', return_value=AsyncMock())
+    await remove_old_files_by_pattern('', retention_days)
+    assert aioremove_mock.await_count == len(files)
+
+
+@pytest.mark.asyncio
+async def test_remove_old_files_by_pattern_not_removes_new_files(mocker: MockerFixture):
+    """
+    New files are not removed according to retention policy
+    """
+    retention_days = 1
+    files = ['test_file1', 'test_file2']
+    mocker.patch('glob.glob', return_value=files)
+    mocker.patch('os.path.getmtime', return_value=datetime.now().timestamp())
+    aioremove_mock = mocker.patch('aiofiles.os.remove', return_value=AsyncMock())
+    await remove_old_files_by_pattern('', retention_days)
+    aioremove_mock.assert_not_awaited()
