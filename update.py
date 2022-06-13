@@ -172,7 +172,6 @@ async def _update_info_base(ib_name, dry=False):
                         result = core_types.InfoBaseUpdateTaskResult(ib_name, False)
         if not update_chain:
             log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
-            log.info(f'<{ib_name}> Skip update')
     return result
 
 

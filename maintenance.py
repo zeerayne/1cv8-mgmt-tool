@@ -13,6 +13,7 @@ from core import utils
 from core.analyze import analyze_maintenance_result
 from core.cluster import ClusterControlInterface, get_server_address
 from core.process import execute_v8_command
+from utils.postgres import get_postgres_host_and_port
 
 
 log = logging.getLogger(__name__)
@@ -64,18 +65,19 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
         if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
             log.error(f'<{ib_name}> vacuumdb can not be performed for {ib_info.DBMS} DBMS')
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    db_user = ib_info.dbUser
-    db_server = ib_info.dbServerName
-    db_user_string = f'{db_user}@{db_server}'
-    try:
-        db_pwd = settings.PG_CREDENTIALS[db_user_string]
-    except KeyError:
-        log.error(f'<{ib_name}> password not found for user {db_user_string}')
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    db_name = ib_info.dbName
+        db_user = ib_info.dbUser
+        db_server = ib_info.dbServerName
+        db_user_string = f'{db_user}@{db_server}'
+        db_host, db_port = get_postgres_host_and_port(db_server)
+        try:
+            db_pwd = settings.PG_CREDENTIALS[db_user_string]
+        except KeyError:
+            log.error(f'<{ib_name}> PostgreSQL: password not found for user {db_user_string}')
+            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+        db_name = ib_info.dbName
     log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
     vacuumdb_command = \
-        f'{settings.PG_VACUUMDB_PATH} --host={db_server} --port=5432 --username={db_user} ' \
+        f'{settings.PG_VACUUMDB_PATH} --host={db_host} --port={db_port} --username={db_user} ' \
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
     vacuumdb_env = os.environ.copy()
     vacuumdb_env['PGPASSWORD'] = db_pwd

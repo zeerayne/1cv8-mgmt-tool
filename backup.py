@@ -19,6 +19,7 @@ from core.process import execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
+from utils.postgres import get_postgres_host_and_port
 
 
 log = logging.getLogger(__name__)
@@ -126,11 +127,12 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
         db_user = ib_info.dbUser
         db_server = ib_info.dbServerName
-        db_user_string = db_user + '@' + db_server
+        db_user_string = f'{db_user}@{db_server}'
+        db_host, db_port = get_postgres_host_and_port(db_server)
         try:
             db_pwd = settings.PG_CREDENTIALS[db_user_string]
         except KeyError:
-            log.error(f'<{ib_name}> password not found for user {db_user_string}')
+            log.error(f'<{ib_name}> PostgreSQL: password not found for user {db_user_string}')
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
         db_name = ib_info.dbName
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
@@ -146,7 +148,7 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     # manual selection and reordering of archived items during restore. This format is also compressed by default.
     pgdump_command = \
         rf'{settings.PG_DUMP_PATH} ' \
-        rf'--host={db_server} --port=5432 --username={db_user} ' \
+        rf'--host={db_host} --port={db_port} --username={db_user} ' \
         rf'--format=custom --blobs --verbose ' \
         rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
     pgdump_env = os.environ.copy()
