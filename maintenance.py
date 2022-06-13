@@ -56,14 +56,14 @@ async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
 
 async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     log.info(f'<{ib_name}> Start vacuumdb')
-    cci = ClusterControlInterface()
-    # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
-    # то не будет возможности получить данные, кроме имени ИБ
-    wpc = cci.get_working_process_connection_with_info_base_auth()
-    ib_info = cci.get_info_base(wpc, ib_name)
-    if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
-        log.error(f'<{ib_name}> vacuumdb can not be performed for {ib_info.DBMS} DBMS')
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+    with ClusterControlInterface() as cci:
+        # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
+        # то не будет возможности получить данные, кроме имени ИБ
+        wpc = cci.get_working_process_connection_with_info_base_auth()
+        ib_info = cci.get_info_base(wpc, ib_name)
+        if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
+            log.error(f'<{ib_name}> vacuumdb can not be performed for {ib_info.DBMS} DBMS')
+            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     db_user = ib_info.dbUser
     db_server = ib_info.dbServerName
     db_user_string = f'{db_user}@{db_server}'
