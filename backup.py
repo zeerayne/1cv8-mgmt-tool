@@ -7,7 +7,7 @@ import sys
 from datetime import datetime
 from typing import List
 
-from aioshutil import copyfile
+import aioshutil
 
 import core.types as core_types
 
@@ -25,8 +25,6 @@ from utils.postgres import get_postgres_host_and_port
 log = logging.getLogger(__name__)
 log_prefix = 'Backup'
 backupPath = settings.BACKUP_PATH
-backupReplicationEnabled = settings.BACKUP_REPLICATION_ENABLED
-backupReplicationPaths = settings.BACKUP_REPLICATION_PATHS
 logPath = settings.LOG_PATH
 
 
@@ -37,7 +35,7 @@ async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             replication_fullpath = os.path.join(path, backup_filename)
             log.info(f'Replicating {backup_fullpath} to {replication_fullpath}')
-            await copyfile(backup_fullpath, replication_fullpath)
+            await aioshutil.copyfile(backup_fullpath, replication_fullpath)
         except Exception as e:
             log.exception(f'Problems while replicating to {path}: {e}')
 
@@ -50,8 +48,8 @@ async def rotate_backups(ib_name):
     path = os.path.join(backupPath, filename_pattern)
     await utils.remove_old_files_by_pattern(path, backupRetentionDays)
     # Удаляет старые резервные копии в местах репликации
-    if backupReplicationEnabled:
-        for replication_path in backupReplicationPaths:
+    if settings.BACKUP_REPLICATION_ENABLED:
+        for replication_path in settings.BACKUP_REPLICATION_PATHS:
             path = os.path.join(replication_path, filename_pattern)
             await utils.remove_old_files_by_pattern(path, backupRetentionDays)
 
@@ -94,16 +92,14 @@ async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_v8_command(
-                ib_name, v8_command, log_filename, permission_code, 1200
-            )
+            await execute_v8_command(ib_name, v8_command, log_filename, permission_code, 1200)
             break
         except V8Exception as e:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
-                raise e
+                return core_types.InfoBaseBackupTaskResult(ib_name, False)
             else:
-                log.debug(f'<{ib_name}> Backup failed, retrying')
+                log.exception(f'<{ib_name}> Backup failed, retrying')
     return core_types.InfoBaseBackupTaskResult(ib_name, True, dt_filename)
 
 
@@ -177,8 +173,8 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
         try:
             result = await _backup_info_base(ib_name)
             # Если включена репликация и результат бэкапа успешен
-            if backupReplicationEnabled and result.succeeded:
-                await replicate_backup(result.backup_filename, backupReplicationPaths)
+            if settings.BACKUP_REPLICATION_ENABLED and result.succeeded:
+                await replicate_backup(result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
             # Ротация бэкапов, удаляет старые
             await rotate_backups(ib_name)
             return result
