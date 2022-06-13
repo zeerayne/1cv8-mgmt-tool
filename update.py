@@ -23,7 +23,6 @@ from core.version import get_version_from_string
 
 log = logging.getLogger(__name__)
 log_prefix = 'Update'
-logPath = settings.LOG_PATH
 
 
 def _find_suitable_manifests(manifests, name_in_metadata, version_in_metadata):
@@ -137,7 +136,7 @@ async def _update_info_base(ib_name, dry=False):
             # Код блокировки новых сеансов
             permission_code = "0000"
             # Формирует команду для обновления
-            log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
+            log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
             # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
             v8_command = \
                 rf'"{utils.get_platform_full_path()}" ' \

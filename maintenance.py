@@ -18,7 +18,6 @@ from utils.postgres import get_postgres_host_and_port
 
 log = logging.getLogger(__name__)
 log_prefix = 'Maintenance'
-logPath = settings.LOG_PATH
 
 
 async def rotate_logs(ib_name):
@@ -26,7 +25,7 @@ async def rotate_logs(ib_name):
     filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
     # Получает список log-файлов, удаляет старые
     log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
-    path = os.path.join(logPath, filename_pattern)
+    path = os.path.join(settings.LOG_PATH, filename_pattern)
     await utils.remove_old_files_by_pattern(path, logRetentionDays)
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
@@ -40,7 +39,7 @@ async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
     log.info(f'<{ib_name}> Start maintenance')
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
+    log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date(reduce_date)
     v8_command = \
@@ -75,7 +74,7 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
             log.error(f'<{ib_name}> PostgreSQL: password not found for user {db_user_string}')
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
         db_name = ib_info.dbName
-    log_filename = os.path.join(logPath, utils.get_ib_and_time_filename(ib_name, 'log'))
+    log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
     vacuumdb_command = \
         f'{settings.PG_VACUUMDB_PATH} --host={db_host} --port={db_port} --username={db_user} ' \
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'

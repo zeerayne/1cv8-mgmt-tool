@@ -24,8 +24,6 @@ from utils.postgres import get_postgres_host_and_port
 
 log = logging.getLogger(__name__)
 log_prefix = 'Backup'
-backupPath = settings.BACKUP_PATH
-logPath = settings.LOG_PATH
 
 
 async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
@@ -43,15 +41,13 @@ async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
 async def rotate_backups(ib_name):
     backupRetentionDays = settings.BACKUP_RETENTION_DAYS
     filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
-    # Получает список резервных копий ИБ, удаляет старые
-    log.info(f'<{ib_name}> Removing backups older than {backupRetentionDays} days')
-    path = os.path.join(backupPath, filename_pattern)
-    await utils.remove_old_files_by_pattern(path, backupRetentionDays)
-    # Удаляет старые резервные копии в местах репликации
-    if settings.BACKUP_REPLICATION_ENABLED:
-        for replication_path in settings.BACKUP_REPLICATION_PATHS:
-            path = os.path.join(replication_path, filename_pattern)
-            await utils.remove_old_files_by_pattern(path, backupRetentionDays)
+    path = os.path.join(settings.BACKUP_PATH, filename_pattern)
+    rotate_paths = [path] + settings.BACKUP_REPLICATION_PATHS if settings.BACKUP_REPLICATION_ENABLED else [path]
+    # Удаляет старые резервные копии
+    for rotation_path in rotate_paths:
+        log.info(f'<{ib_name}> Removing backups older than {backupRetentionDays} days from {rotation_path}')
+        path = os.path.join(rotation_path, filename_pattern)
+        await utils.remove_old_files_by_pattern(path, backupRetentionDays)
 
 
 async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
@@ -76,8 +72,8 @@ async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     # Формирует команду для выгрузки
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
-    dt_filename = os.path.join(backupPath, utils.append_file_extension_to_string(ib_and_time_str, 'dt'))
-    log_filename = os.path.join(logPath, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
+    dt_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'dt'))
+    log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
         rf'"{utils.get_platform_full_path()}" ' \
@@ -132,8 +128,8 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
         db_name = ib_info.dbName
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
-    backup_filename = os.path.join(backupPath, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
-    log_filename = os.path.join(logPath, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
+    backup_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
+    log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
     # --blobs
     # Include large objects in the dump.
     # This is the default behavior except when --schema, --table, or --schema-only is specified.
