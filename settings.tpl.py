@@ -36,7 +36,7 @@ BACKUP_REPLICATION_ENABLED = False
 BACKUP_REPLICATION_PATHS = (os.path.join('\\\\192.168.1.2', 'backup', '1cv8'), )
 # Количество повторных попыток сделать резервную копию при возникновении ошибки
 # Если установлено значение 0, повторные попытки предприниматься не будут
-BACKUP_RETRIES = 1
+BACKUP_RETRIES_V8 = 1
 
 LOG_PATH = os.path.join('C:\\', 'log', '1cv8')
 LOG_RETENTION_DAYS = 60

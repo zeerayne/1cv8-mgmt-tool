@@ -32,7 +32,7 @@ BACKUP_PATH = os.path.join('C:\\', 'backup', '1cv8')
 BACKUP_RETENTION_DAYS = 30
 BACKUP_REPLICATION_ENABLED = False
 BACKUP_REPLICATION_PATHS = (os.path.join('\\\\192.168.1.2', 'backup', '1cv8'), )
-BACKUP_RETRIES = 1
+BACKUP_RETRIES_V8 = 0
 
 LOG_PATH = os.path.join('C:\\', 'log', '1cv8')
 LOG_RETENTION_DAYS = 60

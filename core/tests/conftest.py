@@ -1,4 +1,3 @@
-import asyncio
 import random
 import re
 
@@ -216,33 +215,3 @@ def mock_infobases_credentials(mocker: MockerFixture, infobases):
     infobases_creds_mock.return_value = creds
     mocker.patch('conf.settings.V8_INFO_BASES_CREDENTIALS', new_callable=infobases_creds_mock)
     return creds
-
-
-@pytest.fixture
-def mock_asyncio_subprocess_succeeded(mocker: MockerFixture):
-    subprocess_mock = AsyncMock()
-    subprocess_mock.returncode = 0
-    subprocess_mock.pid = random.randint(1000, 3000)
-    return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)
-
-
-@pytest.fixture
-def mock_asyncio_subprocess_failed(mocker: MockerFixture):
-    subprocess_mock = AsyncMock()
-    subprocess_mock.returncode = -1
-    subprocess_mock.pid = random.randint(1000, 3000)
-    return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)
-
-
-@pytest.fixture
-def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
-    subprocess_mock = AsyncMock()
-    subprocess_mock.returncode = 0
-    subprocess_mock.pid = random.randint(1000, 3000)
-
-    async def subprocess_sleep(*args):
-        asyncio.sleep(10)
-
-    subprocess_mock.communicate = AsyncMock(side_effect=subprocess_sleep)
-    
-    return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)

@@ -1,7 +1,9 @@
-import os
+import asyncio
 import random
+from unittest.mock import AsyncMock
 
 import pytest
+from pytest_mock import MockerFixture
 
 from core import types as core_types
 
@@ -146,3 +148,33 @@ def mixed_aws_result(infobases):
         succeeded=(succeeded := not succeeded),
         upload_size=random.randint(1000, 1000 ** 2) if succeeded else 0
     ) for ib in infobases]
+
+
+@pytest.fixture
+def mock_asyncio_subprocess_succeeded(mocker: MockerFixture):
+    subprocess_mock = AsyncMock()
+    subprocess_mock.returncode = 0
+    subprocess_mock.pid = random.randint(1000, 3000)
+    return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)
+
+
+@pytest.fixture
+def mock_asyncio_subprocess_failed(mocker: MockerFixture):
+    subprocess_mock = AsyncMock()
+    subprocess_mock.returncode = -1
+    subprocess_mock.pid = random.randint(1000, 3000)
+    return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)
+
+
+@pytest.fixture
+def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
+    subprocess_mock = AsyncMock()
+    subprocess_mock.returncode = 0
+    subprocess_mock.pid = random.randint(1000, 3000)
+
+    async def subprocess_sleep(*args):
+        asyncio.sleep(10)
+
+    subprocess_mock.communicate = AsyncMock(side_effect=subprocess_sleep)
+    
+    return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)

@@ -84,8 +84,8 @@ async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         rf'/DumpIB {dt_filename}'
     log.info(f'<{ib_name}> Created dump command [{v8_command}]')
     # Выгружает информационную базу в *.dt файл
-    backup_retries = settings.BACKUP_RETRIES
-    # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
+    backup_retries = settings.BACKUP_RETRIES_V8
+    # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
             await execute_v8_command(ib_name, v8_command, log_filename, permission_code, 1200)
@@ -93,6 +93,7 @@ async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         except V8Exception as e:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
+                log.exception(f'<{ib_name}> Backup failed, retries exceeded')
                 return core_types.InfoBaseBackupTaskResult(ib_name, False)
             else:
                 log.exception(f'<{ib_name}> Backup failed, retrying')
