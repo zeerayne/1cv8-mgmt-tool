@@ -27,13 +27,13 @@ async def execute_v8_command(
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
     with ClusterControlInterface() as cci:
-        agent_connection = cci.get_agent_connection()
-        cluster = cci.get_cluster_with_auth(agent_connection)
-        working_process_connection = cci.get_working_process_connection_with_info_base_auth()
-        # TODO: нужно добавить оптимизацию - объект, который содержит в себе сразу Info и Short описания
-        ib_short = cci.get_info_base_short(agent_connection, cluster, ib_name)
-        ib = cci.get_info_base(working_process_connection, ib_name)
         if permission_code:
+            agent_connection = cci.get_agent_connection()
+            cluster = cci.get_cluster_with_auth(agent_connection)
+            working_process_connection = cci.get_working_process_connection_with_info_base_auth()
+            # TODO: нужно добавить оптимизацию - объект, который содержит в себе сразу Info и Short описания
+            ib_short = cci.get_info_base_short(agent_connection, cluster, ib_name)
+            ib = cci.get_info_base(working_process_connection, ib_name)
             # Блокирует фоновые задания и новые сеансы
             cci.lock_info_base(working_process_connection, ib, permission_code)
             # Перед завершением сеансов следует взять паузу,
@@ -56,7 +56,8 @@ async def execute_v8_command(
             await v8_process.terminate()
         log.info(f'<{ib_name}> Return code is {str(v8_process.returncode)}')
         if permission_code:
-            # Снова получаем соединение с рабочим процессом, потому что за время работы скрипта оно может закрыться
+            # Снова получает соединение с рабочим процессом, 
+            # потому что за время работы процесса 1cv8 оно может закрыться
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
             # Снимает блокировку фоновых заданий и сеансов
             cci.unlock_info_base(working_process_connection, ib)
