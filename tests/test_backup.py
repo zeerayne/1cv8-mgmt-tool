@@ -123,3 +123,14 @@ async def test_backup_v8_return_backup_result_succeeded_true_when_failed(mocker:
     mocker.patch('backup.execute_v8_command', side_effect=V8Exception)
     result = await _backup_v8(infobase)
     assert result.succeeded == False
+
+
+@pytest.mark.asyncio
+async def test_backup_pgdump_creates_subprocess(mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded):
+    """
+    Backup with pgdump creates subprocess
+    """
+    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('', '', '', '', ''))
+    mocker.patch('backup.ClusterControlInterface')
+    await _backup_pgdump(infobase)
+    mock_asyncio_subprocess_succeeded.assert_awaited()
