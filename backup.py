@@ -19,7 +19,7 @@ from core.process import execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
-from utils.postgres import get_postgres_host_and_port
+from utils.postgres import prepare_postgres_connection_vars
 
 
 log = logging.getLogger(__name__)
@@ -115,19 +115,16 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         # то не будет возможности получить данные, кроме имени ИБ
         wpc = cci.get_working_process_connection_with_info_base_auth()
         ib_info = cci.get_info_base(wpc, ib_name)
-        if ib_info.DBMS.lower() != 'PostgreSQL'.lower():
-            log.error(f'<{ib_name}> pgdump can not be performed for {ib_info.DBMS} DBMS')
-            return core_types.InfoBaseBackupTaskResult(ib_name, False)
-        db_user = ib_info.dbUser
-        db_server = ib_info.dbServerName
-        db_user_string = f'{db_user}@{db_server}'
-        db_host, db_port = get_postgres_host_and_port(db_server)
         try:
-            db_pwd = settings.PG_CREDENTIALS[db_user_string]
-        except KeyError:
-            log.error(f'<{ib_name}> PostgreSQL: password not found for user {db_user_string}')
+            db_host, db_port, db_name, db_user, db_pwd = prepare_postgres_connection_vars(
+                ib_info.dbServerName,
+                ib_info.DBMS,
+                ib_info.dbName,
+                ib_info.dbUser
+            )
+        except (ValueError, KeyError) as e:
+            log.error(f'<{ib_name}> {str(e)}')
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
-        db_name = ib_info.dbName
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
@@ -146,9 +143,11 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
     pgdump_env = os.environ.copy()
     pgdump_env['PGPASSWORD'] = db_pwd
+
     pgdump_process = await asyncio.create_subprocess_shell(pgdump_command, env=pgdump_env)
     log.debug(f'<{ib_name}> pg_dump PID is {str(pgdump_process.pid)}')
     await pgdump_process.communicate()
+
     if pgdump_process.returncode != 0:
         log_file_content = utils.read_file_content(log_filename)
         log.error(f'<{ib_name}> Log message :: {log_file_content}')
