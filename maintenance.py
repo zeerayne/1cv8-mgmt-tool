@@ -12,7 +12,8 @@ from conf import settings
 from core import utils
 from core.analyze import analyze_maintenance_result
 from core.cluster import ClusterControlInterface, get_server_address
-from core.process import execute_v8_command
+from core.exceptions import SubprocessException
+from core.process import execute_subprocess_command, execute_v8_command
 from utils.postgres import prepare_postgres_connection_vars
 
 
@@ -61,16 +62,13 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
         # то не будет возможности получить данные, кроме имени ИБ
         wpc = cci.get_working_process_connection_with_info_base_auth()
         ib_info = cci.get_info_base(wpc, ib_name)
+        db_name = ib_info.dbName
+        db_user = ib_info.dbUser
         try:
-            db_host, db_port, db_name, db_user, db_pwd = prepare_postgres_connection_vars(
-                ib_info.dbServerName,
-                ib_info.DBMS,
-                ib_info.dbName,
-                ib_info.dbUser
-            )
+            db_host, db_port, db_pwd = prepare_postgres_connection_vars(ib_info.dbServerName, db_user)
         except (ValueError, KeyError) as e:
             log.error(f'<{ib_name}> {str(e)}')
-            return core_types.InfoBaseBackupTaskResult(ib_name, False)
+            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
     vacuumdb_command = \
         f'{settings.PG_VACUUMDB_PATH} --host={db_host} --port={db_port} --username={db_user} ' \

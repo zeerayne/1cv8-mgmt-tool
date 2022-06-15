@@ -14,12 +14,12 @@ import core.types as core_types
 from conf import settings
 from core import utils
 from core.cluster import ClusterControlInterface, get_server_address
-from core.exceptions import V8Exception
-from core.process import execute_v8_command
+from core.exceptions import SubprocessException, V8Exception
+from core.process import execute_subprocess_command, execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils.notification import make_html_table, send_notification
-from utils.postgres import prepare_postgres_connection_vars
+from utils.postgres import dbms_is_postgres, prepare_postgres_connection_vars
 
 
 log = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ async def rotate_backups(ib_name):
         await utils.remove_old_files_by_pattern(path, backupRetentionDays)
 
 
-async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
+async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackupTaskResult:
     """
     1. Блокирует фоновые задания и новые сеансы
     2. Принудительно завершает текущие сеансы
@@ -82,7 +82,7 @@ async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/UC "{permission_code}" ' \
         rf'/DumpIB {dt_filename}'
-    log.info(f'<{ib_name}> Created dump command [{v8_command}]')
+    log.debug(f'<{ib_name}> Created dump command [{v8_command}]')
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES_V8
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
@@ -100,7 +100,9 @@ async def _backup_v8(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     return core_types.InfoBaseBackupTaskResult(ib_name, True, dt_filename)
 
 
-async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
+async def _backup_pgdump(
+    ib_name: str, db_server: str, db_name: str, db_user: str, *args, **kwargs
+) -> core_types.InfoBaseBackupTaskResult:
     """
     Выполняет резервное копирование ИБ средствами СУБД PostgreSQL при помощи утилиты pg_dump
     1. Проверяет, использует ли ИБ СУБД PostgreSQL
@@ -110,21 +112,11 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     :return:
     """
     log.info(f'<{ib_name}> Start pgdump')
-    with ClusterControlInterface() as cci:
-        # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
-        # то не будет возможности получить данные, кроме имени ИБ
-        wpc = cci.get_working_process_connection_with_info_base_auth()
-        ib_info = cci.get_info_base(wpc, ib_name)
-        try:
-            db_host, db_port, db_name, db_user, db_pwd = prepare_postgres_connection_vars(
-                ib_info.dbServerName,
-                ib_info.DBMS,
-                ib_info.dbName,
-                ib_info.dbUser
-            )
-        except (ValueError, KeyError) as e:
-            log.error(f'<{ib_name}> {str(e)}')
-            return core_types.InfoBaseBackupTaskResult(ib_name, False)
+    try:
+        db_host, db_port, db_pwd = prepare_postgres_connection_vars(db_server, db_user)
+    except (ValueError, KeyError) as e:
+        log.error(f'<{ib_name}> {str(e)}')
+        return core_types.InfoBaseBackupTaskResult(ib_name, False)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
@@ -161,9 +153,18 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
     return core_types.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 
-async def _backup_info_base(ib_name: str):
-    if settings.PG_BACKUP_ENABLED:
-        result = await _backup_pgdump(ib_name)
+async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
+    with ClusterControlInterface() as cci:
+        wpc = cci.get_working_process_connection_with_info_base_auth()
+        ib_info = cci.get_info_base(wpc, ib_name)
+        db_server = ib_info.dbServerName
+        dbms = ib_info.DBMS
+        db_name = ib_info.dbName
+        db_user = ib_info.dbUser
+        del ib_info
+        del wpc
+    if settings.PG_BACKUP_ENABLED and dbms_is_postgres(dbms):
+        result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
     else:
         result = await utils.com_func_wrapper(_backup_v8, ib_name)
     return result
@@ -173,15 +174,21 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
     async with semaphore:
         try:
             result = await _backup_info_base(ib_name)
+        except Exception:
+            log.exception(f'<{ib_name}> Unknown exception occurred in `_backup_info_base` coroutine')
+            return core_types.InfoBaseBackupTaskResult(ib_name, False)
+        try:
             # Если включена репликация и результат бэкапа успешен
             if settings.BACKUP_REPLICATION_ENABLED and result.succeeded:
                 await replicate_backup(result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
+        except Exception:
+            log.exception(f'<{ib_name}> Unknown exception occurred in `replicate_backup` coroutine')
+        try:
             # Ротация бэкапов, удаляет старые
             await rotate_backups(ib_name)
-            return result
-        except Exception as e:
-            log.exception(f'<{ib_name}> Unknown exception occurred in thread')
-            return core_types.InfoBaseBackupTaskResult(ib_name, False)
+        except Exception:
+            log.exception(f'<{ib_name}> Unknown exception occurred in `rotate_backups` coroutine')
+        return result
 
 
 def analyze_results(

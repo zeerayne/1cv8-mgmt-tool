@@ -1,7 +1,21 @@
 import pytest
 
 from conf import settings
-from utils.postgres import POSTGRES_DEFAULT_PORT, get_postgres_host_and_port, prepare_postgres_connection_vars
+from utils.postgres import POSTGRES_DEFAULT_PORT, POSTGRES_NAME, dbms_is_postgres, get_postgres_host_and_port, prepare_postgres_connection_vars
+
+
+def test_dbms_is_postgres_returns_true_for_postgres():
+    """
+    `dbms_is_postgres` returns true for postgres dbms
+    """
+    assert dbms_is_postgres(POSTGRES_NAME)
+
+
+def test_dbms_is_postgres_returns_false_for_non_postgres():
+    """
+    `dbms_is_postgres` returns false for non-postgres dbms
+    """
+    assert not dbms_is_postgres('MSSQL')
 
 
 def test_get_postgres_host_and_port_extract_host_with_port():
@@ -42,28 +56,20 @@ def test_get_postgres_host_and_port_extract_port_without_port():
     assert result[1] == POSTGRES_DEFAULT_PORT
 
 
-def test_prepare_postgres_connection_vars_raises_value_error_for_non_postgres_dbms():
-    """
-    `prepare_postgres_connection_vars` raises ValueError if dbms is not postgres
-    """
-    with pytest.raises(ValueError):
-        prepare_postgres_connection_vars('localhost', 'MSSQL', 'template1', 'postgres')
-
-
 def test_prepare_postgres_connection_vars_raises_key_error_if_no_credentials_found():
     """
     `prepare_postgres_connection_vars` raises KeyError if credentials for user@host not found
     """
     with pytest.raises(KeyError):
-        prepare_postgres_connection_vars('remotehost', 'postgresql', 'template1', 'postgres')
+        prepare_postgres_connection_vars('remotehost', 'postgres')
 
 
 def test_prepare_postgres_connection_vars_returns_exactly_5_elements():
     """
-    `prepare_postgres_connection_vars` returns db_host, db_port, db_name, db_user, db_pwd
+    `prepare_postgres_connection_vars` returns db_host, db_port, db_pwd
     """
-    result = prepare_postgres_connection_vars('localhost', 'postgresql', 'template1', 'postgres')
-    assert len(result) == 5
+    result = prepare_postgres_connection_vars('localhost', 'postgres')
+    assert len(result) == 3
 
 
 def test_prepare_postgres_connection_vars_returns_correct_host():
@@ -71,7 +77,7 @@ def test_prepare_postgres_connection_vars_returns_correct_host():
     `prepare_postgres_connection_vars` returns correct `db_host` value
     """
     host = 'localhost'
-    result = prepare_postgres_connection_vars(host, 'postgresql', 'template1', 'postgres')
+    result = prepare_postgres_connection_vars(host, 'postgres')
     assert result[0] == host
 
 
@@ -79,26 +85,8 @@ def test_prepare_postgres_connection_vars_returns_correct_port():
     """
     `prepare_postgres_connection_vars` returns correct `db_port` value
     """
-    result = prepare_postgres_connection_vars('localhost', 'postgresql', 'template1', 'postgres')
+    result = prepare_postgres_connection_vars('localhost', 'postgres')
     assert result[1] == POSTGRES_DEFAULT_PORT
-
-
-def test_prepare_postgres_connection_vars_returns_correct_db_name():
-    """
-    `prepare_postgres_connection_vars` returns correct `db_name` value
-    """
-    db_name = 'template1'
-    result = prepare_postgres_connection_vars('localhost', 'postgresql', db_name, 'postgres')
-    assert result[2] == db_name
-
-
-def test_prepare_postgres_connection_vars_returns_correct_db_user():
-    """
-    `prepare_postgres_connection_vars` returns correct `db_user` value
-    """
-    db_user = 'postgres'
-    result = prepare_postgres_connection_vars('localhost', 'postgresql', 'template1', db_user)
-    assert result[3] == db_user
 
 
 def test_prepare_postgres_connection_vars_returns_correct_db_password():
@@ -107,5 +95,5 @@ def test_prepare_postgres_connection_vars_returns_correct_db_password():
     """
     host = 'localhost'
     db_user = 'postgres'
-    result = prepare_postgres_connection_vars(host, 'postgresql', 'template1', db_user)
-    assert result[4] == settings.PG_CREDENTIALS[f'{db_user}@{host}']
+    result = prepare_postgres_connection_vars(host, db_user)
+    assert result[2] == settings.PG_CREDENTIALS[f'{db_user}@{host}']
