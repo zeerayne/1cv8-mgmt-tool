@@ -1,5 +1,5 @@
 import asyncio
-
+from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, Mock, PropertyMock
 
 import pytest
@@ -8,7 +8,7 @@ from pytest_mock import MockerFixture
 import core.types as core_types
 
 from conf import settings
-from backup import replicate_backup, rotate_backups, _backup_v8, _backup_pgdump, _backup_info_base, backup_info_base
+from backup import replicate_backup, rotate_backups, _backup_v8, _backup_pgdump, _backup_info_base, backup_info_base, analyze_results
 from core.exceptions import SubprocessException, V8Exception
 from utils.postgres import POSTGRES_NAME
 
@@ -381,3 +381,60 @@ async def test_backup_info_returns_value_from_inner_func_if_replicate_backup_fai
     mocker.patch('backup.replicate_backup', side_effect=Exception)
     result = await backup_info_base(infobase, asyncio.Semaphore(1))
     assert result == value
+
+
+def test_analyze_results_calls_backup_analyze(mocker: MockerFixture, infobases, mixed_backup_result):
+    """
+    `analyze_results` calls `analyze_backup_result` by default
+    """
+    datetime_start = datetime.now()
+    datetime_finish = datetime_start + timedelta(minutes=5)
+    analyze_backup_result_mock = mocker.patch('backup.analyze_backup_result')
+    analyze_results(infobases, mixed_backup_result, datetime_start, datetime_finish, None, None, None)
+    analyze_backup_result_mock.assert_called_with(mixed_backup_result, infobases, datetime_start, datetime_finish)
+
+
+def test_analyze_results_calls_backup_analyze_if_aws_enabled(
+    mocker: MockerFixture, infobases, mixed_backup_result, mixed_aws_result
+):
+    """
+    `analyze_results` calls `analyze_backup_result` if AWS_ENABLED == True
+    """
+    backup_datetime_start = datetime.now()
+    backup_datetime_finish = backup_datetime_start + timedelta(minutes=5)
+    aws_datetime_start = datetime.now()
+    aws_datetime_finish = aws_datetime_start + timedelta(minutes=5)
+    mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.analyze_s3_result')
+    analyze_backup_result_mock = mocker.patch('backup.analyze_backup_result')
+    analyze_results(
+        infobases, 
+        mixed_backup_result, backup_datetime_start, backup_datetime_finish, 
+        mixed_aws_result, aws_datetime_start, aws_datetime_finish
+    )
+    analyze_backup_result_mock.assert_called_with(
+        mixed_backup_result, infobases, backup_datetime_start, backup_datetime_finish
+    )
+
+
+def test_analyze_results_calls_aws_analyze_if_aws_enabled(
+    mocker: MockerFixture, infobases, mixed_backup_result, mixed_aws_result
+):
+    """
+    `analyze_results` calls `analyze_s3_result` if AWS_ENABLED == True
+    """
+    backup_datetime_start = datetime.now()
+    backup_datetime_finish = backup_datetime_start + timedelta(minutes=5)
+    aws_datetime_start = datetime.now()
+    aws_datetime_finish = aws_datetime_start + timedelta(minutes=5)
+    mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.analyze_backup_result')
+    analyze_s3_result_mock = mocker.patch('backup.analyze_s3_result')
+    analyze_results(
+        infobases, 
+        mixed_backup_result, backup_datetime_start, backup_datetime_finish, 
+        mixed_aws_result, aws_datetime_start, aws_datetime_finish
+    )
+    analyze_s3_result_mock.assert_called_with(
+        mixed_aws_result, infobases, aws_datetime_start, aws_datetime_finish
+    )

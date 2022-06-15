@@ -192,7 +192,7 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
 
 
 def analyze_results(
-    info_bases: List[str],
+    infobases: List[str],
     backup_result: List[core_types.InfoBaseBackupTaskResult],
     backup_datetime_start: datetime,
     backup_datetime_finish: datetime,
@@ -200,9 +200,9 @@ def analyze_results(
     aws_datetime_start: datetime,
     aws_datetime_finish: datetime
 ):
-    analyze_backup_result(backup_result, info_bases, backup_datetime_start, backup_datetime_finish)
+    analyze_backup_result(backup_result, infobases, backup_datetime_start, backup_datetime_finish)
     if settings.AWS_ENABLED:
-        analyze_s3_result(aws_result, info_bases, aws_datetime_start, aws_datetime_finish)
+        analyze_s3_result(aws_result, infobases, aws_datetime_start, aws_datetime_finish)
 
 
 def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskResult], aws_result: List[core_types.InfoBaseAWSUploadTaskResult]):
