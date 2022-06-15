@@ -1,17 +1,36 @@
 import asyncio
 import logging
 
+from typing import Type
+
 from conf import settings
 from core import utils
-from core.exceptions import V8Exception
+from core.exceptions import SubprocessException, V8Exception
 from core.cluster import ClusterControlInterface
 
 
 log = logging.getLogger(__name__)
 
 
+def _check_subprocess_return_code(
+    ib_name: str, 
+    subprocess: asyncio.subprocess.Process, 
+    log_filename: str, 
+    log_encoding: str, 
+    exception_class: Type[SubprocessException]
+):
+    log.info(f'<{ib_name}> Return code is {str(subprocess.returncode)}')
+    log_file_content = utils.read_file_content(log_filename, log_encoding)
+    msg = f'<{ib_name}> Log message :: {log_file_content}'
+    if subprocess.returncode != 0:
+        log.error(msg)
+        raise exception_class(log_file_content)
+    else:
+        log.info(msg)
+
+
 async def execute_v8_command(
-    ib_name, v8_command, log_filename, permission_code=None, timeout=None
+    ib_name: str, v8_command: str, log_filename: str, permission_code: str = None, timeout: int = None
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -54,7 +73,7 @@ async def execute_v8_command(
             await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             await v8_process.terminate()
-        log.info(f'<{ib_name}> Return code is {str(v8_process.returncode)}')
+        
         if permission_code:
             # Снова получает соединение с рабочим процессом, 
             # потому что за время работы процесса 1cv8 оно может закрыться
@@ -63,10 +82,16 @@ async def execute_v8_command(
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    log_file_content = utils.read_file_content(log_filename, 'utf-8-sig')
-    msg = f'<{ib_name}> Log message :: {log_file_content}'
-    if v8_process.returncode != 0:
-        log.error(msg)
-        raise V8Exception(log_file_content)
-    else:
-        log.info(msg)
+    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception)
+
+
+async def execute_subprocess_command(
+    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None
+):
+    subprocess = await asyncio.create_subprocess_shell(subprocess_command)
+    log.debug(f'<{ib_name}> Subprocess PID is {str(subprocess.pid)}')
+    try:
+        await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        await subprocess.terminate()
+    _check_subprocess_return_code(ib_name, subprocess, log_filename, 'utf-8', SubprocessException)
