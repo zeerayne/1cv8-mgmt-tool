@@ -143,16 +143,21 @@ async def _backup_pgdump(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
         rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
     pgdump_env = os.environ.copy()
     pgdump_env['PGPASSWORD'] = db_pwd
-
-    pgdump_process = await asyncio.create_subprocess_shell(pgdump_command, env=pgdump_env)
-    log.debug(f'<{ib_name}> pg_dump PID is {str(pgdump_process.pid)}')
-    await pgdump_process.communicate()
-
-    if pgdump_process.returncode != 0:
-        log_file_content = utils.read_file_content(log_filename)
-        log.error(f'<{ib_name}> Log message :: {log_file_content}')
-        return core_types.InfoBaseBackupTaskResult(ib_name, False)
-    log.info(f'<{ib_name}> pg_dump completed')
+    log.debug(f'<{ib_name}> Created pgdump command [{pgdump_command}]')
+    # Делает резервную копию базы данных в *.pgdump файл
+    backup_retries = settings.BACKUP_RETRIES_PG
+    # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
+    for i in range(0, backup_retries + 1):
+        try:
+            await execute_subprocess_command(ib_name, pgdump_command, log_filename)
+            break
+        except SubprocessException as e:
+            # Если количество попыток исчерпано, но ошибка по прежнему присутствует
+            if i == backup_retries:
+                log.exception(f'<{ib_name}> Backup failed, retries exceeded')
+                return core_types.InfoBaseBackupTaskResult(ib_name, False)
+            else:
+                log.exception(f'<{ib_name}> Backup failed, retrying')
     return core_types.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 

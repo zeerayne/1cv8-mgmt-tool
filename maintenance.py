@@ -77,16 +77,10 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
     vacuumdb_env = os.environ.copy()
     vacuumdb_env['PGPASSWORD'] = db_pwd
-    
-    vacuumdb_process = await asyncio.create_subprocess_shell(vacuumdb_command, env=vacuumdb_env)
-    log.debug(f'<{ib_name}> vacuumdb PID is {str(vacuumdb_process.pid)}')
-    await vacuumdb_process.communicate()
-
-    if vacuumdb_process.returncode != 0:
-        log_file_content = utils.read_file_content(log_filename)
-        log.error(f'<{ib_name}> Log message :: {log_file_content}')
+    try:
+        await execute_subprocess_command(ib_name, vacuumdb_command, log_filename)
+    except SubprocessException as e:
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    log.info(f'<{ib_name}> vacuumdb completed')
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
