@@ -212,7 +212,7 @@ def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskRes
         msg += make_html_table('Backup', backup_result)
         if settings.AWS_ENABLED:
             msg += make_html_table('AWS upload', aws_result)
-        send_notification('1cv8-mgmt backup', msg)
+        send_notification(settings.EMAIL_CAPTION, msg)
 
 
 async def main():

@@ -8,7 +8,10 @@ from pytest_mock import MockerFixture
 import core.types as core_types
 
 from conf import settings
-from backup import replicate_backup, rotate_backups, _backup_v8, _backup_pgdump, _backup_info_base, backup_info_base, analyze_results
+from backup import (
+    replicate_backup, rotate_backups, _backup_v8, _backup_pgdump, 
+    _backup_info_base, backup_info_base, analyze_results, send_email_notification
+)
 from core.exceptions import SubprocessException, V8Exception
 from utils.postgres import POSTGRES_NAME
 
@@ -438,3 +441,74 @@ def test_analyze_results_calls_aws_analyze_if_aws_enabled(
     analyze_s3_result_mock.assert_called_with(
         mixed_aws_result, infobases, aws_datetime_start, aws_datetime_finish
     )
+
+
+def test_send_email_notification_does_nothing_when_disabled(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+    """
+    `send_email_notification` does nothing when EMAIL_NOTIFY_ENABLED == False
+    """
+    send_notification_mock = mocker.patch('backup.send_notification')
+    send_email_notification(mixed_backup_result, mixed_aws_result)
+    send_notification_mock.assert_not_called()
+
+
+def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+    """
+    `send_email_notification` calls inner util func for sending notification
+    """
+    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.make_html_table')
+    send_notification_mock = mocker.patch('backup.send_notification')
+    send_email_notification(mixed_backup_result, mixed_aws_result)
+    send_notification_mock.assert_called_once()
+
+
+def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+    """
+    `send_email_notification` calls `make_html_table` for backup results
+    """
+    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.send_notification')
+    make_html_table_mock = mocker.patch('backup.make_html_table')
+    send_email_notification(mixed_backup_result, mixed_aws_result)
+    make_html_table_mock.assert_called_with('Backup', mixed_backup_result)
+
+
+def test_send_email_notification_not_makes_aws_table_when_aws_disabled(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+    """
+    `send_email_notification` calls `make_html_table` only for backup results when AWS_ENABLED == False
+    """
+    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.send_notification')
+    make_html_table_mock = mocker.patch('backup.make_html_table')
+    send_email_notification(mixed_backup_result, mixed_aws_result)
+    make_html_table_mock.assert_called_once()
+
+
+
+def test_send_email_notification_makes_aws_table_when_aws_enabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
+    """
+    `send_email_notification` calls `make_html_table` both for aws and backup results
+    """
+    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.send_notification')
+    make_html_table_mock = mocker.patch('backup.make_html_table')
+    send_email_notification(mixed_backup_result, mixed_aws_result)
+    make_html_table_mock.assert_called_with('AWS upload', mixed_aws_result)
+
+
+def test_send_email_notification_makes_aws_and_backup_tables_when_aws_enabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
+    """
+    `send_email_notification` calls `make_html_table` both for aws and backup results
+    """
+    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('backup.send_notification')
+    make_html_table_mock = mocker.patch('backup.make_html_table')
+    send_email_notification(mixed_backup_result, mixed_aws_result)
+    assert make_html_table_mock.call_count == 2
