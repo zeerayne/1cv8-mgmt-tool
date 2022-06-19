@@ -19,7 +19,7 @@ from core.utils import (
     get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
     get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string,
     get_ib_and_time_filename, get_info_bases, get_info_base_credentials, path_leaf,
-    com_func_wrapper, read_file_content, remove_old_files_by_pattern
+    com_func_wrapper, read_file_content, remove_old_files_by_pattern, get_infobase_glob_pattern
 )
 
 
@@ -340,3 +340,28 @@ async def test_remove_old_files_by_pattern_not_removes_new_files(mocker: MockerF
     aioremove_mock = mocker.patch('aiofiles.os.remove', return_value=AsyncMock())
     await remove_old_files_by_pattern('', retention_days)
     aioremove_mock.assert_not_awaited()
+
+
+def test_get_infobase_glob_pattern_contains_infobase_name(infobase):
+    """
+    `get_infobase_glob_pattern` result contains infobase name
+    """
+    result = get_infobase_glob_pattern(infobase)
+    assert infobase in result
+
+
+def test_get_infobase_glob_pattern_contains_file_extension(infobase):
+    """
+    `get_infobase_glob_pattern` result contains file extension, if provided
+    """
+    file_extension = 'test_extension'
+    result = get_infobase_glob_pattern(infobase, file_extension)
+    assert file_extension in result
+
+
+def test_get_infobase_glob_pattern_uses_infobase_filename_separator(infobase):
+    """
+    `get_infobase_glob_pattern` result contains infobase filename separator
+    """
+    result = get_infobase_glob_pattern(infobase)
+    assert get_ib_name_with_separator(infobase) in result
