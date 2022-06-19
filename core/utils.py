@@ -45,6 +45,10 @@ def get_ib_name_with_separator(ib_name: str):
     return f'{ib_name}{settings.FILENAME_SEPARATOR}'
 
 
+def get_infobase_glob_pattern(ib_name: str, file_extension: str = '*'):
+    return f'*{get_ib_name_with_separator(ib_name)}*.{file_extension}'
+
+
 def get_ib_and_time_string(ib_name: str) -> str:
     return f'{get_ib_name_with_separator(ib_name)}{get_formatted_current_datetime()}'
 
