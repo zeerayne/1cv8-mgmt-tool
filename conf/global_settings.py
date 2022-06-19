@@ -2,7 +2,7 @@ import os
 
 AWS_RETRY_PAUSE = 600
 
-DATE_FORMAT = '%Y-%m-%d'
+DATE_FORMAT_1CV8 = '%Y-%m-%d'
 DATETIME_FORMAT = '%Y-%m-%d-%H-%M-%S'
 
 EMAIL_CAPTION = '1cv8-mgmt backup'

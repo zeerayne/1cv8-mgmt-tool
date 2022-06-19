@@ -42,7 +42,7 @@ async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
-    reduce_date_str = utils.get_formatted_date(reduce_date)
+    reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
     v8_command = \
         rf'"{utils.get_platform_full_path()}" ' \
         rf'DESIGNER /S {get_server_address()}\{ib_name} ' \

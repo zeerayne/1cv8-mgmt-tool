@@ -16,7 +16,7 @@ from conf import settings
 from core import types as core_types
 from core.exceptions import V8Exception
 from core.utils import (
-    get_platform_full_path, get_formatted_current_datetime, get_formatted_date, 
+    get_platform_full_path, get_formatted_current_datetime, get_formatted_date_for_1cv8, 
     get_ib_name_with_separator, get_ib_and_time_string, append_file_extension_to_string,
     get_ib_and_time_filename, get_info_bases, get_info_base_credentials, path_leaf,
     com_func_wrapper, read_file_content, remove_old_files_by_pattern, get_infobase_glob_pattern
@@ -48,12 +48,12 @@ def test_get_formatted_current_datetime():
     assert result == datetime.now().strftime(settings.DATETIME_FORMAT)
 
 
-def test_get_formatted_date(mock_datetime):
+def test_get_formatted_date_for_1cv8(mock_datetime):
     """
-    Datetime is formatted according to settings defined format
+    Date for 1CV8 is formatted according to settings defined format
     """
-    result = get_formatted_date(mock_datetime)
-    assert result == mock_datetime.strftime(settings.DATE_FORMAT)
+    result = get_formatted_date_for_1cv8(mock_datetime)
+    assert result == mock_datetime.strftime(settings.DATE_FORMAT_1CV8)
 
 
 def test_get_ib_name_with_separator_contains_ib_name(infobase):

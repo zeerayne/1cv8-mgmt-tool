@@ -37,8 +37,8 @@ def get_formatted_current_datetime() -> str:
     return datetime.now().strftime(settings.DATETIME_FORMAT)
 
 
-def get_formatted_date(datetime_value: Union[datetime, date]) -> str:
-    return datetime_value.strftime(settings.DATE_FORMAT)
+def get_formatted_date_for_1cv8(datetime_value: Union[datetime, date]) -> str:
+    return datetime_value.strftime(settings.DATE_FORMAT_1CV8)
 
 
 def get_ib_name_with_separator(ib_name: str):
