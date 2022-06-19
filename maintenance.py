@@ -23,7 +23,7 @@ log_prefix = 'Maintenance'
 
 async def rotate_logs(ib_name):
     logRetentionDays = settings.LOG_RETENTION_DAYS
-    filename_pattern = f'*{utils.get_ib_name_with_separator(ib_name)}*.*'
+    filename_pattern = utils.get_infobase_glob_pattern(ib_name, 'log')
     # Получает список log-файлов, удаляет старые
     log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
     path = os.path.join(settings.LOG_PATH, filename_pattern)
@@ -95,7 +95,7 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
             result_logs = await rotate_logs(ib_name)
             succeeded &= result_logs.succeeded
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
-        except Exception as e:
+        except Exception:
             log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
 
@@ -127,7 +127,7 @@ async def main():
         )
 
         log.info(f'<{log_prefix}> Done')
-    except Exception as e:
+    except Exception:
         log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
 
 
