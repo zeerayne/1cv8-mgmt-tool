@@ -178,3 +178,8 @@ def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
     subprocess_mock.communicate = AsyncMock(side_effect=subprocess_sleep)
     
     return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)
+
+
+@pytest.fixture
+def mock_get_platform_full_path(mocker: MockerFixture):
+    return mocker.patch('core.utils.get_platform_full_path', return_value='')

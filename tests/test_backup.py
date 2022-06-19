@@ -65,23 +65,21 @@ async def test_rotate_backups_calls_old_file_remover_for_replication_paths(mocke
     assert remove_old_mock.await_count == len(replication_paths) + 1  # plus one for initial backup place
 
 @pytest.mark.asyncio
-async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobase):
+async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with 1cv8 tools calls `execute_v8_command`
     """
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     execute_v8_mock = mocker.patch('backup.execute_v8_command', return_value=AsyncMock())
     await _backup_v8(infobase)
     execute_v8_mock.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase):
+async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with 1cv8 tools makes retries according to retry policy
     """
     backup_retries = 1
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('conf.settings.BACKUP_RETRIES_V8', new_callable=PropertyMock(return_value=backup_retries))
     execute_v8_mock = mocker.patch('backup.execute_v8_command', side_effect=V8Exception)
     await _backup_v8(infobase)
@@ -89,44 +87,40 @@ async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase):
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_type_object_when_succeeded(mocker: MockerFixture, infobase):
+async def test_backup_v8_return_backup_result_type_object_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when succeeded
     """
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_v8_command', return_value=AsyncMock())
     result = await _backup_v8(infobase)
     assert isinstance(result, core_types.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_type_object_when_failed(mocker: MockerFixture, infobase):
+async def test_backup_v8_return_backup_result_type_object_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when failed
     """
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_v8_command', side_effect=V8Exception)
     result = await _backup_v8(infobase)
     assert isinstance(result, core_types.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(mocker: MockerFixture, infobase):
+async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with 1cv8 tools returns object with succeeded == True when succeeded
     """
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_v8_command', return_value=AsyncMock())
     result = await _backup_v8(infobase)
     assert result.succeeded == True
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_succeeded_false_when_failed(mocker: MockerFixture, infobase):
+async def test_backup_v8_return_backup_result_succeeded_false_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with 1cv8 tools returns object with succeeded == False when failed
     """
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_v8_command', side_effect=V8Exception)
     result = await _backup_v8(infobase)
     assert result.succeeded == False
@@ -144,13 +138,12 @@ async def test_backup_pgdump_calls_execute_subprocess_command(mocker: MockerFixt
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_makes_retries(mocker: MockerFixture, infobase):
+async def test_backup_pgdump_makes_retries(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with pgdump makes retries according to retry policy
     """
     backup_retries = 1
     mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('conf.settings.BACKUP_RETRIES_PG', new_callable=PropertyMock(return_value=backup_retries))
     execute_subprocess_mock = mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
     await _backup_pgdump(infobase, '', '', '')
@@ -158,48 +151,44 @@ async def test_backup_pgdump_makes_retries(mocker: MockerFixture, infobase):
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(mocker: MockerFixture, infobase):
+async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when succeeded
     """
     mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_subprocess_command', return_value=AsyncMock())
     result = await _backup_pgdump(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_type_object_when_failed(mocker: MockerFixture, infobase):
+async def test_backup_pgdump_return_backup_result_type_object_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when failed
     """
     mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(mocker: MockerFixture, infobase):
+async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with pgdump returns object with succeeded == True when succeeded
     """
     mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_subprocess_command', return_value=AsyncMock())
     result = await _backup_pgdump(infobase, '', '', '')
     assert result.succeeded == True
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(mocker: MockerFixture, infobase):
+async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Backup with pgdump returns object with succeeded == False when failed
     """
     mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
-    mocker.patch('core.utils.get_platform_full_path', return_value='')
     mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, '', '', '')
     assert result.succeeded == False
