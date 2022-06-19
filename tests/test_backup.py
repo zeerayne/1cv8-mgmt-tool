@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, Mock, PropertyMock
+from unittest.mock import AsyncMock, PropertyMock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -13,7 +13,6 @@ from backup import (
     _backup_info_base, backup_info_base, analyze_results, send_email_notification
 )
 from core.exceptions import SubprocessException, V8Exception
-from utils.postgres import POSTGRES_NAME
 
 
 @pytest.mark.asyncio
@@ -97,7 +96,9 @@ async def test_backup_v8_return_backup_result_type_object_when_succeeded(mocker:
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_type_object_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_v8_return_backup_result_type_object_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path
+):
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when failed
     """
@@ -107,13 +108,39 @@ async def test_backup_v8_return_backup_result_type_object_when_failed(mocker: Mo
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_v8_return_result_for_exact_infobase_when_succeeded(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path
+):
+    """
+    Backup with 1cv8 tools returns object for exact infobase which was provided when succeeded
+    """
+    mocker.patch('backup.execute_v8_command', return_value=AsyncMock())
+    result = await _backup_v8(infobase)
+    assert result.infobase_name == infobase
+
+
+@pytest.mark.asyncio
+async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path
+):
     """
     Backup with 1cv8 tools returns object with succeeded == True when succeeded
     """
     mocker.patch('backup.execute_v8_command', return_value=AsyncMock())
     result = await _backup_v8(infobase)
     assert result.succeeded == True
+
+
+@pytest.mark.asyncio
+async def test_backup_v8_return_result_for_exact_infobase_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path
+):
+    """
+    Backup with 1cv8 tools returns object for exact infobase which was provided when faild
+    """
+    mocker.patch('backup.execute_v8_command', side_effect=V8Exception)
+    result = await _backup_v8(infobase)
+    assert result.infobase_name == infobase
 
 
 @pytest.mark.asyncio
@@ -127,23 +154,25 @@ async def test_backup_v8_return_backup_result_succeeded_false_when_failed(mocker
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_calls_execute_subprocess_command(mocker: MockerFixture, infobase):
+async def test_backup_pgdump_calls_execute_subprocess_command(
+    mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
+):
     """
     Backup with pgdump calls `execute_subprocess_command`
     """
-    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
     execute_subprocess_mock = mocker.patch('backup.execute_subprocess_command', return_value=AsyncMock())
     await _backup_pgdump(infobase, '', '', '')
     execute_subprocess_mock.assert_awaited()
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_makes_retries(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_pgdump_makes_retries(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
     """
     Backup with pgdump makes retries according to retry policy
     """
     backup_retries = 1
-    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
     mocker.patch('conf.settings.BACKUP_RETRIES_PG', new_callable=PropertyMock(return_value=backup_retries))
     execute_subprocess_mock = mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
     await _backup_pgdump(infobase, '', '', '')
@@ -151,47 +180,75 @@ async def test_backup_pgdump_makes_retries(mocker: MockerFixture, infobase, mock
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when succeeded
     """
-    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
     mocker.patch('backup.execute_subprocess_command', return_value=AsyncMock())
     result = await _backup_pgdump(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_type_object_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_pgdump_return_backup_result_type_object_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when failed
     """
-    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
     mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
     """
     Backup with pgdump returns object with succeeded == True when succeeded
     """
-    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
     mocker.patch('backup.execute_subprocess_command', return_value=AsyncMock())
     result = await _backup_pgdump(infobase, '', '', '')
     assert result.succeeded == True
 
 
 @pytest.mark.asyncio
-async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
     """
     Backup with pgdump returns object with succeeded == False when failed
     """
-    mocker.patch('backup.prepare_postgres_connection_vars', return_value=('test_db_host', '5432', 'test_db_pwd'))
     mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, '', '', '')
     assert result.succeeded == False
+
+
+@pytest.mark.asyncio
+async def test_backup_pgdump_return_result_for_exact_infobase_when_succeeded(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
+    """
+    Backup with pgdump returns object for exact infobase which was provided when succeeded
+    """
+    mocker.patch('backup.execute_subprocess_command', return_value=AsyncMock())
+    result = await _backup_pgdump(infobase, '', '', '')
+    assert result.infobase_name == infobase
+
+
+@pytest.mark.asyncio
+async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
+    """
+    Backup with pgdump returns object for exact infobase which was provided when failed
+    """
+    mocker.patch('backup.execute_subprocess_command', side_effect=SubprocessException)
+    result = await _backup_pgdump(infobase, '', '', '')
+    assert result.infobase_name == infobase
 
 
 @pytest.mark.asyncio
@@ -199,7 +256,7 @@ async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, infobase):
     """
     `_backup_info_base` calls `_backup_v8` by default
     """
-    mocker.patch('backup.ClusterControlInterface')
+    mocker.patch('core.cluster.ClusterControlInterface')
     com_func_wrapper_mock = mocker.patch('core.utils.com_func_wrapper')
     await _backup_info_base(infobase)
     com_func_wrapper_mock.assert_awaited_with(_backup_v8, infobase)
@@ -208,15 +265,12 @@ async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, infobase):
 @pytest.mark.asyncio
 async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_is_not_postgres(
     mocker: MockerFixture, 
-    infobase
+    infobase,
+    mock_cluster_mssql_infobase
 ):
     """
     `_backup_info_base` calls `_backup_v8` if PG_BACKUP_ENABLED == True, but infobase DBMS is not postgres
     """
-    info_base_mock = Mock()
-    info_base_mock.return_value.DBMS = 'MSSQL'
-    cci_mock = mocker.patch('backup.ClusterControlInterface')    
-    cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
     mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
     com_func_wrapper_mock = mocker.patch('core.utils.com_func_wrapper')
     await _backup_info_base(infobase)
@@ -226,21 +280,13 @@ async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_
 @pytest.mark.asyncio
 async def test_backup_info_base_run_pgdump_backup_when_pgbackup_is_enabled_and_dbms_is_postgres(
     mocker: MockerFixture, 
-    infobase
+    infobase,
+    mock_cluster_postgres_infobase
 ):
     """
     `_backup_info_base` calls `_backup_pgdump` if PG_BACKUP_ENABLED == True, and infobase DBMS is postgres
     """
-    db_server = 'test_db_server'
-    db_name = 'test_db_name'
-    db_user = 'test_db_user'
-    info_base_mock = Mock()
-    info_base_mock.return_value.DBMS = POSTGRES_NAME
-    info_base_mock.return_value.dbServerName = db_server
-    info_base_mock.return_value.dbName = db_name
-    info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch('backup.ClusterControlInterface')    
-    cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
+    db_server, db_name, db_user = mock_cluster_postgres_infobase
     mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
     backup_pgdump_mock = mocker.patch('backup._backup_pgdump')
     await _backup_info_base(infobase)
@@ -253,22 +299,18 @@ async def test_backup_info_base_returns_value_from_v8_backup(mocker: MockerFixtu
     `_backup_info_base` returns value from underlying `com_func_wrapper` function
     """
     value = core_types.InfoBaseBackupTaskResult(infobase, True, '')
-    mocker.patch('backup.ClusterControlInterface')
+    mocker.patch('core.cluster.ClusterControlInterface')
     mocker.patch('core.utils.com_func_wrapper', return_value=value)
     result = await _backup_info_base(infobase)
     assert result == value
 
 
 @pytest.mark.asyncio
-async def test_backup_info_base_returns_value_from_pgdump_backup(mocker: MockerFixture, infobase):
+async def test_backup_info_base_returns_value_from_pgdump_backup(mocker: MockerFixture, infobase, mock_cluster_postgres_infobase):
     """
     `_backup_info_base` returns value from underlying `_backup_pgdump` function
     """
     value = core_types.InfoBaseBackupTaskResult(infobase, True, '')
-    info_base_mock = Mock()
-    info_base_mock.return_value.DBMS = POSTGRES_NAME
-    cci_mock = mocker.patch('backup.ClusterControlInterface')    
-    cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
     mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup._backup_pgdump', return_value=value)
     result = await _backup_info_base(infobase)

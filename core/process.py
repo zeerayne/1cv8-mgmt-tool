@@ -4,9 +4,8 @@ import logging
 from typing import Type
 
 from conf import settings
-from core import utils
+from core import cluster, utils
 from core.exceptions import SubprocessException, V8Exception
-from core.cluster import ClusterControlInterface
 
 
 log = logging.getLogger(__name__)
@@ -45,13 +44,11 @@ async def execute_v8_command(
     # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
-    with ClusterControlInterface() as cci:
+    with cluster.ClusterControlInterface() as cci:
         if permission_code:
             agent_connection = cci.get_agent_connection()
-            cluster = cci.get_cluster_with_auth(agent_connection)
+            cluster_with_auth = cci.get_cluster_with_auth(agent_connection)
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
-            # TODO: нужно добавить оптимизацию - объект, который содержит в себе сразу Info и Short описания
-            ib_short = cci.get_info_base_short(agent_connection, cluster, ib_name)
             ib = cci.get_info_base(working_process_connection, ib_name)
             # Блокирует фоновые задания и новые сеансы
             cci.lock_info_base(working_process_connection, ib, permission_code)
@@ -61,10 +58,11 @@ async def execute_v8_command(
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
             log.debug(f'<{ib_name}> Wait for {pause} seconds')
             await asyncio.sleep(pause)
+            ib_short = cci.get_info_base_short(agent_connection, cluster_with_auth, ib_name)
             # Принудительно завершает текущие сеансы
-            cci.terminate_info_base_sessions(agent_connection, cluster, ib_short)
+            cci.terminate_info_base_sessions(agent_connection, cluster_with_auth, ib_short)
             del agent_connection
-            del cluster
+            del cluster_with_auth
             del ib_short
             del working_process_connection
         v8_process = await asyncio.create_subprocess_shell(v8_command)

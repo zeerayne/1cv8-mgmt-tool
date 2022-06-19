@@ -12,14 +12,13 @@ import aioshutil
 import core.types as core_types
 
 from conf import settings
-from core import utils
-from core.cluster import ClusterControlInterface, get_server_address
+from core import cluster, utils
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
+from utils import postgres
 from utils.notification import make_html_table, send_notification
-from utils.postgres import dbms_is_postgres, prepare_postgres_connection_vars
 
 
 log = logging.getLogger(__name__)
@@ -76,7 +75,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = \
         rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {get_server_address()}\{ib_name} ' \
+        rf'DESIGNER /S {cluster.get_server_address()}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/UC "{permission_code}" ' \
@@ -112,7 +111,7 @@ async def _backup_pgdump(
     """
     log.info(f'<{ib_name}> Start pgdump')
     try:
-        db_host, db_port, db_pwd = prepare_postgres_connection_vars(db_server, db_user)
+        db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(db_server, db_user)
     except (ValueError, KeyError) as e:
         log.error(f'<{ib_name}> {str(e)}')
         return core_types.InfoBaseBackupTaskResult(ib_name, False)
@@ -153,7 +152,7 @@ async def _backup_pgdump(
 
 
 async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
-    with ClusterControlInterface() as cci:
+    with cluster.ClusterControlInterface() as cci:
         wpc = cci.get_working_process_connection_with_info_base_auth()
         ib_info = cci.get_info_base(wpc, ib_name)
         db_server = ib_info.dbServerName
@@ -162,7 +161,7 @@ async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult
         db_user = ib_info.dbUser
         del ib_info
         del wpc
-    if settings.PG_BACKUP_ENABLED and dbms_is_postgres(dbms):
+    if settings.PG_BACKUP_ENABLED and postgres.dbms_is_postgres(dbms):
         result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
     else:
         result = await utils.com_func_wrapper(_backup_v8, ib_name)

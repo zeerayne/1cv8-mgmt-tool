@@ -11,10 +11,10 @@ import core.types as core_types
 from conf import settings
 from core import utils
 from core.analyze import analyze_maintenance_result
-from core.cluster import ClusterControlInterface, get_server_address
-from core.exceptions import SubprocessException
+from core import cluster
+from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
-from utils.postgres import prepare_postgres_connection_vars
+from utils import postgres
 
 
 log = logging.getLogger(__name__)
@@ -45,19 +45,22 @@ async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
     v8_command = \
         rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {get_server_address()}\{ib_name} ' \
+        rf'DESIGNER /S {cluster.get_server_address()}\{ib_name} ' \
         rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/ReduceEventLogSize {reduce_date_str}'
-    await execute_v8_command(
-        ib_name, v8_command, log_filename, timeout=600
-    )
+    try:
+        await execute_v8_command(
+            ib_name, v8_command, log_filename, timeout=600
+        )
+    except V8Exception:
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)    
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
 async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
     log.info(f'<{ib_name}> Start vacuumdb')
-    with ClusterControlInterface() as cci:
+    with cluster.ClusterControlInterface() as cci:
         # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
         # то не будет возможности получить данные, кроме имени ИБ
         wpc = cci.get_working_process_connection_with_info_base_auth()
@@ -65,8 +68,8 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
         db_name = ib_info.dbName
         db_user = ib_info.dbUser
         try:
-            db_host, db_port, db_pwd = prepare_postgres_connection_vars(ib_info.dbServerName, db_user)
-        except (ValueError, KeyError) as e:
+            db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(ib_info.dbServerName, db_user)
+        except KeyError as e:
             log.error(f'<{ib_name}> {str(e)}')
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))

@@ -1,11 +1,12 @@
 import asyncio
 import random
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from pytest_mock import MockerFixture
 
 from core import types as core_types
+from utils.postgres import POSTGRES_NAME
 
 
 random.seed(0)
@@ -183,3 +184,40 @@ def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
 @pytest.fixture
 def mock_get_platform_full_path(mocker: MockerFixture):
     return mocker.patch('core.utils.get_platform_full_path', return_value='')
+
+
+@pytest.fixture
+def mock_cluster_postgres_infobase(mocker: MockerFixture):
+    db_server = 'test_postgres_db_server'
+    db_name = 'test_postgres_db_name'
+    db_user = 'test_postgres_db_user'
+    info_base_mock = Mock()
+    info_base_mock.return_value.DBMS = POSTGRES_NAME
+    info_base_mock.return_value.dbServerName = db_server
+    info_base_mock.return_value.dbName = db_name
+    info_base_mock.return_value.dbUser = db_user
+    cci_mock = mocker.patch('core.cluster.ClusterControlInterface')
+    cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
+    return db_server, db_name, db_user
+
+
+@pytest.fixture
+def mock_cluster_mssql_infobase(mocker: MockerFixture):
+    db_server = 'test_mssql_db_server'
+    db_name = 'test_mssql_db_name'
+    db_user = 'test_mssql_db_user'
+    info_base_mock = Mock()
+    info_base_mock.return_value.DBMS = 'MSSQL'
+    info_base_mock.return_value.dbServerName = db_server
+    info_base_mock.return_value.dbName = db_name
+    info_base_mock.return_value.dbUser = db_user
+    cci_mock = mocker.patch('core.cluster.ClusterControlInterface')
+    cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
+    return db_server, db_name, db_user
+
+
+@pytest.fixture
+def mock_prepare_postgres_connection_vars(mocker: MockerFixture):
+    return_value = ('test_db_host', '5432', 'test_db_pwd')
+    mocker.patch('utils.postgres.prepare_postgres_connection_vars', return_value=return_value)
+    return return_value
