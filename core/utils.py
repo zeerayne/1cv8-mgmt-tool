@@ -112,7 +112,7 @@ async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseT
     """
     try:
         result = await func(ib_name, **kwargs)
-    except pywintypes.com_error as e:
+    except pywintypes.com_error:
         log.exception(f'<{ib_name}> COM Error occured')
         # Если произошла ошибка, пытаемся снять блокировку ИБ
         try:
@@ -121,11 +121,11 @@ async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseT
                 ib = cci.get_info_base(working_process_connection, ib_name)
                 cci.unlock_info_base(working_process_connection, ib)
                 del working_process_connection
-        except pywintypes.com_error as e:
+        except pywintypes.com_error:
             log.exception(f'<{ib_name}> COM Error occured during handling another COM Error')
         # После разблокировки возвращаем неуспешный результат
         return core_types.InfoBaseTaskResultBase(ib_name, False)
-    except V8Exception as e:
+    except V8Exception:
         return core_types.InfoBaseTaskResultBase(ib_name, False)
     return result
 
