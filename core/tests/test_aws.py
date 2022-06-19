@@ -11,25 +11,50 @@ from core import types as core_types
 
 
 @pytest.mark.asyncio
+async def test_upload_infobase_to_s3_return_success_result_for_exact_infobase(
+    infobase, success_backup_result, mock_upload_infobase_to_s3
+):
+    """
+    AWS uploader should return InfoBaseAWSUploadTaskResult for exact infobase which was provided if no errors
+    """
+    aws_semaphore = asyncio.Semaphore(1)
+    result = await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
+    assert result.infobase_name == infobase
+
+
+
+@pytest.mark.asyncio
 async def test_upload_infobase_to_s3_return_success_result(infobase, success_backup_result, mock_upload_infobase_to_s3):
     """
     AWS uploader should return InfoBaseAWSUploadTaskResult with `success=True` if no errors
     """
     aws_semaphore = asyncio.Semaphore(1)
     result = await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
-    compare = core_types.InfoBaseAWSUploadTaskResult(infobase, True)
-    assert result.infobase_name == compare.infobase_name and result.succeeded == compare.succeeded
+    assert result.succeeded == True
 
 
 @pytest.mark.asyncio
-async def test_upload_infobase_to_s3_return_failed_result(infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error):
+async def test_upload_infobase_to_s3_return_failed_result_for_exact_infobase(
+    infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error
+):
+    """
+    AWS uploader should return InfoBaseAWSUploadTaskResult for exact infobase which was provided if can't upload
+    """
+    aws_semaphore = asyncio.Semaphore(1)
+    result = await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
+    assert result.infobase_name == infobase
+
+
+@pytest.mark.asyncio
+async def test_upload_infobase_to_s3_return_failed_result(
+    infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error
+):
     """
     AWS uploader should return InfoBaseAWSUploadTaskResult with `success=False` if can't upload
     """
     aws_semaphore = asyncio.Semaphore(1)
     result = await upload_infobase_to_s3(infobase, success_backup_result[0].backup_filename, aws_semaphore)
-    compare = core_types.InfoBaseAWSUploadTaskResult(infobase, False)
-    assert result.infobase_name == compare.infobase_name and result.succeeded == compare.succeeded
+    assert result.succeeded == False
 
 
 @pytest.mark.asyncio
