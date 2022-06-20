@@ -9,14 +9,14 @@ import pywintypes
 import random
 
 from datetime import datetime
-from typing import List
+from packaging.version import Version
+from typing import List, Tuple
 
 import core.types as core_types
 
 from conf import settings
-from core import utils
+from core import cluster, utils
 from core.analyze import analyze_update_result
-from core.cluster import ClusterControlInterface, get_server_address
 from core.process import execute_v8_command
 from core.version import get_version_from_string
 
@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 log_prefix = 'Update'
 
 
-def _find_suitable_manifests(manifests, name_in_metadata, version_in_metadata):
+def _find_suitable_manifests(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> List[Tuple[str, Version]]:
     """
     Получает все манифесты обновлений для конфигурации из списка манифестов.
     Поиск производится по имени конфигурации и по её версии.
@@ -61,7 +61,7 @@ def _find_suitable_manifests(manifests, name_in_metadata, version_in_metadata):
     return suitable_manifests
 
 
-def _get_suitable_manifest(manifests, name_in_metadata, version_in_metadata):
+def _get_suitable_manifest(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> Tuple[str, Version]:
     """
     Получает наиболее подходящий манифест обновления для текущей конфигурации
     :param manifests: Список файлов манифестов
@@ -79,7 +79,7 @@ def _get_suitable_manifest(manifests, name_in_metadata, version_in_metadata):
         return None
 
 
-def _get_update_chain(manifests, name_in_metadata, version_in_metadata):
+def _get_update_chain(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> Tuple[List[Tuple[str, Version]], bool]:
     update_chain = []
     suitable_manifest_search_flag = True
     v = version_in_metadata
@@ -107,10 +107,10 @@ async def _update_info_base(ib_name, dry=False):
     log.info(f'<{ib_name}> Initiate update')
     updatePath = settings.UPDATE_PATH
     result = core_types.InfoBaseUpdateTaskResult(ib_name, True)
-    with ClusterControlInterface() as cci:
-        info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-        # Получает тип конфигурации и её версию
+    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
+    with cluster.ClusterControlInterface() as cci:
         try:
+            # Получает тип конфигурации и её версию
             # TODO: подумать, как сделать получение метаданных асинхронным
             metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
         except pywintypes.com_error as e:
@@ -119,56 +119,60 @@ async def _update_info_base(ib_name, dry=False):
                 # TODO: подумать нужно ли это делать, или база заблокирована не просто так
                 pass
             raise e
-        name_in_metadata = metadata[0]
-        version_in_metadata = get_version_from_string(metadata[1])
-        # Получает манифесты всех обновлений в указанной директории
-        path = os.path.join(updatePath, '**', '1cv8.mft')
-        manifests = glob.glob(pathname=path, recursive=True)
-        update_chain, is_multiupdate = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
-        # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений
-        current_version = version_in_metadata
-        if is_multiupdate:
-            chain_str = " -> ".join([str(manifest[1]) for manifest in itertools.chain([current_version], update_chain)])
-            log.info(f'<{ib_name}> Created update chain [{chain_str}]')
-        for selected_manifest in update_chain:
-            log.info(f'<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
-            selected_update_filename = selected_manifest[0].replace('1cv8.mft', '1cv8.cfu')
-            # Код блокировки новых сеансов
-            permission_code = "0000"
-            # Формирует команду для обновления
-            log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
-            # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
-            v8_command = \
-                rf'"{utils.get_platform_full_path()}" ' \
-                rf'DESIGNER /S {get_server_address()}\{ib_name} ' \
-                rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
-                rf'/Out {log_filename} -NoTruncate ' \
-                rf'/UC "{permission_code}" ' \
-                rf'/DisableStartupDialogs /DisableStartupMessages ' \
-                rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
-            log.info(f'Created update command [{v8_command}]')
-            if not dry:
-                # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае, 
-                # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
-                # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020): 
-                # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
-                await asyncio.sleep(random.randint(0, 10))
-                # Обновляет информационную базу и конфигурацию БД
-                await execute_v8_command(
-                    ib_name, v8_command, log_filename, permission_code
-                )
-                if is_multiupdate:
-                    # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
-                    # и продолжает только в случае, если ИБ обновилась.
-                    previous_version = current_version
-                    metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-                    current_version = get_version_from_string(metadata[1])
-                    if current_version == previous_version:
-                        log.error(
-                            f'<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
-                            f'was not applied, next chain updates will not be applied'
-                        )
-                        result = core_types.InfoBaseUpdateTaskResult(ib_name, False)
+    name_in_metadata = metadata[0]
+    version_in_metadata = get_version_from_string(metadata[1])
+    # Получает манифесты всех обновлений в указанной директории
+    path = os.path.join(updatePath, '**', '1cv8.mft')
+    manifests = glob.glob(pathname=path, recursive=True)
+    update_chain, is_multiupdate = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
+    # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений
+    current_version = version_in_metadata
+    if is_multiupdate:
+        chain_str = " -> ".join([str(manifest[1]) for manifest in itertools.chain([current_version], update_chain)])
+        log.info(f'<{ib_name}> Created update chain [{chain_str}]')
+    for selected_manifest in update_chain:
+        log.info(f'<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
+        selected_update_filename = selected_manifest[0].replace('1cv8.mft', '1cv8.cfu')
+        # Код блокировки новых сеансов
+        permission_code = "0000"
+        # Формирует команду для обновления
+        log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
+        # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
+        v8_command = \
+            rf'"{utils.get_platform_full_path()}" ' \
+            rf'DESIGNER /S {cluster.get_server_address()}\{ib_name} ' \
+            rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+            rf'/Out {log_filename} -NoTruncate ' \
+            rf'/UC "{permission_code}" ' \
+            rf'/DisableStartupDialogs /DisableStartupMessages ' \
+            rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
+        log.info(f'Created update command [{v8_command}]')
+        if not dry:
+            # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае, 
+            # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
+            # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020): 
+            # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
+            await asyncio.sleep(random.randint(0, 10))
+            # Обновляет информационную базу и конфигурацию БД
+            await execute_v8_command(
+                ib_name, v8_command, log_filename, permission_code
+            )
+            if is_multiupdate:
+                # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
+                # и продолжает только в случае, если ИБ обновилась.
+                previous_version = current_version
+                with cluster.ClusterControlInterface() as cci:
+                    try:
+                        metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+                    except pywintypes.com_error as e:
+                        raise e
+                current_version = get_version_from_string(metadata[1])
+                if current_version == previous_version:
+                    log.error(
+                        f'<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
+                        f'was not applied, next chain updates will not be applied'
+                    )
+                    result = core_types.InfoBaseUpdateTaskResult(ib_name, False)
         if not update_chain:
             log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
     return result
@@ -178,7 +182,7 @@ async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
     async with semaphore:
         try:
             return await utils.com_func_wrapper(_update_info_base, ib_name)
-        except Exception as e:
+        except Exception:
             log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')
             return core_types.InfoBaseUpdateTaskResult(ib_name, False)
 
