@@ -244,9 +244,10 @@ async def main():
                         name=f'Task :: Upload {backup_result.infobase_name} to S3'
                 ))
 
-        await asyncio.wait(aws_tasks)
+        if aws_tasks:
+            await asyncio.wait(aws_tasks)
+            aws_results = [task.result() for task in aws_tasks]
         aws_datetime_finish = datetime.now()
-        aws_results = [task.result() for task in aws_tasks]
 
         analyze_results(
             info_bases, 
