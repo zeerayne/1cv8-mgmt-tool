@@ -16,7 +16,8 @@ def _check_subprocess_return_code(
     subprocess: asyncio.subprocess.Process, 
     log_filename: str, 
     log_encoding: str, 
-    exception_class: Type[SubprocessException]
+    exception_class: Type[SubprocessException] = SubprocessException,
+    log_output_on_success = False
 ):
     log.info(f'<{ib_name}> Return code is {str(subprocess.returncode)}')
     log_file_content = utils.read_file_content(log_filename, log_encoding)
@@ -24,12 +25,12 @@ def _check_subprocess_return_code(
     if subprocess.returncode != 0:
         log.error(msg)
         raise exception_class(log_file_content)
-    else:
+    elif log_output_on_success:
         log.info(msg)
 
 
 async def execute_v8_command(
-    ib_name: str, v8_command: str, log_filename: str, permission_code: str = None, timeout: int = None
+    ib_name: str, v8_command: str, log_filename: str, permission_code: str = None, timeout: int = None, log_output_on_success = False
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -80,11 +81,11 @@ async def execute_v8_command(
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception)
+    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception, log_output_on_success)
 
 
 async def execute_subprocess_command(
-    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None
+    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None, log_output_on_success = False
 ):
     subprocess = await asyncio.create_subprocess_shell(subprocess_command)
     log.debug(f'<{ib_name}> Subprocess PID is {str(subprocess.pid)}')
@@ -92,4 +93,4 @@ async def execute_subprocess_command(
         await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         await subprocess.terminate()
-    _check_subprocess_return_code(ib_name, subprocess, log_filename, 'utf-8', SubprocessException)
+    _check_subprocess_return_code(ib_name, subprocess, log_filename, 'utf-8', SubprocessException, log_output_on_success)

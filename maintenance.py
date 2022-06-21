@@ -51,7 +51,7 @@ async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
         rf'/ReduceEventLogSize {reduce_date_str}'
     try:
         await execute_v8_command(
-            ib_name, v8_command, log_filename, timeout=600
+            ib_name, v8_command, log_filename, timeout=600, log_output_on_success=True
         )
     except V8Exception:
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)    

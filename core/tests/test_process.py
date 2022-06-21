@@ -22,15 +22,28 @@ def test_check_subprocess_return_code_raises_exception_when_subprocess_failed(mo
 
 def test_check_subprocess_return_code_logs_message_when_subprocess_succeeded(mocker: MockerFixture, caplog, infobase):
     """
-    `_check_subprocess_return_code` logs subprocess output when succeeded
+    `_check_subprocess_return_code` logs subprocess output when succeeded and log_output_on_success == True
     """
     subprocess_mock = Mock()
     subprocess_mock.returncode = 0
     message = 'test_message'
     mocker.patch('core.utils.read_file_content', return_value=message)
     with caplog.at_level(logging.INFO):
-        _check_subprocess_return_code(infobase, subprocess_mock, '', '', SubprocessException)
+        _check_subprocess_return_code(infobase, subprocess_mock, '', '', SubprocessException, True)
     assert message in caplog.text
+
+
+def test_check_subprocess_return_code_does_not_logs_message_when_subprocess_succeeded_by_default(mocker: MockerFixture, caplog, infobase):
+    """
+    `_check_subprocess_return_code` doesn't log subprocess output when succeeded by default
+    """
+    subprocess_mock = Mock()
+    subprocess_mock.returncode = 0
+    message = 'test_message'
+    mocker.patch('core.utils.read_file_content', return_value=message)
+    with caplog.at_level(logging.INFO):
+        _check_subprocess_return_code(infobase, subprocess_mock, '', '')
+    assert message not in caplog.text
 
 
 def test_check_subprocess_return_code_logs_message_when_subprocess_failed(mocker: MockerFixture, caplog, infobase):

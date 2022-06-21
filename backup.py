@@ -86,7 +86,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_v8_command(ib_name, v8_command, log_filename, permission_code, 1200)
+            await execute_v8_command(ib_name, v8_command, log_filename, permission_code, timeout=1200, log_output_on_success=True)
             break
         except V8Exception as e:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
