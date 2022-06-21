@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta
 from unittest.mock import PropertyMock
 
 import pytest
@@ -7,7 +8,7 @@ from pytest_mock import MockerFixture
 import core.types as core_types
 
 from core.exceptions import SubprocessException, V8Exception
-from maintenance import rotate_logs, _maintenance_v8, _maintenance_vacuumdb, maintenance_info_base
+from maintenance import rotate_logs, _maintenance_v8, _maintenance_vacuumdb, maintenance_info_base, analyze_results
 
 
 @pytest.mark.asyncio
@@ -532,3 +533,11 @@ async def test_maintenance_info_base_calls_maintenance_pg_with_pg_enabled(mocker
     maintenance_vacuumdb_mock = mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
     await maintenance_info_base(infobase, asyncio.Semaphore(1))
     maintenance_vacuumdb_mock.assert_awaited_with(infobase)
+
+
+def test_analyze_results_calls_inner_func(mocker: MockerFixture, infobases, mixed_maintenance_result):
+    start = datetime.now()
+    end = start + timedelta(minutes=5)
+    analyze_maintenance_result_mock = mocker.patch('maintenance.analyze_maintenance_result')
+    analyze_results(infobases, mixed_maintenance_result, start, end)
+    analyze_maintenance_result_mock.assert_called_with(mixed_maintenance_result, infobases, start, end)
