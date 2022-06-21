@@ -105,7 +105,7 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
 
 def analyze_results(
     infobases: List[str],
-    update_result: List[core_types.InfoBaseUpdateTaskResult],
+    update_result: List[core_types.InfoBaseMaintenanceTaskResult],
     update_datetime_start: datetime,
     update_datetime_finish: datetime,
 ):
