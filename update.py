@@ -105,8 +105,6 @@ async def _update_info_base(ib_name, dry=False):
     6. Снимает блокировку фоновых заданий и сеансов
     """
     log.info(f'<{ib_name}> Initiate update')
-    updatePath = settings.UPDATE_PATH
-    result = core_types.InfoBaseUpdateTaskResult(ib_name, True)
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     with cluster.ClusterControlInterface() as cci:
         try:
@@ -122,7 +120,7 @@ async def _update_info_base(ib_name, dry=False):
     name_in_metadata = metadata[0]
     version_in_metadata = get_version_from_string(metadata[1])
     # Получает манифесты всех обновлений в указанной директории
-    path = os.path.join(updatePath, '**', '1cv8.mft')
+    path = os.path.join(settings.UPDATE_PATH, '**', '1cv8.mft')
     manifests = glob.glob(pathname=path, recursive=True)
     update_chain, is_multiupdate = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
     # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений
@@ -134,7 +132,7 @@ async def _update_info_base(ib_name, dry=False):
         log.info(f'<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
         selected_update_filename = selected_manifest[0].replace('1cv8.mft', '1cv8.cfu')
         # Код блокировки новых сеансов
-        permission_code = "0000"
+        permission_code = settings.V8_PERMISSION_CODE
         # Формирует команду для обновления
         log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
         # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
@@ -172,10 +170,10 @@ async def _update_info_base(ib_name, dry=False):
                         f'<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] '
                         f'was not applied, next chain updates will not be applied'
                     )
-                    result = core_types.InfoBaseUpdateTaskResult(ib_name, False)
+                    return core_types.InfoBaseUpdateTaskResult(ib_name, False)
         if not update_chain:
             log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
-    return result
+    return core_types.InfoBaseUpdateTaskResult(ib_name, True)
 
 
 async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseUpdateTaskResult:

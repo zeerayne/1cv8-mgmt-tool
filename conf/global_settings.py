@@ -16,6 +16,7 @@ V8_INFO_BASES_CREDENTIALS = {
 V8_INFO_BASES_EXCLUDE = []
 # Пауза в секундах между началом блокировки ИБ и принудительным завершением сеансов
 V8_LOCK_INFO_BASE_PAUSE = 5
+V8_PERMISSION_CODE = "0000"
 V8_PLATFORM_PATH = os.path.join('C:\\', 'Program Files', '1cv8')
 V8_SERVER_AGENT = {
     'address': 'localhost',

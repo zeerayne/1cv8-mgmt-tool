@@ -66,7 +66,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
     """
     log.info(f'<{ib_name}> Start backup')
     # Код блокировки новых сеансов
-    permission_code = "0000"
+    permission_code = settings.V8_PERMISSION_CODE
     # Формирует команду для выгрузки
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
