@@ -25,6 +25,28 @@ log = logging.getLogger(__name__)
 log_prefix = 'Update'
 
 
+def get_name_and_version_from_manifest(manifest_filename: str) -> Tuple[str, Version]:
+    with open(file=manifest_filename, mode='r', encoding='UTF-8') as manifest_file:
+        manifest_text = manifest_file.read()
+        name_matches = re.findall("Name=(.*)", manifest_text)
+        name_in_manifest = name_matches[0]
+        version_matches = re.findall("Version=(.*)", manifest_text)
+        version_in_manifest = get_version_from_string(version_matches[0])
+    return name_in_manifest, version_in_manifest
+
+
+def get_updatable_versions(updinfo_filename: str) -> List[Version]:
+    with open(file=updinfo_filename, mode='r', encoding='UTF-8') as updinfo_file:
+        updinfo_text = updinfo_file.read()
+        from_versions_matches = re.findall("FromVersions=(.*)", updinfo_text)
+        from_version_match_result = from_versions_matches[0]
+    if from_version_match_result.startswith(';'):
+        from_version_match_result = from_version_match_result[1:]
+    if from_version_match_result.endswith(';'):
+        from_version_match_result = from_version_match_result[:-1]
+    return [get_version_from_string(v) for v in from_version_match_result.split(";")]
+
+
 def _find_suitable_manifests(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> List[Tuple[str, Version]]:
     """
     Получает все манифесты обновлений для конфигурации из списка манифестов.
@@ -37,24 +59,11 @@ def _find_suitable_manifests(manifests: List[str], name_in_metadata: str, versio
     """
     suitable_manifests = []
     for m in manifests:
-        with open(file=m, mode='r', encoding='UTF-8') as manifest_file:
-            manifest_text = manifest_file.read()
-            name_matches = re.findall("Name=(.*)", manifest_text)
-            name_in_manifest = name_matches[0]
-            version_matches = re.findall("Version=(.*)", manifest_text)
-            version_in_manifest = get_version_from_string(version_matches[0])
+        name_in_manifest, version_in_manifest = get_name_and_version_from_manifest(m)
         # Наименование конфигурации должно совпадать, а версия обновления должна быть больше, чем версия ИБ
         # Если это так, необходимо проверить, можно ли обновить текущую версию до новой
         if name_in_manifest == name_in_metadata and version_in_manifest > version_in_metadata:
-            with open(file=m.replace('1cv8.mft', 'UpdInfo.txt'), mode='r', encoding='UTF-8') as updinfo_file:
-                updinfo_text = updinfo_file.read()
-                from_versions_matches = re.findall("FromVersions=(.*)", updinfo_text)
-                from_version_match_result = from_versions_matches[0]
-            if from_version_match_result.startswith(';'):
-                from_version_match_result = from_version_match_result[1:]
-            if from_version_match_result.endswith(';'):
-                from_version_match_result = from_version_match_result[:-1]
-            from_versions_array = from_version_match_result.split(";")
+            from_versions_array = get_updatable_versions(m.replace('1cv8.mft', 'UpdInfo.txt'))
             # Если обновление применимо к текущей версии ИБ, добавляем его в список доступных
             if version_in_metadata in from_versions_array:
                 suitable_manifests.append((m, version_in_manifest))
