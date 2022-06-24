@@ -163,11 +163,8 @@ class ClusterControlInterface:
         info_base.SessionsDenied = True
         info_base.PermissionCode = permission_code
         info_base.DeniedMessage = message
-        try:
-            working_process_connection.UpdateInfoBase(info_base)
-        except Exception as e:
-            log.exception('[{0}] Lock info base exception'.format(info_base.Name))
-        log.debug('[{0}] Lock info base successfully'.format(info_base.Name))
+        working_process_connection.UpdateInfoBase(info_base)
+        log.debug(f'<{info_base.Name}> Lock info base successfully')
 
     def unlock_info_base(self, working_process_connection, info_base):
         """
@@ -179,7 +176,7 @@ class ClusterControlInterface:
         info_base.SessionsDenied = False
         info_base.DeniedMessage = ""
         working_process_connection.UpdateInfoBase(info_base)
-        log.debug('[{0}] Unlock info base successfully'.format(info_base.Name))
+        log.debug(f'<{info_base.Name}> Unlock info base successfully')
 
     def terminate_info_base_sessions(self, agent_connection, cluster, info_base_short):
         """
