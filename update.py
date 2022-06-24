@@ -159,7 +159,9 @@ async def _update_info_base(ib_name, dry=False):
             # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
             # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020): 
             # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
-            await asyncio.sleep(random.randint(0, 10))
+            pause = (random.randint(0, 100_000)) / 10_000
+            log.debug(f'<{ib_name}> Wait for {pause:.2f} seconds')
+            await asyncio.sleep(pause)
             # Обновляет информационную базу и конфигурацию БД
             await execute_v8_command(
                 ib_name, v8_command, log_filename, permission_code
@@ -180,8 +182,8 @@ async def _update_info_base(ib_name, dry=False):
                         f'was not applied, next chain updates will not be applied'
                     )
                     return core_types.InfoBaseUpdateTaskResult(ib_name, False)
-        if not update_chain:
-            log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
+    if not update_chain:
+        log.info(f'<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found')
     return core_types.InfoBaseUpdateTaskResult(ib_name, True)
 
 
