@@ -1,8 +1,10 @@
 import asyncio
 import random
-from unittest.mock import AsyncMock, Mock
+from textwrap import dedent
+from unittest.mock import AsyncMock, Mock, mock_open
 
 import pytest
+from packaging.version import Version
 from pytest_mock import MockerFixture
 
 from core import types as core_types
@@ -221,3 +223,66 @@ def mock_prepare_postgres_connection_vars(mocker: MockerFixture):
     return_value = ('test_db_host', '5432', 'test_db_pwd')
     mocker.patch('utils.postgres.prepare_postgres_connection_vars', return_value=return_value)
     return return_value
+
+
+@pytest.fixture
+def mock_configuration_metadata():
+    return 'БухгалтерияПредприятия', Version('3.0.108.206')
+
+
+@pytest.fixture
+def mock_configuration_manifest(mocker: MockerFixture):
+    content = dedent("""Vendor=Фирма "1С"
+        Name=БухгалтерияПредприятия
+        Version=3.0.111.25
+        AppVersion=8.3
+        [Config1]
+        Catalog=1С:Бухгалтерия предприятия /Бухгалтерия предприятия 
+        Destination=1C/Accounting
+        Source=1Cv8new.dt
+        [Config2]
+        Catalog=1С:Бухгалтерия предприятия /Бухгалтерия предприятия (демо) 
+        Destination=1C/DemoAccounting
+        Source=1Cv8.dt
+    """)
+    mocker.patch('builtins.open', mock_open(read_data=content))
+    return 'БухгалтерияПредприятия', Version('3.0.111.25')
+
+
+@pytest.fixture
+def mock_configuration_manifest_new(mocker: MockerFixture):
+    content = dedent("""Vendor=Фирма "1С"
+        Name=БухгалтерияПредприятия
+        Version=3.0.113.17
+        AppVersion=8.3
+        [Config1]
+        Catalog=1С:Бухгалтерия предприятия /Бухгалтерия предприятия 
+        Destination=1C/Accounting
+        Source=1Cv8new.dt
+        [Config2]
+        Catalog=1С:Бухгалтерия предприятия /Бухгалтерия предприятия (демо) 
+        Destination=1C/DemoAccounting
+        Source=1Cv8.dt
+    """)
+    mocker.patch('builtins.open', mock_open(read_data=content))
+    return 'БухгалтерияПредприятия', Version('3.0.113.17')
+
+
+@pytest.fixture
+def mock_configuration_manifest_updinfo(mocker: MockerFixture):
+    content = dedent("""Version=3.0.111.25
+        FromVersions=;3.0.108.206;3.0.109.61;3.0.110.20;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.20;
+        UpdateDate=21.04.2022
+    """)
+    mocker.patch('builtins.open', mock_open(read_data=content))
+    return [Version(v) for v in '3.0.108.206;3.0.109.61;3.0.110.20;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.20'.split(';')]
+
+
+@pytest.fixture
+def mock_configuration_manifest_updinfo_new(mocker: MockerFixture):
+    content = dedent("""Version=3.0.113.17
+        FromVersions=;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.25;3.0.112.31;3.0.112.34;3.0.113.16;
+        UpdateDate=26.05.2022
+    """)
+    mocker.patch('builtins.open', mock_open(read_data=content))
+    return [Version(v) for v in '3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.25;3.0.112.31;3.0.112.34;3.0.113.16'.split(';')]
