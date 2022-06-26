@@ -97,7 +97,7 @@ class ClusterControlInterface:
         working_process_0 = agent_connection.GetWorkingProcesses(cluster)[0]
         working_process_port = str(working_process_0.MainPort)
         working_process_connection = self.V8COMConnector.ConnectWorkingProcess(
-            'tcp://{0}:{1}'.format(self.server, working_process_port)
+            f'tcp://{self.server}:{working_process_port}'
         )
         # Выполняет аутентификацию администратора кластера.
         # Администратор кластера должен быть аутентифицирован для создания в этом кластере новой информационной базы.
@@ -142,7 +142,7 @@ class ClusterControlInterface:
         :return: tuple(Наименование, Версия информационной базы)
         """
         external_connection = self.V8COMConnector.Connect(
-            'Srvr="{0}";Ref="{1}";Usr="{2}";Pwd="{3}";'.format(self.server, info_base, info_base_user, info_base_pwd)
+            f'Srvr="{self.server}";Ref="{info_base}";Usr="{info_base_user}";Pwd="{info_base_pwd}";'
         )
         version = external_connection.Metadata.Version
         name = external_connection.Metadata.Name
