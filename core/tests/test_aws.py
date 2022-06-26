@@ -6,8 +6,42 @@ import pytest
 from pytest_mock import MockerFixture
 
 from conf import settings
-from core.aws import upload_infobase_to_s3, _upload_infobase_to_s3, upload_to_s3, _remove_old_infobase_backups_from_s3
-from core import types as core_types
+from core.aws import _get_aws_endpoint_url_parameter, upload_infobase_to_s3, _upload_infobase_to_s3, upload_to_s3, _remove_old_infobase_backups_from_s3
+
+
+def test_get_aws_endpoint_url_parameter_returns_dict_if_not_set():
+    """
+    Default AWS endpoint url parameter is dict
+    """
+    result = _get_aws_endpoint_url_parameter()
+    assert isinstance(result, dict)
+
+
+def test_get_aws_endpoint_url_parameter_returns_dict_if_set(mocker: MockerFixture):
+    """
+    Custom AWS endpoint url parameter is dict
+    """
+    mocker.patch('conf.settings.AWS_ENDPOINT_URL', new_callable=PropertyMock(return_value='test.aws.endpoint'))
+    result = _get_aws_endpoint_url_parameter()
+    assert isinstance(result, dict)
+
+
+def test_get_aws_endpoint_url_parameter_returns_empty_dict_if_not_set():
+    """
+    Default AWS endpoint url parameter is empty
+    """
+    result = _get_aws_endpoint_url_parameter()
+    assert not result
+
+
+def test_get_aws_endpoint_url_parameter_returns_dict_with_value_if_set(mocker: MockerFixture):
+    """
+    Custom AWS endpoint url parameter contatins parameter name and value
+    """
+    endpoint_url = 'test.aws.endpoint'
+    mocker.patch('conf.settings.AWS_ENDPOINT_URL', new_callable=PropertyMock(return_value=endpoint_url))
+    result = _get_aws_endpoint_url_parameter()
+    assert result['endpoint_url'] == endpoint_url
 
 
 @pytest.mark.asyncio
