@@ -22,7 +22,7 @@ log_prefix = 'Maintenance'
 
 
 async def rotate_logs(ib_name):
-    logRetentionDays = settings.LOG_RETENTION_DAYS
+    logRetentionDays = settings.MAINTENANCE_LOG_RETENTION_DAYS
     filename_pattern = utils.get_infobase_glob_pattern(ib_name, 'log')
     # Получает список log-файлов, удаляет старые
     log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
