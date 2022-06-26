@@ -3,6 +3,8 @@ import aioboto3
 import os
 import logging
 
+from typing import Dict
+
 import boto3
 
 from botocore.exceptions import EndpointConnectionError
@@ -18,6 +20,14 @@ from utils.common import sizeof_fmt
 
 log = logging.getLogger(__name__)
 log_prefix = 'AWS'
+
+
+def _get_aws_endpoint_url_parameter() -> Dict[str, str]:
+    url = settings.AWS_ENDPOINT_URL
+    if url:
+        return dict(endpoint_url=url)
+    else:
+        return dict()
 
 
 async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseAWSUploadTaskResult:
@@ -54,7 +64,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
     filestat = os.stat(full_backup_path)
     source_size = filestat.st_size
     datetime_start = datetime.now()
-    async with session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3c:
+    async with session.client(service_name='s3', **_get_aws_endpoint_url_parameter()) as s3c:
         await s3c.upload_file(Filename=full_backup_path, Bucket=settings.AWS_BUCKET_NAME, Key=filename)
     datetime_finish = datetime.now()
     diff = (datetime_finish - datetime_start).total_seconds()
@@ -67,7 +77,7 @@ async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Sess
     # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
     # `get_ib_name_with_separator` используется вместо имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
     # при наличии имён вида infobase и infobase2
-    async with session.resource(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3_resource:
+    async with session.resource(service_name='s3', **_get_aws_endpoint_url_parameter()) as s3_resource:
         bucket = await s3_resource.Bucket(settings.AWS_BUCKET_NAME)
         async for o in bucket.objects.filter(Prefix=f'{utils.get_ib_name_with_separator(ib_name)}'):
             if await o.last_modified < (datetime.now() - timedelta(days=settings.AWS_RETENTION_DAYS)).replace(tzinfo=timezone.utc):
