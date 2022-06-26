@@ -47,11 +47,10 @@ class ClusterControlInterface:
     """
 
     def __init__(self):
-        # В зависимости от версии платформы используется V82.COMConnector или V83.COMConnector
         try:
             self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
-        except pywintypes.com_error:
-            self.V8COMConnector = win32com_client.Dispatch("V82.COMConnector")
+        except pywintypes.com_error as e:
+            raise e
         self.server = get_server_address()
         self.agentPort = get_server_port()
         self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
