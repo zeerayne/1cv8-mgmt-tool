@@ -38,7 +38,9 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
 
 
 def send_notification(caption, html_body):
-    with smtplib.SMTP(settings.EMAIL_SMTP_HOST, settings.EMAIL_SMTP_PORT) as server:
-        server.login(settings.EMAIL_LOGIN, settings.EMAIL_PASSWORD)
+    with smtplib.SMTP(settings.EMAIL_SMTP_HOST, settings.EMAIL_SMTP_PORT) as session:
+        if settings.EMAIL_SMTP_SSL_REQUIRED:
+            session.starttls()
+        session.login(settings.EMAIL_LOGIN, settings.EMAIL_PASSWORD)
         msg = make_message(caption, html_body)
-        server.sendmail(settings.EMAIL_FROM, settings.EMAIL_TO, msg.as_string())
+        session.sendmail(settings.EMAIL_FROM, settings.EMAIL_TO, msg.as_string())
