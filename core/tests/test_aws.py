@@ -135,8 +135,6 @@ async def test_upload_to_s3(mocker: MockerFixture, mock_upload_infobase_to_s3, m
     When uploading infobases backups to s3 `upload_infobase_to_s3` should be called for every successful backup result
     """
     mocker.patch('core.analyze._analyze_result')
-    aws_enabled_mock = PropertyMock()
-    aws_enabled_mock.return_value = True
-    mocker.patch('conf.settings.AWS_ENABLED', new_callable=aws_enabled_mock)
+    mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
     await upload_to_s3(mixed_backup_result)
     assert mock_upload_infobase_to_s3.await_count == reduce(lambda prev, curr: prev + int(curr.succeeded), mixed_backup_result, 0)
