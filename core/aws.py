@@ -30,6 +30,14 @@ def _get_aws_endpoint_url_parameter() -> Dict[str, str]:
         return dict()
 
 
+def _get_aws_region_parameter() -> Dict[str, str]:
+    region = settings.AWS_REGION_NAME
+    if region:
+        return dict(region_name=region)
+    else:
+        return dict()
+
+
 async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseAWSUploadTaskResult:
     aws_retries = settings.AWS_RETRIES
     async with semaphore:
@@ -57,7 +65,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
     session = aioboto3.Session(
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION_NAME
+        **_get_aws_region_parameter()
     )
     filename = utils.path_leaf(full_backup_path)
     # Собирает инфу чтобы вывод в лог был полезным

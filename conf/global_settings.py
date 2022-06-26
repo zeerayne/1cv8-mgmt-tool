@@ -1,6 +1,7 @@
 import os
 
 AWS_ENDPOINT_URL = ''
+AWS_REGION_NAME = ''
 AWS_RETRY_PAUSE = 600
 
 DATE_FORMAT_1CV8 = '%Y-%m-%d'
