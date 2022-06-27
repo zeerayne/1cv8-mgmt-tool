@@ -1,5 +1,3 @@
-import logging
-
 from os.path import expanduser, join
 
 
@@ -7,16 +5,12 @@ from os.path import expanduser, join
 ## 1CV8 platform ##
 ## ------------- ##
 
-V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', 'cluster_admin_password')
+V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', '')
 V8_INFO_BASES_CREDENTIALS = {
-    'default': ('Администратор', 'infobase_user_password'),
-    'accounting': ('БухАдминистратор', 'infobase_user_password'),
-    'trade': ('УТАдминистратор', 'infobase_user_password'),
+    'default': ('Администратор', ''),
 }
-V8_INFO_BASES_EXCLUDE = [
-    'accounting_for_tests',
-    'trade_copy'
-]
+V8_INFO_BASES_EXCLUDE = []
+V8_LOCK_INFO_BASE_PAUSE = 5
 V8_SERVER_AGENT = {
     'address': 'localhost',
     'port': '1540',
@@ -66,6 +60,7 @@ AWS_REGION_NAME = ''
 AWS_BUCKET_NAME = ''
 AWS_RETENTION_DAYS = 90
 AWS_RETRIES = 1
+AWS_RETRY_PAUSE = 600
 
 ## ---------- ##
 ## PostgreSQL ##
@@ -73,10 +68,9 @@ AWS_RETRIES = 1
 
 PG_BACKUP_ENABLED = False
 PG_CREDENTIALS = {
-    'postgres@localhost': 'postgres_user_password',
-    'usr_1cv8@192.168.1.2:5433': 'postgres_user_password',
+    'postgres@localhost': '',
 }
-PG_BIN_PATH = join('C:\\', 'Program Files', 'PostgreSQL', '14.2-1.1C', 'bin')
+PG_BIN_PATH = join('C:\\', 'Program Files', 'PostgreSQL', 'bin')
 
 ## ------------- ##
 ## Notifications ##
@@ -97,15 +91,3 @@ NOTIFY_EMAIL_TO = ['', ]
 ## ------- ##
 
 LOG_PATH = join('.', 'log')
-
-logFormatter = logging.Formatter('%(asctime)s [%(levelname)-3.3s] %(message)s')
-rootLogger = logging.getLogger()
-rootLogger.setLevel(logging.DEBUG)
-
-for handler in [logging.StreamHandler(), logging.FileHandler(join(LOG_PATH, '1cv8-mgmt-tool.log'))]:
-    handler.setFormatter(logFormatter)
-    handler.setLevel(logging.DEBUG)
-    rootLogger.addHandler(handler)
-
-for logger_name in ['aioboto3', 'aiobotocore', 'botocore', 'boto3', 'urllib3']:
-    logging.getLogger(logger_name).setLevel(logging.INFO)

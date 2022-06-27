@@ -476,7 +476,7 @@ def test_analyze_results_calls_aws_analyze_if_aws_enabled(
 
 def test_send_email_notification_does_nothing_when_disabled(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
     """
-    `send_email_notification` does nothing when EMAIL_NOTIFY_ENABLED == False
+    `send_email_notification` does nothing when NOTIFY_EMAIL_ENABLED == False
     """
     send_notification_mock = mocker.patch('backup.send_notification')
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -487,7 +487,7 @@ def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mi
     """
     `send_email_notification` calls inner util func for sending notification
     """
-    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.NOTIFY_EMAIL_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup.make_html_table')
     send_notification_mock = mocker.patch('backup.send_notification')
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -498,7 +498,7 @@ def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed
     """
     `send_email_notification` calls `make_html_table` for backup results
     """
-    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.NOTIFY_EMAIL_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup.send_notification')
     make_html_table_mock = mocker.patch('backup.make_html_table')
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -509,7 +509,7 @@ def test_send_email_notification_not_makes_aws_table_when_aws_disabled(mocker: M
     """
     `send_email_notification` calls `make_html_table` only for backup results when AWS_ENABLED == False
     """
-    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.NOTIFY_EMAIL_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup.send_notification')
     make_html_table_mock = mocker.patch('backup.make_html_table')
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -523,7 +523,7 @@ def test_send_email_notification_makes_aws_table_when_aws_enabled(
     """
     `send_email_notification` calls `make_html_table` both for aws and backup results
     """
-    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.NOTIFY_EMAIL_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup.send_notification')
     make_html_table_mock = mocker.patch('backup.make_html_table')
@@ -537,7 +537,7 @@ def test_send_email_notification_makes_aws_and_backup_tables_when_aws_enabled(
     """
     `send_email_notification` calls `make_html_table` both for aws and backup results
     """
-    mocker.patch('conf.settings.EMAIL_NOTIFY_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.NOTIFY_EMAIL_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup.send_notification')
     make_html_table_mock = mocker.patch('backup.make_html_table')

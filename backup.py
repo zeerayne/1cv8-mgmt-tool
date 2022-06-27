@@ -118,6 +118,7 @@ async def _backup_pgdump(
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
+    pg_dump_path = os.path.join(settings.PG_BIN_PATH, 'pg_dump.exe')
     # --blobs
     # Include large objects in the dump.
     # This is the default behavior except when --schema, --table, or --schema-only is specified.
@@ -127,7 +128,7 @@ async def _backup_pgdump(
     # Together with the directory output format, this is the most flexible output format in that it allows
     # manual selection and reordering of archived items during restore. This format is also compressed by default.
     pgdump_command = \
-        rf'{settings.PG_DUMP_PATH} ' \
+        rf'{pg_dump_path} ' \
         rf'--host={db_host} --port={db_port} --username={db_user} ' \
         rf'--format=custom --blobs --verbose ' \
         rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
@@ -204,13 +205,13 @@ def analyze_results(
 
 
 def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskResult], aws_result: List[core_types.InfoBaseAWSUploadTaskResult]):
-    if settings.EMAIL_NOTIFY_ENABLED:
+    if settings.NOTIFY_EMAIL_ENABLED:
         log.info(f'<{log_prefix}> Sending email notification')
         msg = ''
         msg += make_html_table('Backup', backup_result)
         if settings.AWS_ENABLED:
             msg += make_html_table('AWS upload', aws_result)
-        send_notification(settings.EMAIL_CAPTION, msg)
+        send_notification(settings.NOTIFY_EMAIL_CAPTION, msg)
 
 
 async def main():

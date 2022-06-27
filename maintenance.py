@@ -73,8 +73,9 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
             log.error(f'<{ib_name}> {str(e)}')
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
+    pg_vacuumdb_path = os.path.join(settings.PG_BIN_PATH, 'vacuumdb.exe')
     vacuumdb_command = \
-        f'{settings.PG_VACUUMDB_PATH} --host={db_host} --port={db_port} --username={db_user} ' \
+        f'{pg_vacuumdb_path} --host={db_host} --port={db_port} --username={db_user} ' \
         f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
     vacuumdb_env = os.environ.copy()
     vacuumdb_env['PGPASSWORD'] = db_pwd

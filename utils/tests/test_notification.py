@@ -75,14 +75,14 @@ def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_send
     To send email, SMTP should be created with proper SMTP host and port
     """
     send_notification('', '')
-    mock_smtp.assert_called_with(settings.EMAIL_SMTP_HOST, settings.EMAIL_SMTP_PORT)
+    mock_smtp.assert_called_with(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT)
 
 def test_send_notification_calls_smtp_login(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
     """
     To send email, should be logged in on smtp server
     """
     send_notification('', '')
-    mock_smtp_login.assert_called_with(settings.EMAIL_LOGIN, settings.EMAIL_PASSWORD)
+    mock_smtp_login.assert_called_with(settings.NOTIFY_EMAIL_LOGIN, settings.NOTIFY_EMAIL_PASSWORD)
 
 
 def test_send_notification_calls_smtp_sendmail(mock_smtp, mock_smtp_login, mock_smtp_sendmail, mock_email_message):
@@ -90,7 +90,7 @@ def test_send_notification_calls_smtp_sendmail(mock_smtp, mock_smtp_login, mock_
     To send email, should actually send message
     """
     send_notification('', '')
-    mock_smtp_sendmail.assert_called_with(settings.EMAIL_FROM, settings.EMAIL_TO, mock_email_message())
+    mock_smtp_sendmail.assert_called_with(settings.NOTIFY_EMAIL_FROM, settings.NOTIFY_EMAIL_TO, mock_email_message())
 
 
 def test_make_message_includes_content():

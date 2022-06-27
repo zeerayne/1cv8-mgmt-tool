@@ -13,8 +13,8 @@ def make_message(caption, html_body):
     now = datetime.now()
     msg = MIMEMultipart('alternative')
     msg['Subject'] = '{0} {1}'.format(caption, now.strftime('%d.%m.%Y'))
-    msg['From'] = settings.EMAIL_FROM
-    msg['To'] = ','.join(settings.EMAIL_TO)
+    msg['From'] = settings.NOTIFY_EMAIL_FROM
+    msg['To'] = ','.join(settings.NOTIFY_EMAIL_TO)
 
     part = MIMEText(html_body, 'html')
     msg.attach(part)
@@ -38,9 +38,9 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
 
 
 def send_notification(caption, html_body):
-    with smtplib.SMTP(settings.EMAIL_SMTP_HOST, settings.EMAIL_SMTP_PORT) as session:
-        if settings.EMAIL_SMTP_SSL_REQUIRED:
+    with smtplib.SMTP(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT) as session:
+        if settings.NOTIFY_EMAIL_SMTP_SSL_REQUIRED:
             session.starttls()
-        session.login(settings.EMAIL_LOGIN, settings.EMAIL_PASSWORD)
+        session.login(settings.NOTIFY_EMAIL_LOGIN, settings.NOTIFY_EMAIL_PASSWORD)
         msg = make_message(caption, html_body)
-        session.sendmail(settings.EMAIL_FROM, settings.EMAIL_TO, msg.as_string())
+        session.sendmail(settings.NOTIFY_EMAIL_FROM, settings.NOTIFY_EMAIL_TO, msg.as_string())
