@@ -32,13 +32,13 @@ async def rotate_logs(ib_name):
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
     2. Удаляет старые резервные копии
     3. Удаляет старые log-файлы
     """
-    log.info(f'<{ib_name}> Start maintenance')
+    log.info(f'<{ib_name}> Start 1cv8 maintenance')
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
@@ -59,20 +59,15 @@ async def _maintenance_v8(ib_name: str) -> core_types.InfoBaseMaintenanceTaskRes
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_vacuumdb(
+    ib_name: str, db_server: str, db_name: str, db_user: str, *args, **kwargs
+) -> core_types.InfoBaseMaintenanceTaskResult:
     log.info(f'<{ib_name}> Start vacuumdb')
-    with cluster.ClusterControlInterface() as cci:
-        # Если соединение с рабочим процессом будет без данных для аутентификации в ИБ,
-        # то не будет возможности получить данные, кроме имени ИБ
-        wpc = cci.get_working_process_connection_with_info_base_auth()
-        ib_info = cci.get_info_base(wpc, ib_name)
-        db_name = ib_info.dbName
-        db_user = ib_info.dbUser
-        try:
-            db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(ib_info.dbServerName, db_user)
-        except KeyError as e:
-            log.error(f'<{ib_name}> {str(e)}')
-            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+    try:
+        db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(db_server, db_user)
+    except KeyError as e:
+        log.error(f'<{ib_name}> {str(e)}')
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
     pg_vacuumdb_path = os.path.join(settings.PG_BIN_PATH, 'vacuumdb.exe')
     vacuumdb_command = \
@@ -88,14 +83,21 @@ async def _maintenance_vacuumdb(ib_name: str) -> core_types.InfoBaseMaintenanceT
 
 
 async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseMaintenanceTaskResult:
-    succeeded = True
+    with cluster.ClusterControlInterface() as cci:
+        wpc = cci.get_working_process_connection_with_info_base_auth()
+        ib_info = cci.get_info_base(wpc, ib_name)
+        db_server = ib_info.dbServerName
+        dbms = ib_info.DBMS
+        db_name = ib_info.dbName
+        db_user = ib_info.dbUser
     async with semaphore:
         try:
+            succeeded = True
             if settings.MAINTENANCE_V8:
                 result_v8 = await utils.com_func_wrapper(_maintenance_v8, ib_name)
                 succeeded &= result_v8.succeeded
-            if settings.MAINTENANCE_PG:
-                result_pg = await _maintenance_vacuumdb(ib_name)
+            if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(dbms):
+                result_pg = await _maintenance_vacuumdb(ib_name, db_server, db_name, db_user)
                 succeeded &= result_pg.succeeded
             result_logs = await rotate_logs(ib_name)
             succeeded &= result_logs.succeeded

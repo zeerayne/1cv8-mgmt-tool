@@ -161,8 +161,6 @@ async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult
         dbms = ib_info.DBMS
         db_name = ib_info.dbName
         db_user = ib_info.dbUser
-        del ib_info
-        del wpc
     if settings.PG_BACKUP_ENABLED and postgres.dbms_is_postgres(dbms):
         result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
     else:
