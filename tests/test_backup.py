@@ -269,9 +269,9 @@ async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_
     mock_cluster_mssql_infobase
 ):
     """
-    `_backup_info_base` calls `_backup_v8` if PG_BACKUP_ENABLED == True, but infobase DBMS is not postgres
+    `_backup_info_base` calls `_backup_v8` if BACKUP_PG == True, but infobase DBMS is not postgres
     """
-    mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_PG', new_callable=PropertyMock(return_value=True))
     com_func_wrapper_mock = mocker.patch('core.utils.com_func_wrapper')
     await _backup_info_base(infobase)
     com_func_wrapper_mock.assert_awaited_with(_backup_v8, infobase)
@@ -284,10 +284,10 @@ async def test_backup_info_base_run_pgdump_backup_when_pgbackup_is_enabled_and_d
     mock_cluster_postgres_infobase
 ):
     """
-    `_backup_info_base` calls `_backup_pgdump` if PG_BACKUP_ENABLED == True, and infobase DBMS is postgres
+    `_backup_info_base` calls `_backup_pgdump` if BACKUP_PG == True, and infobase DBMS is postgres
     """
     db_server, db_name, db_user = mock_cluster_postgres_infobase
-    mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_PG', new_callable=PropertyMock(return_value=True))
     backup_pgdump_mock = mocker.patch('backup._backup_pgdump')
     await _backup_info_base(infobase)
     backup_pgdump_mock.assert_awaited_with(infobase, db_server, db_name, db_user)
@@ -311,7 +311,7 @@ async def test_backup_info_base_returns_value_from_pgdump_backup(mocker: MockerF
     `_backup_info_base` returns value from underlying `_backup_pgdump` function
     """
     value = core_types.InfoBaseBackupTaskResult(infobase, True, '')
-    mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_PG', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup._backup_pgdump', return_value=value)
     result = await _backup_info_base(infobase)
     assert result == value

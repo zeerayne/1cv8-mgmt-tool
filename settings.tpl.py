@@ -28,6 +28,7 @@ V8_PLATFORM_PATH = join('C:\\', 'Program Files', '1cv8')
 
 BACKUP_CONCURRENCY = 3
 BACKUP_PATH = join('.', 'backup')
+BACKUP_PG = False
 BACKUP_RETENTION_DAYS = 30
 BACKUP_REPLICATION_ENABLED = False
 BACKUP_REPLICATION_PATHS = [join('\\\\192.168.1.2', 'backup', '1cv8'), ]
@@ -69,7 +70,6 @@ AWS_RETRIES = 1
 ## PostgreSQL ##
 ## ---------- ##
 
-PG_BACKUP_ENABLED = False
 PG_CREDENTIALS = {
     'postgres@localhost': 'postgres_user_password',
     'usr_1cv8@192.168.1.2:5433': 'postgres_user_password',
