@@ -3,6 +3,7 @@ import os
 
 from conf import settings
 
+
 def configure_logging(log_level):
     log_format = logging.Formatter('%(asctime)s [%(levelname)-3.3s] %(message)s')
     root_logger = logging.getLogger()
