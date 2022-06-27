@@ -90,4 +90,6 @@ NOTIFY_EMAIL_TO = ['', ]
 ## Logging ##
 ## ------- ##
 
+LOG_FILENAME = '1cv8-mgmt-tool.log'
+LOG_LEVEL = 'DEBUG'
 LOG_PATH = join('.', 'log')

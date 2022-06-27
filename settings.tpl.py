@@ -1,5 +1,3 @@
-import logging
-
 from os.path import expanduser, join
 
 
@@ -96,16 +94,6 @@ NOTIFY_EMAIL_TO = ['', ]
 ## Logging ##
 ## ------- ##
 
+LOG_FILENAME = '1cv8-mgmt-tool.log'
+LOG_LEVEL = 'DEBUG'
 LOG_PATH = join('.', 'log')
-
-logFormatter = logging.Formatter('%(asctime)s [%(levelname)-3.3s] %(message)s')
-rootLogger = logging.getLogger()
-rootLogger.setLevel(logging.DEBUG)
-
-for handler in [logging.StreamHandler(), logging.FileHandler(join(LOG_PATH, '1cv8-mgmt-tool.log'))]:
-    handler.setFormatter(logFormatter)
-    handler.setLevel(logging.DEBUG)
-    rootLogger.addHandler(handler)
-
-for logger_name in ['aioboto3', 'aiobotocore', 'botocore', 'boto3', 'urllib3']:
-    logging.getLogger(logger_name).setLevel(logging.INFO)

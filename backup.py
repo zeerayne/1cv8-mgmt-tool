@@ -18,6 +18,7 @@ from core.process import execute_subprocess_command, execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils import postgres
+from utils.log import configure_logging
 from utils.notification import make_html_table, send_notification
 
 
@@ -268,6 +269,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
         # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
