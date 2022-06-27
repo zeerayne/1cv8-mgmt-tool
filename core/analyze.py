@@ -10,6 +10,13 @@ log = logging.getLogger(__name__)
 log_prefix = 'Analyze'
 
 
+def _wrap_log_subprefix(log_subprefix):
+    if log_subprefix:
+        return f' | {log_subprefix}'
+    else:
+        return ''
+
+
 def _log_message(
     resultset: List[core_types.InfoBaseTaskResultBase], 
     succeeded: int, 
@@ -18,8 +25,9 @@ def _log_message(
     datetime_finish: datetime, 
     log_subprefix: str
 ):
+    log_subprefix = _wrap_log_subprefix(log_subprefix)
     diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'<{log_prefix} | {log_subprefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.')
+    log.info(f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.')
 
 
 def _analyze_result(
@@ -30,13 +38,10 @@ def _analyze_result(
     custom_log_message_func: Callable[[List[core_types.InfoBaseTaskResultBase], int, int, datetime, datetime], None] = None,
     log_subprefix: str = None
 ):
-    if log_subprefix:
-        log_subprefix = f' | {log_subprefix}'
-    else:
-        log_subprefix = ''
+    log_subprefix = _wrap_log_subprefix(log_subprefix)
     succeeded = 0
     failed = 0
-    if len(resultset) > 0:
+    if resultset:
         for task_result in resultset:
             if task_result.succeeded:
                 succeeded += 1
@@ -45,15 +50,15 @@ def _analyze_result(
                 log.error(f'<{log_prefix}{log_subprefix}> [{task_result.infobase_name}] FAILED')
         if custom_log_message_func:
             custom_log_message_func(resultset, succeeded, failed, datetime_start, datetime_finish)
-        if len(resultset) != len(workload):
-            processed_info_bases = [task_result.infobase_name for task_result in resultset]
-            missed = 0
-            for w in workload:
-                if w not in processed_info_bases:
-                    log.warning(f'<{log_prefix}{log_subprefix}> [{w}] MISSED')
-                    missed += 1
-            log.warning(f'<{log_prefix}{log_subprefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
-    else:
+    if len(resultset) != len(workload):
+        processed_info_bases = [task_result.infobase_name for task_result in resultset]
+        missed = 0
+        for w in workload:
+            if w not in processed_info_bases:
+                log.warning(f'<{log_prefix}{log_subprefix}> [{w}] MISSED')
+                missed += 1
+        log.warning(f'<{log_prefix}{log_subprefix}> {len(workload)} required; {len(resultset)} done; {missed} missed')
+    if not (resultset and workload):
         log.info(f'<{log_prefix}{log_subprefix}> Nothing was done')
 
 
@@ -76,7 +81,7 @@ def analyze_result(
 
 
 def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
-    log_subprefix = 'AWS'
+    log_subprefix = _wrap_log_subprefix('AWS')
     
     def log_message(    
         resultset: List[core_types.InfoBaseTaskResultBase], 
@@ -90,7 +95,7 @@ def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], w
             if task_result.succeeded:
                 size += task_result.upload_size
         diff = (datetime_finish - datetime_start).total_seconds()
-        log.info(f'<{log_prefix} | {log_subprefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s')
+        log.info(f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s')
     
     _analyze_result(
         resultset,

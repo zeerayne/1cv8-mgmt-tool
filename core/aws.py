@@ -2,30 +2,47 @@ import asyncio
 import aioboto3
 import os
 import logging
-import settings
+
+from typing import Dict
+
+import boto3
 
 from botocore.exceptions import EndpointConnectionError
 from datetime import datetime, timedelta, timezone
 
-import core.common as common_funcs
+from core import utils
 import core.types as core_types
 
+from conf import settings
 from core.analyze import analyze_s3_result
 from utils.common import sizeof_fmt
-
-
-retention_days = settings.AWS_RETENTION_DAYS
 
 
 log = logging.getLogger(__name__)
 log_prefix = 'AWS'
 
 
+def _get_aws_endpoint_url_parameter() -> Dict[str, str]:
+    url = settings.AWS_ENDPOINT_URL
+    if url:
+        return dict(endpoint_url=url)
+    else:
+        return dict()
+
+
+def _get_aws_region_parameter() -> Dict[str, str]:
+    region = settings.AWS_REGION_NAME
+    if region:
+        return dict(region_name=region)
+    else:
+        return dict()
+
+
 async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseAWSUploadTaskResult:
     aws_retries = settings.AWS_RETRIES
     async with semaphore:
         try:
-            # Добавляем 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
+            # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
             for i in range(0, aws_retries + 1):
                 try:
                     return await _upload_infobase_to_s3(ib_name, full_backup_path)
@@ -48,28 +65,31 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
     session = aioboto3.Session(
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION_NAME
+        **_get_aws_region_parameter()
     )
-    async with session.resource(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3:
-        bucket_name = settings.AWS_BUCKET_NAME
-        filename = common_funcs.path_leaf(full_backup_path)
-        # Собираем инфу чтобы вывод в лог был полезным
-        filestat = os.stat(full_backup_path)
-        source_size = filestat.st_size
-        datetime_start = datetime.now()
-        async with session.client(service_name='s3', endpoint_url=settings.AWS_ENDPOINT_URL) as s3c:
-            await s3c.upload_file(Filename=full_backup_path, Bucket=bucket_name, Key=filename)
-        datetime_finish = datetime.now()
-        diff = (datetime_finish - datetime_start).total_seconds()
-        log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
-        # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
-        # '_' добавляется к имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
-        # при наличии имён вида infobase и infobase2
-        bucket = await s3.Bucket(bucket_name)
-        async for o in bucket.objects.filter(Prefix=ib_name + '_'):
-            if await o.last_modified < (datetime.now() - timedelta(days=retention_days)).replace(tzinfo=timezone.utc):
-                await o.delete()
+    filename = utils.path_leaf(full_backup_path)
+    # Собирает инфу чтобы вывод в лог был полезным
+    filestat = os.stat(full_backup_path)
+    source_size = filestat.st_size
+    datetime_start = datetime.now()
+    async with session.client(service_name='s3', **_get_aws_endpoint_url_parameter()) as s3c:
+        await s3c.upload_file(Filename=full_backup_path, Bucket=settings.AWS_BUCKET_NAME, Key=filename)
+    datetime_finish = datetime.now()
+    diff = (datetime_finish - datetime_start).total_seconds()
+    log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
+    await _remove_old_infobase_backups_from_s3(ib_name, session)
     return core_types.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
+
+
+async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Session):
+    # Имена файлов обязательно должны быть в формате ИмяИБ_ДатаСоздания
+    # `get_ib_name_with_separator` используется вместо имени ИБ, чтобы по ошибке не получить файлы от другой ИБ
+    # при наличии имён вида infobase и infobase2
+    async with session.resource(service_name='s3', **_get_aws_endpoint_url_parameter()) as s3_resource:
+        bucket = await s3_resource.Bucket(settings.AWS_BUCKET_NAME)
+        async for o in bucket.objects.filter(Prefix=f'{utils.get_ib_name_with_separator(ib_name)}'):
+            if await o.last_modified < (datetime.now() - timedelta(days=settings.AWS_RETENTION_DAYS)).replace(tzinfo=timezone.utc):
+                await o.delete()
 
 
 async def upload_to_s3(backup_results: core_types.InfoBaseBackupTaskResult):
@@ -82,12 +102,12 @@ async def upload_to_s3(backup_results: core_types.InfoBaseBackupTaskResult):
         semaphore = asyncio.Semaphore(concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {concurrency} concurrent tasks')
         datetime_start = datetime.now()
-        result = await asyncio.gather([
+        result = await asyncio.gather(*[
             upload_infobase_to_s3(
                     backup_result.infobase_name, 
                     backup_result.backup_filename, 
                     semaphore
-                ) for backup_result in backup_results
+                ) for backup_result in backup_results if backup_result.succeeded
             ])
         datetime_finish = datetime.now()
-        analyze_s3_result(result, datetime_start, datetime_finish)
+        analyze_s3_result(result, [e.infobase_name for e in backup_results], datetime_start, datetime_finish)

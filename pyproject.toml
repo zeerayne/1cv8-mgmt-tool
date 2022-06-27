@@ -12,8 +12,28 @@ pywin32 = [
 aioboto3 = "^9.6.0"
 filechunkio = "^1.8"
 aioshutil = "^1.1"
+aiofiles = "^0.8.0"
+packaging = "^21.3"
 
 [tool.poetry.dev-dependencies]
+pytest = "^7.1.2"
+pytest-spec = "^3.2.0"
+pytest-mock = "^3.7.0"
+pytest-asyncio = "^0.18.3"
+pytest-freezegun = "^0.4.2"
+pytest-env = "^0.6.2"
+
+[tool.pytest.ini_options]
+spec_header_format = "Case: {test_case}\nPath: {module_path}"
+spec_test_format = '{result} {docstring_summary}'
+spec_success_indicator = '✓'
+spec_failure_indicator = '✗'
+spec_skipped_indicator = '↷'
+asyncio_mode = 'auto'
+env = """
+    PYTHONPATH=.
+    1CV8MGMT_SETTINGS_MODULE=tests.settings
+    """
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,26 +1,27 @@
 import smtplib
-import settings
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from datetime import datetime
 from typing import List
 
 import core.types as core_types
 
+from conf import settings
+
 
 def make_message(caption, html_body):
-    from datetime import datetime
     now = datetime.now()
     msg = MIMEMultipart('alternative')
     msg['Subject'] = '{0} {1}'.format(caption, now.strftime('%d.%m.%Y'))
-    msg['From'] = settings.EMAIL_FROM
-    msg['To'] = ','.join(settings.EMAIL_TO)
+    msg['From'] = settings.NOTIFY_EMAIL_FROM
+    msg['To'] = ','.join(settings.NOTIFY_EMAIL_TO)
 
     part = MIMEText(html_body, 'html')
     msg.attach(part)
     return msg
 
 
-def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]):
+def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]) -> str:
     style = "style='min-width: 100px; text-align: center; border: 1px solid black;'"
     table = "<table><caption style='white-space: nowrap;'>{caption}</caption>{body}</table>"
     table_body = ''
@@ -37,18 +38,9 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
 
 
 def send_notification(caption, html_body):
-    server = smtplib.SMTP(
-        settings.EMAIL_SMTP_HOST,
-        settings.EMAIL_SMTP_PORT
-    )
-    server.login(
-        settings.EMAIL_LOGIN,
-        settings.EMAIL_PASSWORD
-    )
-    msg = make_message(caption, html_body)
-    server.sendmail(
-        settings.EMAIL_FROM,
-        settings.EMAIL_TO,
-        msg.as_string()
-    )
-    server.quit()
+    with smtplib.SMTP(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT) as session:
+        if settings.NOTIFY_EMAIL_SMTP_SSL_REQUIRED:
+            session.starttls()
+        session.login(settings.NOTIFY_EMAIL_LOGIN, settings.NOTIFY_EMAIL_PASSWORD)
+        msg = make_message(caption, html_body)
+        session.sendmail(settings.NOTIFY_EMAIL_FROM, settings.NOTIFY_EMAIL_TO, msg.as_string())
