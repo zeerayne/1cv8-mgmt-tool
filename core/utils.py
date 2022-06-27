@@ -87,9 +87,9 @@ def get_info_base_credentials(ib_name) -> Tuple[str, str]:
     :return: tuple(login, pwd)
     """
     try:
-        creds = settings.V8_INFO_BASES_CREDENTIALS[ib_name]
+        creds = settings.V8_INFOBASES_CREDENTIALS[ib_name]
     except KeyError:
-        creds = settings.V8_INFO_BASES_CREDENTIALS['default']
+        creds = settings.V8_INFOBASES_CREDENTIALS['default']
     return creds
 
 

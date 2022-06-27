@@ -6,7 +6,7 @@ from os.path import expanduser, join
 ## ------------- ##
 
 V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', 'cluster_admin_password')
-V8_INFO_BASES_CREDENTIALS = {
+V8_INFOBASES_CREDENTIALS = {
     'default': ('Администратор', 'infobase_user_password'),
     'accounting': ('БухАдминистратор', 'infobase_user_password'),
     'trade': ('УТАдминистратор', 'infobase_user_password'),

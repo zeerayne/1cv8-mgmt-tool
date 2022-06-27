@@ -210,8 +210,8 @@ def mock_excluded_infobases(mocker: MockerFixture, infobases):
 @pytest.fixture
 def mock_infobases_credentials(mocker: MockerFixture, infobases):
     creds = { infobase: (f'test_{infobase}_login', f'test_{infobase}_password') for infobase in infobases}
-    creds.update(settings.V8_INFO_BASES_CREDENTIALS)
+    creds.update(settings.V8_INFOBASES_CREDENTIALS)
     infobases_creds_mock = PropertyMock()
     infobases_creds_mock.return_value = creds
-    mocker.patch('conf.settings.V8_INFO_BASES_CREDENTIALS', new_callable=infobases_creds_mock)
+    mocker.patch('conf.settings.V8_INFOBASES_CREDENTIALS', new_callable=infobases_creds_mock)
     return creds
