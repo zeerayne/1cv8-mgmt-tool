@@ -1,10 +1,12 @@
 import logging
 import os
 
+from typing import Union
+
 from conf import settings
 
 
-def configure_logging(log_level):
+def configure_logging(log_level: Union[str, int]):
     log_format = logging.Formatter('%(asctime)s [%(levelname)-3.3s] %(message)s')
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
