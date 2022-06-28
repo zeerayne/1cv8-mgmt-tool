@@ -41,7 +41,9 @@ async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
 async def rotate_backups(ib_name):
     backup_retention_days = settings.BACKUP_RETENTION_DAYS
     filename_pattern = utils.get_infobase_glob_pattern(ib_name)
-    rotate_paths = [settings.BACKUP_PATH] + settings.BACKUP_REPLICATION_PATHS if settings.BACKUP_REPLICATION else [settings.BACKUP_PATH]
+    rotate_paths = [settings.BACKUP_PATH]
+    if settings.BACKUP_REPLICATION:
+        rotate_paths += settings.BACKUP_REPLICATION_PATHS
     # Удаляет старые резервные копии
     for rotation_path in rotate_paths:
         log.info(f'<{ib_name}> Removing backups older than {backup_retention_days} days from {rotation_path}')
