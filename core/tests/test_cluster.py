@@ -100,10 +100,7 @@ def test_cluster_control_interface_get_working_process_connection_info_base_auth
         'test_infobase01': ('test_user01', 'test_password01'),
         'test_infobase02': ('test_user02', 'test_password02'),
     }
-
-    infobase_credentials_mock = PropertyMock()
-    infobase_credentials_mock.return_value = infobases_credentials
-    mocker.patch('conf.settings.V8_INFOBASES_CREDENTIALS', new_callable=infobase_credentials_mock)
+    mocker.patch('conf.settings.V8_INFOBASES_CREDENTIALS', new_callable=PropertyMock(return_value=infobases_credentials))
     cci = ClusterControlInterface()
     cci.get_working_process_connection_with_info_base_auth()
     assert mock_connect_working_process.return_value.AddAuthentication.call_count == len(infobases_credentials)
