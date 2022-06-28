@@ -11,7 +11,7 @@ V8_INFOBASES_CREDENTIALS = {
     'accounting': ('БухАдминистратор', 'infobase_user_password'),
     'trade': ('УТАдминистратор', 'infobase_user_password'),
 }
-V8_INFO_BASES_EXCLUDE = [
+V8_INFOBASES_EXCLUDE = [
     'accounting_for_tests',
     'trade_copy'
 ]

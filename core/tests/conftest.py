@@ -203,7 +203,7 @@ def mock_excluded_infobases(mocker: MockerFixture, infobases):
     excluded_infobase = infobases[-1]
     infobases_exclude_mock = PropertyMock()
     infobases_exclude_mock.return_value = [excluded_infobase]
-    mocker.patch('conf.settings.V8_INFO_BASES_EXCLUDE', new_callable=infobases_exclude_mock)
+    mocker.patch('conf.settings.V8_INFOBASES_EXCLUDE', new_callable=infobases_exclude_mock)
     return [excluded_infobase]
 
 

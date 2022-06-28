@@ -73,7 +73,7 @@ def get_info_bases() -> List[str]:
 
         info_bases = cci.get_info_bases(working_process_connection)
         info_bases = [
-            ib.Name for ib in info_bases if ib.Name.lower() not in [ib.lower() for ib in settings.V8_INFO_BASES_EXCLUDE]
+            ib.Name for ib in info_bases if ib.Name.lower() not in [ib.lower() for ib in settings.V8_INFOBASES_EXCLUDE]
         ]
         del working_process_connection
         return info_bases
