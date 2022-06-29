@@ -2,16 +2,13 @@ import asyncio
 import logging
 import os
 import sys
-
 from datetime import datetime, timedelta
 from typing import List
 
 import core.types as core_types
-
 from conf import settings
-from core import utils
+from core import cluster, utils
 from core.analyze import analyze_maintenance_result
-from core import cluster
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres

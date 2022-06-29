@@ -6,6 +6,7 @@ from typing import Callable, List
 import core.types as core_types
 from utils.common import sizeof_fmt
 
+
 log = logging.getLogger(__name__)
 log_prefix = 'Analyze'
 

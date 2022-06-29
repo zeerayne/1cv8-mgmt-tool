@@ -1,11 +1,11 @@
 import random
 import re
-
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock
 
-import pytest
 from botocore.exceptions import EndpointConnectionError
+
+import pytest
 from pytest_mock import MockerFixture
 
 from conf import settings

@@ -6,12 +6,11 @@ import pytest
 from pytest_mock import MockerFixture
 
 import core.types as core_types
-
-from conf import settings
 from backup import (
-    replicate_backup, rotate_backups, _backup_v8, _backup_pgdump, 
-    _backup_info_base, backup_info_base, analyze_results, send_email_notification
+    _backup_info_base, _backup_pgdump, _backup_v8, analyze_results, backup_info_base, replicate_backup, rotate_backups,
+    send_email_notification
 )
+from conf import settings
 from core.exceptions import SubprocessException, V8Exception
 
 

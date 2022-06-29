@@ -7,6 +7,7 @@ AUTHOR = 'Kostia Balitsky aka ikostia'
 import sys
 from functools import wraps
 
+
 __all__ = ('surrogate', )
 
 

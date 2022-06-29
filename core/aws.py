@@ -1,19 +1,16 @@
 import asyncio
-import aioboto3
-import os
 import logging
-
+import os
+from datetime import datetime, timedelta, timezone
 from typing import Dict
 
+import aioboto3
 import boto3
-
 from botocore.exceptions import EndpointConnectionError
-from datetime import datetime, timedelta, timezone
 
-from core import utils
 import core.types as core_types
-
 from conf import settings
+from core import utils
 from core.analyze import analyze_s3_result
 from utils.common import sizeof_fmt
 

@@ -1,11 +1,10 @@
 import smtplib
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from datetime import datetime
 from typing import List
 
 import core.types as core_types
-
 from conf import settings
 
 

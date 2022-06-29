@@ -6,9 +6,8 @@ import pytest
 from pytest_mock import MockerFixture
 
 import core.types as core_types
-
 from core.exceptions import SubprocessException, V8Exception
-from maintenance import rotate_logs, _maintenance_v8, _maintenance_vacuumdb, maintenance_info_base, analyze_results
+from maintenance import _maintenance_v8, _maintenance_vacuumdb, analyze_results, maintenance_info_base, rotate_logs
 
 
 @pytest.mark.asyncio

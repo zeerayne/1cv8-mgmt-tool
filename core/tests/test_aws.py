@@ -7,8 +7,8 @@ from pytest_mock import MockerFixture
 
 from conf import settings
 from core.aws import (
-    _get_aws_endpoint_url_parameter, _get_aws_region_parameter, upload_infobase_to_s3, 
-    _upload_infobase_to_s3, upload_to_s3, _remove_old_infobase_backups_from_s3
+    _get_aws_endpoint_url_parameter, _get_aws_region_parameter, _remove_old_infobase_backups_from_s3,
+    _upload_infobase_to_s3, upload_infobase_to_s3, upload_to_s3
 )
 
 

@@ -1,9 +1,8 @@
 import logging
-
 from datetime import datetime, timedelta
 
 from core.analyze import (
-    analyze_result, analyze_backup_result, analyze_maintenance_result, analyze_update_result, analyze_s3_result
+    analyze_backup_result, analyze_maintenance_result, analyze_result, analyze_s3_result, analyze_update_result
 )
 
 

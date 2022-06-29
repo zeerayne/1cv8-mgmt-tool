@@ -1,6 +1,5 @@
 import asyncio
 import logging
-
 from typing import Type
 
 from conf import settings

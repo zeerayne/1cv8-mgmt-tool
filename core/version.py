@@ -1,6 +1,7 @@
 import os
-from packaging.version import Version
 from typing import List
+
+from packaging.version import Version
 
 
 def get_version_from_string(version_str: str) -> Version:
