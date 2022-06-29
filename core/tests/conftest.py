@@ -200,18 +200,14 @@ def mock_datetime():
 
 @pytest.fixture
 def mock_excluded_infobases(mocker: MockerFixture, infobases):
-    excluded_infobase = infobases[-1]
-    infobases_exclude_mock = PropertyMock()
-    infobases_exclude_mock.return_value = [excluded_infobase]
-    mocker.patch('conf.settings.V8_INFO_BASES_EXCLUDE', new_callable=infobases_exclude_mock)
-    return [excluded_infobase]
+    excluded_infobases = [infobases[-1]]
+    mocker.patch('conf.settings.V8_INFOBASES_EXCLUDE', new_callable=PropertyMock(return_value=excluded_infobases))
+    return excluded_infobases
 
 
 @pytest.fixture
 def mock_infobases_credentials(mocker: MockerFixture, infobases):
     creds = { infobase: (f'test_{infobase}_login', f'test_{infobase}_password') for infobase in infobases}
-    creds.update(settings.V8_INFO_BASES_CREDENTIALS)
-    infobases_creds_mock = PropertyMock()
-    infobases_creds_mock.return_value = creds
-    mocker.patch('conf.settings.V8_INFO_BASES_CREDENTIALS', new_callable=infobases_creds_mock)
+    creds.update(settings.V8_INFOBASES_CREDENTIALS)
+    mocker.patch('conf.settings.V8_INFOBASES_CREDENTIALS', new_callable=PropertyMock(return_value=creds))
     return creds

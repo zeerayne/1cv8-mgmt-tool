@@ -205,7 +205,7 @@ def test_get_info_base_credentials_fallback_to_default(infobase):
     Infobase credentials falls back yo default if no explicit record for infobase
     """
     result = get_info_base_credentials(infobase)
-    assert result == settings.V8_INFO_BASES_CREDENTIALS['default']
+    assert result == settings.V8_INFOBASES_CREDENTIALS['default']
 
 
 def test_path_leaf_on_full_path():

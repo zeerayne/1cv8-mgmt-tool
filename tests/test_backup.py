@@ -57,7 +57,7 @@ async def test_rotate_backups_calls_old_file_remover_for_replication_paths(mocke
     Backup rotation calls `remove_old_files_by_pattern` function for every replication path
     """
     replication_paths = ['test/replication/path/01', 'test/replication/path/02']
-    mocker.patch('conf.settings.BACKUP_REPLICATION_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_REPLICATION', new_callable=PropertyMock(return_value=True))
     mocker.patch('conf.settings.BACKUP_REPLICATION_PATHS', new_callable=PropertyMock(return_value=replication_paths))
     remove_old_mock = mocker.patch('core.utils.remove_old_files_by_pattern', return_value=AsyncMock())
     await rotate_backups(infobase)
@@ -269,9 +269,9 @@ async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_
     mock_cluster_mssql_infobase
 ):
     """
-    `_backup_info_base` calls `_backup_v8` if PG_BACKUP_ENABLED == True, but infobase DBMS is not postgres
+    `_backup_info_base` calls `_backup_v8` if BACKUP_PG == True, but infobase DBMS is not postgres
     """
-    mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_PG', new_callable=PropertyMock(return_value=True))
     com_func_wrapper_mock = mocker.patch('core.utils.com_func_wrapper')
     await _backup_info_base(infobase)
     com_func_wrapper_mock.assert_awaited_with(_backup_v8, infobase)
@@ -284,10 +284,10 @@ async def test_backup_info_base_run_pgdump_backup_when_pgbackup_is_enabled_and_d
     mock_cluster_postgres_infobase
 ):
     """
-    `_backup_info_base` calls `_backup_pgdump` if PG_BACKUP_ENABLED == True, and infobase DBMS is postgres
+    `_backup_info_base` calls `_backup_pgdump` if BACKUP_PG == True, and infobase DBMS is postgres
     """
     db_server, db_name, db_user = mock_cluster_postgres_infobase
-    mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_PG', new_callable=PropertyMock(return_value=True))
     backup_pgdump_mock = mocker.patch('backup._backup_pgdump')
     await _backup_info_base(infobase)
     backup_pgdump_mock.assert_awaited_with(infobase, db_server, db_name, db_user)
@@ -311,7 +311,7 @@ async def test_backup_info_base_returns_value_from_pgdump_backup(mocker: MockerF
     `_backup_info_base` returns value from underlying `_backup_pgdump` function
     """
     value = core_types.InfoBaseBackupTaskResult(infobase, True, '')
-    mocker.patch('conf.settings.PG_BACKUP_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_PG', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup._backup_pgdump', return_value=value)
     result = await _backup_info_base(infobase)
     assert result == value
@@ -342,13 +342,13 @@ async def test_backup_info_calls_rotate_backups(mocker: MockerFixture, infobase)
 @pytest.mark.asyncio
 async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_backup_was_successfull(mocker: MockerFixture, infobase):
     """
-    `backup_info_base` calls `replicate_backup` if BACKUP_REPLICATION_ENABLED == True and backup was successfull
+    `backup_info_base` calls `replicate_backup` if BACKUP_REPLICATION == True and backup was successfull
     """
     backup_path = 'test/backup.path'
     value = core_types.InfoBaseBackupTaskResult(infobase, True, backup_path)
     mocker.patch('backup.rotate_backups')
     mocker.patch('backup._backup_info_base', return_value=value)
-    mocker.patch('conf.settings.BACKUP_REPLICATION_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_REPLICATION', new_callable=PropertyMock(return_value=True))
     replicate_backup_mock = mocker.patch('backup.replicate_backup')
     await backup_info_base(infobase, asyncio.Semaphore(1))
     replicate_backup_mock.assert_awaited_with(backup_path, settings.BACKUP_REPLICATION_PATHS)
@@ -357,12 +357,12 @@ async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_
 @pytest.mark.asyncio
 async def test_backup_info_dont_calls_replicate_backup_if_replication_is_enabled_and_backup_failed(mocker: MockerFixture, infobase):
     """
-    `backup_info_base` don't calls `replicate_backup` if BACKUP_REPLICATION_ENABLED == True and backup failed
+    `backup_info_base` don't calls `replicate_backup` if BACKUP_REPLICATION == True and backup failed
     """
     value = core_types.InfoBaseBackupTaskResult(infobase, False)
     mocker.patch('backup.rotate_backups')
     mocker.patch('backup._backup_info_base', return_value=value)
-    mocker.patch('conf.settings.BACKUP_REPLICATION_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_REPLICATION', new_callable=PropertyMock(return_value=True))
     replicate_backup_mock = mocker.patch('backup.replicate_backup')
     await backup_info_base(infobase, asyncio.Semaphore(1))
     replicate_backup_mock.assert_not_awaited()
@@ -411,7 +411,7 @@ async def test_backup_info_returns_value_from_inner_func_if_replicate_backup_fai
     value = core_types.InfoBaseBackupTaskResult(infobase, True, 'test/backup.path')
     mocker.patch('backup.rotate_backups')
     mocker.patch('backup._backup_info_base', return_value=value)
-    mocker.patch('conf.settings.BACKUP_REPLICATION_ENABLED', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.BACKUP_REPLICATION', new_callable=PropertyMock(return_value=True))
     mocker.patch('backup.replicate_backup', side_effect=Exception)
     result = await backup_info_base(infobase, asyncio.Semaphore(1))
     assert result == value

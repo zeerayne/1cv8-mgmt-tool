@@ -73,7 +73,7 @@ def get_info_bases() -> List[str]:
 
         info_bases = cci.get_info_bases(working_process_connection)
         info_bases = [
-            ib.Name for ib in info_bases if ib.Name.lower() not in [ib.lower() for ib in settings.V8_INFO_BASES_EXCLUDE]
+            ib.Name for ib in info_bases if ib.Name.lower() not in [ib.lower() for ib in settings.V8_INFOBASES_EXCLUDE]
         ]
         del working_process_connection
         return info_bases
@@ -87,9 +87,9 @@ def get_info_base_credentials(ib_name) -> Tuple[str, str]:
     :return: tuple(login, pwd)
     """
     try:
-        creds = settings.V8_INFO_BASES_CREDENTIALS[ib_name]
+        creds = settings.V8_INFOBASES_CREDENTIALS[ib_name]
     except KeyError:
-        creds = settings.V8_INFO_BASES_CREDENTIALS['default']
+        creds = settings.V8_INFOBASES_CREDENTIALS['default']
     return creds
 
 

@@ -54,7 +54,7 @@ class ClusterControlInterface:
         self.agentPort = get_server_port()
         self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
         self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
-        self.infoBasesCredentials = settings.V8_INFO_BASES_CREDENTIALS
+        self.infoBasesCredentials = settings.V8_INFOBASES_CREDENTIALS
 
     def __enter__(self):
         return self

@@ -19,6 +19,7 @@ from core import cluster, utils
 from core.analyze import analyze_update_result
 from core.process import execute_v8_command
 from core.version import get_version_from_string
+from utils.log import configure_logging
 
 
 log = logging.getLogger(__name__)
@@ -228,6 +229,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         asyncio.get_event_loop().run_until_complete(main())
     else:

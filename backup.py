@@ -18,6 +18,7 @@ from core.process import execute_subprocess_command, execute_v8_command
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
 from utils import postgres
+from utils.log import configure_logging
 from utils.notification import make_html_table, send_notification
 
 
@@ -40,7 +41,9 @@ async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
 async def rotate_backups(ib_name):
     backup_retention_days = settings.BACKUP_RETENTION_DAYS
     filename_pattern = utils.get_infobase_glob_pattern(ib_name)
-    rotate_paths = [settings.BACKUP_PATH] + settings.BACKUP_REPLICATION_PATHS if settings.BACKUP_REPLICATION_ENABLED else [settings.BACKUP_PATH]
+    rotate_paths = [settings.BACKUP_PATH]
+    if settings.BACKUP_REPLICATION:
+        rotate_paths += settings.BACKUP_REPLICATION_PATHS
     # Удаляет старые резервные копии
     for rotation_path in rotate_paths:
         log.info(f'<{ib_name}> Removing backups older than {backup_retention_days} days from {rotation_path}')
@@ -160,9 +163,7 @@ async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult
         dbms = ib_info.DBMS
         db_name = ib_info.dbName
         db_user = ib_info.dbUser
-        del ib_info
-        del wpc
-    if settings.PG_BACKUP_ENABLED and postgres.dbms_is_postgres(dbms):
+    if settings.BACKUP_PG and postgres.dbms_is_postgres(dbms):
         result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
     else:
         result = await utils.com_func_wrapper(_backup_v8, ib_name)
@@ -178,7 +179,7 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
         try:
             # Если включена репликация и результат бэкапа успешен
-            if settings.BACKUP_REPLICATION_ENABLED and result.succeeded:
+            if settings.BACKUP_REPLICATION and result.succeeded:
                 await replicate_backup(result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
         except Exception:
             log.exception(f'<{ib_name}> Unknown exception occurred in `replicate_backup` coroutine')
@@ -268,6 +269,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
         # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8

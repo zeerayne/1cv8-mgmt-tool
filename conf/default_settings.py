@@ -6,10 +6,10 @@ from os.path import expanduser, join
 ## ------------- ##
 
 V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', '')
-V8_INFO_BASES_CREDENTIALS = {
+V8_INFOBASES_CREDENTIALS = {
     'default': ('Администратор', ''),
 }
-V8_INFO_BASES_EXCLUDE = []
+V8_INFOBASES_EXCLUDE = []
 V8_LOCK_INFO_BASE_PAUSE = 5
 V8_SERVER_AGENT = {
     'address': 'localhost',
@@ -24,8 +24,9 @@ V8_PLATFORM_PATH = join('C:\\', 'Program Files', '1cv8')
 
 BACKUP_CONCURRENCY = 3
 BACKUP_PATH = join('.', 'backup')
+BACKUP_PG = False
 BACKUP_RETENTION_DAYS = 30
-BACKUP_REPLICATION_ENABLED = False
+BACKUP_REPLICATION = False
 BACKUP_REPLICATION_PATHS = [join('\\\\192.168.1.2', 'backup', '1cv8'), ]
 BACKUP_RETRIES_V8 = 1
 BACKUP_RETRIES_PG = 1
@@ -66,7 +67,6 @@ AWS_RETRY_PAUSE = 600
 ## PostgreSQL ##
 ## ---------- ##
 
-PG_BACKUP_ENABLED = False
 PG_CREDENTIALS = {
     'postgres@localhost': '',
 }
@@ -90,4 +90,6 @@ NOTIFY_EMAIL_TO = ['', ]
 ## Logging ##
 ## ------- ##
 
+LOG_FILENAME = '1cv8-mgmt-tool.log'
+LOG_LEVEL = 'DEBUG'
 LOG_PATH = join('.', 'log')

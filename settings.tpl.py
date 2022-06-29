@@ -1,5 +1,3 @@
-import logging
-
 from os.path import expanduser, join
 
 
@@ -8,12 +6,12 @@ from os.path import expanduser, join
 ## ------------- ##
 
 V8_CLUSTER_ADMIN_CREDENTIALS = ('Администратор', 'cluster_admin_password')
-V8_INFO_BASES_CREDENTIALS = {
+V8_INFOBASES_CREDENTIALS = {
     'default': ('Администратор', 'infobase_user_password'),
     'accounting': ('БухАдминистратор', 'infobase_user_password'),
     'trade': ('УТАдминистратор', 'infobase_user_password'),
 }
-V8_INFO_BASES_EXCLUDE = [
+V8_INFOBASES_EXCLUDE = [
     'accounting_for_tests',
     'trade_copy'
 ]
@@ -30,8 +28,9 @@ V8_PLATFORM_PATH = join('C:\\', 'Program Files', '1cv8')
 
 BACKUP_CONCURRENCY = 3
 BACKUP_PATH = join('.', 'backup')
+BACKUP_PG = False
 BACKUP_RETENTION_DAYS = 30
-BACKUP_REPLICATION_ENABLED = False
+BACKUP_REPLICATION = False
 BACKUP_REPLICATION_PATHS = [join('\\\\192.168.1.2', 'backup', '1cv8'), ]
 BACKUP_RETRIES_V8 = 1
 BACKUP_RETRIES_PG = 1
@@ -71,7 +70,6 @@ AWS_RETRIES = 1
 ## PostgreSQL ##
 ## ---------- ##
 
-PG_BACKUP_ENABLED = False
 PG_CREDENTIALS = {
     'postgres@localhost': 'postgres_user_password',
     'usr_1cv8@192.168.1.2:5433': 'postgres_user_password',
@@ -96,16 +94,6 @@ NOTIFY_EMAIL_TO = ['', ]
 ## Logging ##
 ## ------- ##
 
+LOG_FILENAME = '1cv8-mgmt-tool.log'
+LOG_LEVEL = 'DEBUG'
 LOG_PATH = join('.', 'log')
-
-logFormatter = logging.Formatter('%(asctime)s [%(levelname)-3.3s] %(message)s')
-rootLogger = logging.getLogger()
-rootLogger.setLevel(logging.DEBUG)
-
-for handler in [logging.StreamHandler(), logging.FileHandler(join(LOG_PATH, '1cv8-mgmt-tool.log'))]:
-    handler.setFormatter(logFormatter)
-    handler.setLevel(logging.DEBUG)
-    rootLogger.addHandler(handler)
-
-for logger_name in ['aioboto3', 'aiobotocore', 'botocore', 'boto3', 'urllib3']:
-    logging.getLogger(logger_name).setLevel(logging.INFO)
