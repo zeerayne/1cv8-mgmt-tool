@@ -1,9 +1,8 @@
 import asyncio
 import random
+from packaging.version import Version
 from textwrap import dedent
 from unittest.mock import AsyncMock, Mock, mock_open
-
-from packaging.version import Version
 
 import pytest
 from pytest_mock import MockerFixture
