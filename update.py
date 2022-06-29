@@ -7,10 +7,10 @@ import random
 import re
 import sys
 from datetime import datetime
+from packaging.version import Version
 from typing import List, Tuple
 
 import pywintypes
-from packaging.version import Version
 
 import core.types as core_types
 from conf import settings

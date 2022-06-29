@@ -39,7 +39,7 @@ env = """
 
 [tool.isort]
 combine_as_imports = true
-extra_standard_library = "pytest"
+extra_standard_library = "packaging"
 group_by_package = true
 known_pytest = [
     "pytest",
