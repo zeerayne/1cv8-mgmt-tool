@@ -1,13 +1,23 @@
 import logging
-import settings
-import pythoncom
-import win32com.client
+from typing import List
+
+try:
+    import win32com.client as win32com_client
+    import pywintypes
+except ImportError:
+    from surrogate import surrogate
+    surrogate('win32com.client').prepare()
+    surrogate('pywintypes').prepare()
+    import win32com.client as win32com_client
+    import pywintypes
+    pywintypes.com_error = Exception
+
+from conf import settings
 
 
-"""
+r"""
 Для доступа к информационной базе из внешней программы используется COM объект COMConnector. 
-В зависимости от версии платформы используется V82.COMConnector или V83.COMConnector. При установке платформы 1С, 
-операционной системе автоматически регистрируется класс COMConnector. 
+При установке платформы 1С, операционной системе автоматически регистрируется класс COMConnector. 
 Если по каким либо причинам регистрация не прошла, то его можно зарегистрировать вручную.
  
 Если COMConnector не зарегистрирован в Windows, то при программном создании объекта будет появляться ошибка:
@@ -21,6 +31,14 @@ import win32com.client
 log = logging.getLogger(__name__)
 
 
+def get_server_address() -> str:
+    return settings.V8_SERVER_AGENT['address']
+
+
+def get_server_port() -> str:
+    return str(settings.V8_SERVER_AGENT['port'])
+
+
 class ClusterControlInterface:
     """
     Примечание: любые COM-объекты не могут быть переданы между потоками,
@@ -28,16 +46,15 @@ class ClusterControlInterface:
     """
 
     def __init__(self):
-        # В зависимости от версии платформы используется V82.COMConnector или V83.COMConnector
         try:
-            self.V8COMConnector = win32com.client.Dispatch("V83.COMConnector")
-        except pythoncom.com_error:
-            self.V8COMConnector = win32com.client.Dispatch("V82.COMConnector")
-        self.server = settings.V8_SERVER_AGENT["address"]
-        self.agentPort = str(settings.V8_SERVER_AGENT["port"])
-        self.clusterAdminName = settings.V8_CLUSTER_ADMIN_NAME
-        self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_PWD
-        self.infoBasesCredentials = settings.V8_INFO_BASE_CREDENTIALS
+            self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
+        except pywintypes.com_error as e:
+            raise e
+        self.server = get_server_address()
+        self.agentPort = get_server_port()
+        self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
+        self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
+        self.infoBasesCredentials = settings.V8_INFOBASES_CREDENTIALS
 
     def __enter__(self):
         return self
@@ -78,7 +95,7 @@ class ClusterControlInterface:
         working_process_0 = agent_connection.GetWorkingProcesses(cluster)[0]
         working_process_port = str(working_process_0.MainPort)
         working_process_connection = self.V8COMConnector.ConnectWorkingProcess(
-            'tcp://{0}:{1}'.format(self.server, working_process_port)
+            f'tcp://{self.server}:{working_process_port}'
         )
         # Выполняет аутентификацию администратора кластера.
         # Администратор кластера должен быть аутентифицирован для создания в этом кластере новой информационной базы.
@@ -93,7 +110,7 @@ class ClusterControlInterface:
             working_process_connection.AddAuthentication(c[0], c[1])
         return working_process_connection
 
-    def _get_info_base(self, info_bases, name):
+    def _get_info_base(self, info_bases: List, name: str):
         for ib in info_bases:
             if ib.Name.lower() == name.lower():
                 return ib
@@ -110,28 +127,28 @@ class ClusterControlInterface:
         info_bases_short = agent_connection.GetInfoBases(cluster)
         return info_bases_short
 
-    def get_info_base_short(self, agent_connection, cluster, name):
+    def get_info_base_short(self, agent_connection, cluster, name: str):
         info_bases_short = self.get_info_bases_short(agent_connection, cluster)
         return self._get_info_base(info_bases_short, name)
 
-    def get_info_base_metadata(self, info_base, info_base_user, info_base_pwd):
+    def get_info_base_metadata(self, info_base: str, info_base_user: str, info_base_pwd: str):
         """
         Получает наименование и версию конфигурации
-        :param info_base: COM-Объект типа IInfoBaseShort или IInfoBaseInfo. Подойдёт любой объект, имеющий поле Name
+        :param info_base: Имя информационной базы
         :param info_base_user: Пользователь ИБ с правами администратора
         :param info_base_pwd: Пароль пользователя ИБ
         :return: tuple(Наименование, Версия информационной базы)
         """
         external_connection = self.V8COMConnector.Connect(
-            'Srvr="{0}";Ref="{1}";Usr="{2}";Pwd="{3}";'.format(self.server, info_base, info_base_user, info_base_pwd)
+            f'Srvr="{self.server}";Ref="{info_base}";Usr="{info_base_user}";Pwd="{info_base_pwd}";'
         )
         version = external_connection.Metadata.Version
         name = external_connection.Metadata.Name
         del external_connection
         return name, version
 
-    def lock_info_base(self, working_process_connection, info_base, permission_code='0000',
-                       message='Выполняется обслуживание ИБ'):
+    def lock_info_base(self, working_process_connection, info_base, permission_code: str = '0000',
+                       message: str = 'Выполняется обслуживание ИБ'):
         """
         Блокирует фоновые задания и новые сеансы информационной базы
         :param working_process_connection: Соединение с рабочим процессом
@@ -144,11 +161,8 @@ class ClusterControlInterface:
         info_base.SessionsDenied = True
         info_base.PermissionCode = permission_code
         info_base.DeniedMessage = message
-        try:
-            working_process_connection.UpdateInfoBase(info_base)
-        except Exception as e:
-            log.exception('[{0}] Lock info base exception'.format(info_base.Name))
-        log.debug('[{0}] Lock info base successfully'.format(info_base.Name))
+        working_process_connection.UpdateInfoBase(info_base)
+        log.debug(f'<{info_base.Name}> Lock info base successfully')
 
     def unlock_info_base(self, working_process_connection, info_base):
         """
@@ -160,7 +174,7 @@ class ClusterControlInterface:
         info_base.SessionsDenied = False
         info_base.DeniedMessage = ""
         working_process_connection.UpdateInfoBase(info_base)
-        log.debug('[{0}] Unlock info base successfully'.format(info_base.Name))
+        log.debug(f'<{info_base.Name}> Unlock info base successfully')
 
     def terminate_info_base_sessions(self, agent_connection, cluster, info_base_short):
         """

@@ -1,21 +1,36 @@
 import asyncio
 import logging
-import threading
 
-from multiprocessing.pool import ThreadPool
+from typing import Type
 
-import settings
-
-import core.common as common_funcs
-from core.exceptions import V8Exception
-from core.cluster import ClusterControlInterface
+from conf import settings
+from core import cluster, utils
+from core.exceptions import SubprocessException, V8Exception
 
 
 log = logging.getLogger(__name__)
 
 
+def _check_subprocess_return_code(
+    ib_name: str, 
+    subprocess: asyncio.subprocess.Process, 
+    log_filename: str, 
+    log_encoding: str, 
+    exception_class: Type[SubprocessException] = SubprocessException,
+    log_output_on_success = False
+):
+    log.info(f'<{ib_name}> Return code is {str(subprocess.returncode)}')
+    log_file_content = utils.read_file_content(log_filename, log_encoding)
+    msg = f'<{ib_name}> Log message :: {log_file_content}'
+    if subprocess.returncode != 0:
+        log.error(msg)
+        raise exception_class(log_file_content)
+    elif log_output_on_success:
+        log.info(msg)
+
+
 async def execute_v8_command(
-    ib_name, v8_command, log_filename, permission_code=None, timeout=None
+    ib_name: str, v8_command: str, log_filename: str, permission_code: str = None, timeout: int = None, log_output_on_success = False
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -30,14 +45,12 @@ async def execute_v8_command(
     # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
-    with ClusterControlInterface() as cci:
-        agent_connection = cci.get_agent_connection()
-        cluster = cci.get_cluster_with_auth(agent_connection)
-        working_process_connection = cci.get_working_process_connection_with_info_base_auth()
-        # TODO: нужно добавить оптимизацию - объект, который содержит в себе сразу Info и Short описания
-        ib_short = cci.get_info_base_short(agent_connection, cluster, ib_name)
-        ib = cci.get_info_base(working_process_connection, ib_name)
+    with cluster.ClusterControlInterface() as cci:
         if permission_code:
+            agent_connection = cci.get_agent_connection()
+            cluster_with_auth = cci.get_cluster_with_auth(agent_connection)
+            working_process_connection = cci.get_working_process_connection_with_info_base_auth()
+            ib = cci.get_info_base(working_process_connection, ib_name)
             # Блокирует фоновые задания и новые сеансы
             cci.lock_info_base(working_process_connection, ib, permission_code)
             # Перед завершением сеансов следует взять паузу,
@@ -46,10 +59,11 @@ async def execute_v8_command(
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
             log.debug(f'<{ib_name}> Wait for {pause} seconds')
             await asyncio.sleep(pause)
+            ib_short = cci.get_info_base_short(agent_connection, cluster_with_auth, ib_name)
             # Принудительно завершает текущие сеансы
-            cci.terminate_info_base_sessions(agent_connection, cluster, ib_short)
+            cci.terminate_info_base_sessions(agent_connection, cluster_with_auth, ib_short)
             del agent_connection
-            del cluster
+            del cluster_with_auth
             del ib_short
             del working_process_connection
         v8_process = await asyncio.create_subprocess_shell(v8_command)
@@ -58,55 +72,25 @@ async def execute_v8_command(
             await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             await v8_process.terminate()
-        log.info(f'<{ib_name}> Return code is {str(v8_process.returncode)}')
+        
         if permission_code:
-            # Снова получаем соединение с рабочим процессом, потому что за время работы скрипта оно может закрыться
+            # Снова получает соединение с рабочим процессом, 
+            # потому что за время работы процесса 1cv8 оно может закрыться
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
             # Снимает блокировку фоновых заданий и сеансов
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    log_file_content = common_funcs.read_file_content(log_filename, 'utf-8')
-    msg = f'<{ib_name}> Log message :: {log_file_content}'
-    if v8_process.returncode != 0:
-        log.error(msg)
-        raise V8Exception(log_file_content)
-    else:
-        log.info(msg)
+    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception, log_output_on_success)
 
 
-def pycom_threadpool_initializer():
-    # Чтобы создавать COM-объекты в потоках, отличных от MainThread,
-    # необходимо инициализировать win32com для кажодго потока
-    import pythoncom
-    pythoncom.CoInitialize()
-    thread_id = threading.get_ident()
-    log.debug('Thread #%d initialized' % thread_id)
-
-
-def execute_in_threadpool(func, iterable, threads):
-    """
-
-    :param func:
-    :param iterable:
-    :param threads:
-    :return:
-    """
-    log.debug('Creating pool with %d threads' % threads)
-    pool = ThreadPool(threads, initializer=pycom_threadpool_initializer)
-    log.debug('Pool initialized, mapping workload: %d items' % len(iterable))
-    resultset = pool.map(func, iterable)
-    log.debug('Closing pool')
-    pool.close()
-    log.debug('Joining pool')
-    pool.join()
-    succeeded = 0
-    failed = 0
-    for task_result in resultset:
-        if task_result.succeeded:
-            succeeded += 1
-        else:
-            failed += 1
-            log.error(f'[{task_result.infobase_name}] FAILED')
-    log.info(f'{succeeded} succeeded; {failed} failed')
-    return resultset
+async def execute_subprocess_command(
+    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None, log_output_on_success = False
+):
+    subprocess = await asyncio.create_subprocess_shell(subprocess_command)
+    log.debug(f'<{ib_name}> Subprocess PID is {str(subprocess.pid)}')
+    try:
+        await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        await subprocess.terminate()
+    _check_subprocess_return_code(ib_name, subprocess, log_filename, 'utf-8', SubprocessException, log_output_on_success)
