@@ -1,6 +1,8 @@
 from pytest_mock import MockerFixture
 
-from update import get_name_and_version_from_manifest, get_updatable_versions, _find_suitable_manifests, _get_suitable_manifest
+from update import (
+    _find_suitable_manifests, _get_suitable_manifest, get_name_and_version_from_manifest, get_updatable_versions
+)
 
 
 def test_get_name_and_version_from_manifest_returns_name_from_manifest(mock_configuration_manifest):

@@ -1,15 +1,16 @@
 import logging
 from typing import List
 
+
 try:
-    import win32com.client as win32com_client
     import pywintypes
+    import win32com.client as win32com_client
 except ImportError:
     from surrogate import surrogate
     surrogate('win32com.client').prepare()
     surrogate('pywintypes').prepare()
-    import win32com.client as win32com_client
     import pywintypes
+    import win32com.client as win32com_client
     pywintypes.com_error = Exception
 
 from conf import settings

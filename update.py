@@ -1,19 +1,18 @@
 import asyncio
-import os.path
-import re
-import sys
 import glob
 import itertools
 import logging
-import pywintypes
+import os.path
 import random
-
+import re
+import sys
 from datetime import datetime
-from packaging.version import Version
 from typing import List, Tuple
 
-import core.types as core_types
+import pywintypes
+from packaging.version import Version
 
+import core.types as core_types
 from conf import settings
 from core import cluster, utils
 from core.analyze import analyze_update_result

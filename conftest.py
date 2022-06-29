@@ -3,8 +3,9 @@ import random
 from textwrap import dedent
 from unittest.mock import AsyncMock, Mock, mock_open
 
-import pytest
 from packaging.version import Version
+
+import pytest
 from pytest_mock import MockerFixture
 
 from core import types as core_types

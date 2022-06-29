@@ -1,6 +1,5 @@
 import logging
 import os
-
 from typing import Union
 
 from conf import settings

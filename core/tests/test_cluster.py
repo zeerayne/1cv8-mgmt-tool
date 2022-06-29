@@ -1,8 +1,9 @@
 from unittest.mock import Mock, PropertyMock
+
 from pytest_mock import MockerFixture
 
-from core.cluster import ClusterControlInterface, get_server_address, get_server_port
 from conf import settings
+from core.cluster import ClusterControlInterface, get_server_address, get_server_port
 
 
 def test_get_server_address_returns_exact_address_from_settings():
