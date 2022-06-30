@@ -8,6 +8,7 @@ SETTINGS_ENVIRONMENT_VARIABLE = '1CV8MGMT_SETTINGS_MODULE'
 
 
 class Settings:
+
     def __init__(self):
         # update this dict from global and default settings (but only for ALL_CAPS settings)
         for setting in dir(global_settings):

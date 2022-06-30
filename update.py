@@ -47,7 +47,8 @@ def get_updatable_versions(updinfo_filename: str) -> List[Version]:
     return [get_version_from_string(v) for v in from_version_match_result.split(";")]
 
 
-def _find_suitable_manifests(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> List[Tuple[str, Version]]:
+def _find_suitable_manifests(manifests: List[str], name_in_metadata: str,
+                             version_in_metadata: Version) -> List[Tuple[str, Version]]:
     """
     Получает все манифесты обновлений для конфигурации из списка манифестов.
     Поиск производится по имени конфигурации и по её версии.
@@ -70,7 +71,8 @@ def _find_suitable_manifests(manifests: List[str], name_in_metadata: str, versio
     return suitable_manifests
 
 
-def _get_suitable_manifest(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> Tuple[str, Version]:
+def _get_suitable_manifest(manifests: List[str], name_in_metadata: str,
+                           version_in_metadata: Version) -> Tuple[str, Version]:
     """
     Получает наиболее подходящий манифест обновления для текущей конфигурации
     :param manifests: Список файлов манифестов
@@ -88,7 +90,8 @@ def _get_suitable_manifest(manifests: List[str], name_in_metadata: str, version_
         return None
 
 
-def _get_update_chain(manifests: List[str], name_in_metadata: str, version_in_metadata: Version) -> Tuple[List[Tuple[str, Version]], bool]:
+def _get_update_chain(manifests: List[str], name_in_metadata: str,
+                      version_in_metadata: Version) -> Tuple[List[Tuple[str, Version]], bool]:
     update_chain = []
     suitable_manifest_search_flag = True
     v = version_in_metadata
@@ -155,17 +158,15 @@ async def _update_info_base(ib_name, dry=False):
             rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
         log.info(f'Created update command [{v8_command}]')
         if not dry:
-            # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае, 
+            # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае,
             # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
-            # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020): 
+            # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020):
             # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
             pause = (random.randint(0, 100_000)) / 10_000
             log.debug(f'<{ib_name}> Wait for {pause:.2f} seconds')
             await asyncio.sleep(pause)
             # Обновляет информационную базу и конфигурацию БД
-            await execute_v8_command(
-                ib_name, v8_command, log_filename, permission_code
-            )
+            await execute_v8_command(ib_name, v8_command, log_filename, permission_code)
             if is_multiupdate:
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.
@@ -216,10 +217,10 @@ async def main():
         update_datetime_finish = datetime.now()
 
         analyze_results(
-            info_bases, 
-            update_results, 
-            update_datetime_start, 
-            update_datetime_finish, 
+            info_bases,
+            update_results,
+            update_datetime_start,
+            update_datetime_finish,
         )
 
         log.info(f'<{log_prefix}> Done')

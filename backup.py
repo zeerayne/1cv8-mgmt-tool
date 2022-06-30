@@ -87,7 +87,9 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_v8_command(ib_name, v8_command, log_filename, permission_code, timeout=1200, log_output_on_success=True)
+            await execute_v8_command(
+                ib_name, v8_command, log_filename, permission_code, timeout=1200, log_output_on_success=True
+            )
             break
         except V8Exception as e:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
@@ -117,7 +119,9 @@ async def _backup_pgdump(
         log.error(f'<{ib_name}> {str(e)}')
         return core_types.InfoBaseBackupTaskResult(ib_name, False)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
-    backup_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump'))
+    backup_filename = os.path.join(
+        settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump')
+    )
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
     pg_dump_path = os.path.join(settings.PG_BIN_PATH, 'pg_dump.exe')
     # --blobs
@@ -190,20 +194,18 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
 
 
 def analyze_results(
-    infobases: List[str],
-    backup_result: List[core_types.InfoBaseBackupTaskResult],
-    backup_datetime_start: datetime,
-    backup_datetime_finish: datetime,
-    aws_result: List[core_types.InfoBaseAWSUploadTaskResult],
-    aws_datetime_start: datetime,
-    aws_datetime_finish: datetime
+    infobases: List[str], backup_result: List[core_types.InfoBaseBackupTaskResult], backup_datetime_start: datetime,
+    backup_datetime_finish: datetime, aws_result: List[core_types.InfoBaseAWSUploadTaskResult],
+    aws_datetime_start: datetime, aws_datetime_finish: datetime
 ):
     analyze_backup_result(backup_result, infobases, backup_datetime_start, backup_datetime_finish)
     if settings.AWS_ENABLED:
         analyze_s3_result(aws_result, infobases, aws_datetime_start, aws_datetime_finish)
 
 
-def send_email_notification(backup_result: List[core_types.InfoBaseBackupTaskResult], aws_result: List[core_types.InfoBaseAWSUploadTaskResult]):
+def send_email_notification(
+    backup_result: List[core_types.InfoBaseBackupTaskResult], aws_result: List[core_types.InfoBaseAWSUploadTaskResult]
+):
     if settings.NOTIFY_EMAIL_ENABLED:
         log.info(f'<{log_prefix}> Sending email notification')
         msg = ''
@@ -225,7 +227,9 @@ async def main():
 
         backup_semaphore = asyncio.Semaphore(backup_concurrency)
         aws_semaphore = asyncio.Semaphore(aws_concurrency)
-        log.info(f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency')
+        log.info(
+            f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency'
+        )
         backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
         backup_datetime_start = datetime.now()
         aws_tasks = []
@@ -240,9 +244,12 @@ async def main():
                     aws_datetime_start = datetime.now()
                 aws_tasks.append(
                     asyncio.create_task(
-                        upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore),
+                        upload_infobase_to_s3(
+                            backup_result.infobase_name, backup_result.backup_filename, aws_semaphore
+                        ),
                         name=f'Task :: Upload {backup_result.infobase_name} to S3'
-                ))
+                    )
+                )
 
         if aws_tasks:
             await asyncio.wait(aws_tasks)
@@ -250,12 +257,7 @@ async def main():
         aws_datetime_finish = datetime.now()
 
         analyze_results(
-            info_bases, 
-            backup_results, 
-            backup_datetime_start, 
-            backup_datetime_finish, 
-            aws_results, 
-            aws_datetime_start, 
+            info_bases, backup_results, backup_datetime_start, backup_datetime_finish, aws_results, aws_datetime_start,
             aws_datetime_finish
         )
 

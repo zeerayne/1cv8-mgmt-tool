@@ -1,6 +1,5 @@
 from os.path import expanduser, join
 
-
 ## ------------- ##
 ## 1CV8 platform ##
 ## ------------- ##
@@ -11,10 +10,7 @@ V8_INFOBASES_CREDENTIALS = {
     'accounting': ('БухАдминистратор', 'infobase_user_password'),
     'trade': ('УТАдминистратор', 'infobase_user_password'),
 }
-V8_INFOBASES_EXCLUDE = [
-    'accounting_for_tests',
-    'trade_copy'
-]
+V8_INFOBASES_EXCLUDE = ['accounting_for_tests', 'trade_copy']
 V8_SERVER_AGENT = {
     'address': 'localhost',
     'port': '1540',
@@ -31,7 +27,9 @@ BACKUP_PATH = join('.', 'backup')
 BACKUP_PG = False
 BACKUP_RETENTION_DAYS = 30
 BACKUP_REPLICATION = False
-BACKUP_REPLICATION_PATHS = [join('\\\\192.168.1.2', 'backup', '1cv8'), ]
+BACKUP_REPLICATION_PATHS = [
+    join('\\\\192.168.1.2', 'backup', '1cv8'),
+]
 BACKUP_RETRIES_V8 = 1
 BACKUP_RETRIES_PG = 1
 
@@ -88,7 +86,9 @@ NOTIFY_EMAIL_SMTP_SSL_REQUIRED = False
 NOTIFY_EMAIL_LOGIN = ''
 NOTIFY_EMAIL_PASSWORD = ''
 NOTIFY_EMAIL_FROM = ''
-NOTIFY_EMAIL_TO = ['', ]
+NOTIFY_EMAIL_TO = [
+    '',
+]
 
 ## ------- ##
 ## Logging ##

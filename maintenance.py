@@ -48,11 +48,9 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
         rf'/Out {log_filename} -NoTruncate ' \
         rf'/ReduceEventLogSize {reduce_date_str}'
     try:
-        await execute_v8_command(
-            ib_name, v8_command, log_filename, timeout=600, log_output_on_success=True
-        )
+        await execute_v8_command(ib_name, v8_command, log_filename, timeout=600, log_output_on_success=True)
     except V8Exception:
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)    
+        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
@@ -120,14 +118,16 @@ async def main():
         maintenance_semaphore = asyncio.Semaphore(maintenance_concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency')
         maintenance_datetime_start = datetime.now()
-        maintenance_results = await asyncio.gather(*[maintenance_info_base(ib_name, maintenance_semaphore) for ib_name in info_bases])
+        maintenance_results = await asyncio.gather(
+            *[maintenance_info_base(ib_name, maintenance_semaphore) for ib_name in info_bases]
+        )
         maintenance_datetime_finish = datetime.now()
 
         analyze_results(
-            info_bases, 
-            maintenance_results, 
-            maintenance_datetime_start, 
-            maintenance_datetime_finish, 
+            info_bases,
+            maintenance_results,
+            maintenance_datetime_start,
+            maintenance_datetime_finish,
         )
 
         log.info(f'<{log_prefix}> Done')

@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, mock_open
 import pytest
 from pytest_mock import MockerFixture
 
-
 try:
     import pywintypes
 except ImportError:
@@ -168,10 +167,7 @@ def test_get_ib_and_time_filename_ends_with_file_extension(infobase):
 
 
 def test_get_info_bases_not_returns_excluded_infobases(
-    infobases,
-    mock_excluded_infobases,
-    mock_connect_agent,
-    mock_connect_working_process
+    infobases, mock_excluded_infobases, mock_connect_agent, mock_connect_working_process
 ):
     """
     `get_info_bases` not returns excluded infobases
@@ -181,10 +177,7 @@ def test_get_info_bases_not_returns_excluded_infobases(
 
 
 def test_get_info_bases_returns_all_but_excluded_infobases(
-    infobases,
-    mock_excluded_infobases,
-    mock_connect_agent,
-    mock_connect_working_process
+    infobases, mock_excluded_infobases, mock_connect_agent, mock_connect_working_process
 ):
     """
     `get_info_bases` returns all but excluded infobases
@@ -263,6 +256,7 @@ async def test_com_func_wrapper_handle_com_error(infobase, mock_connect_agent, m
     """
     `com_func_wrapper` returns value when com error raised
     """
+
     def raise_com_error(*args):
         raise pywintypes.com_error
 
@@ -276,6 +270,7 @@ async def test_com_func_wrapper_handle_v8_exception(infobase, mock_connect_agent
     """
     `com_func_wrapper` returns value when V8Exception raised
     """
+
     def raise_v8_exception(*args):
         raise V8Exception
 

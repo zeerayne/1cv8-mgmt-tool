@@ -10,7 +10,10 @@ def configure_logging(log_level: Union[str, int]):
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
     # log to console and to file
-    for handler in [logging.StreamHandler(), logging.FileHandler(os.path.join(settings.LOG_PATH, settings.LOG_FILENAME))]:
+    for handler in [
+        logging.StreamHandler(),
+        logging.FileHandler(os.path.join(settings.LOG_PATH, settings.LOG_FILENAME))
+    ]:
         handler.setFormatter(log_format)
         handler.setLevel(log_level)
         root_logger.addHandler(handler)

@@ -19,24 +19,23 @@ def _wrap_log_subprefix(log_subprefix):
 
 
 def _log_message(
-    resultset: List[core_types.InfoBaseTaskResultBase], 
-    succeeded: int, 
-    failed: int, 
-    datetime_start: datetime, 
-    datetime_finish: datetime, 
-    log_subprefix: str
+    resultset: List[core_types.InfoBaseTaskResultBase], succeeded: int, failed: int, datetime_start: datetime,
+    datetime_finish: datetime, log_subprefix: str
 ):
     log_subprefix = _wrap_log_subprefix(log_subprefix)
     diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.')
+    log.info(
+        f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Avg. time {diff / len(resultset):.1f}s.'
+    )
 
 
 def _analyze_result(
-    resultset: List[core_types.InfoBaseTaskResultBase], 
-    workload: List[str], 
-    datetime_start: datetime, 
+    resultset: List[core_types.InfoBaseTaskResultBase],
+    workload: List[str],
+    datetime_start: datetime,
     datetime_finish: datetime,
-    custom_log_message_func: Callable[[List[core_types.InfoBaseTaskResultBase], int, int, datetime, datetime], None] = None,
+    custom_log_message_func: Callable[[List[core_types.InfoBaseTaskResultBase], int, int, datetime, datetime],
+                                      None] = None,
     log_subprefix: str = None
 ):
     log_subprefix = _wrap_log_subprefix(log_subprefix)
@@ -64,31 +63,24 @@ def _analyze_result(
 
 
 def analyze_result(
-    resultset: List[core_types.InfoBaseTaskResultBase], 
-    workload: List[str], 
-    datetime_start: datetime, 
-    datetime_finish: datetime, 
+    resultset: List[core_types.InfoBaseTaskResultBase],
+    workload: List[str],
+    datetime_start: datetime,
+    datetime_finish: datetime,
     log_subprefix: str = None
 ):
     log_message = functools.partial(_log_message, log_subprefix=log_subprefix)
-    _analyze_result(
-        resultset,
-        workload,
-        datetime_start,
-        datetime_finish,
-        log_message,
-        log_subprefix
-    )
+    _analyze_result(resultset, workload, datetime_start, datetime_finish, log_message, log_subprefix)
 
 
-def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
+def analyze_s3_result(
+    resultset: List[core_types.InfoBaseAWSUploadTaskResult], workload: List[str], datetime_start: datetime,
+    datetime_finish: datetime
+):
     log_subprefix = _wrap_log_subprefix('AWS')
-    
-    def log_message(    
-        resultset: List[core_types.InfoBaseTaskResultBase], 
-        succeeded: int, 
-        failed: int, 
-        datetime_start: datetime, 
+
+    def log_message(
+        resultset: List[core_types.InfoBaseTaskResultBase], succeeded: int, failed: int, datetime_start: datetime,
         datetime_finish: datetime
     ):
         size = 0
@@ -96,46 +88,32 @@ def analyze_s3_result(resultset: List[core_types.InfoBaseAWSUploadTaskResult], w
             if task_result.succeeded:
                 size += task_result.upload_size
         diff = (datetime_finish - datetime_start).total_seconds()
-        log.info(f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s')
-    
-    _analyze_result(
-        resultset,
-        workload,
-        datetime_start,
-        datetime_finish,
-        log_message,
-        log_subprefix
-    )
+        log.info(
+            f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s'
+        )
+
+    _analyze_result(resultset, workload, datetime_start, datetime_finish, log_message, log_subprefix)
 
 
-def analyze_backup_result(resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
+def analyze_backup_result(
+    resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime,
+    datetime_finish: datetime
+):
     log_subprefix = 'Backup'
-    analyze_result(
-        resultset,
-        workload,
-        datetime_start,
-        datetime_finish,
-        log_subprefix
-    )
+    analyze_result(resultset, workload, datetime_start, datetime_finish, log_subprefix)
 
 
-def analyze_maintenance_result(resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
+def analyze_maintenance_result(
+    resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime,
+    datetime_finish: datetime
+):
     log_subprefix = 'Maintenance'
-    analyze_result(
-        resultset,
-        workload,
-        datetime_start,
-        datetime_finish,
-        log_subprefix
-    )
+    analyze_result(resultset, workload, datetime_start, datetime_finish, log_subprefix)
 
 
-def analyze_update_result(resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime, datetime_finish: datetime):
+def analyze_update_result(
+    resultset: List[core_types.InfoBaseBackupTaskResult], workload: List[str], datetime_start: datetime,
+    datetime_finish: datetime
+):
     log_subprefix = 'Update'
-    analyze_result(
-        resultset,
-        workload,
-        datetime_start,
-        datetime_finish,
-        log_subprefix
-    )
+    analyze_result(resultset, workload, datetime_start, datetime_finish, log_subprefix)

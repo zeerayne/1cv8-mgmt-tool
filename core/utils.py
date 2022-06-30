@@ -7,7 +7,6 @@ from typing import List, Tuple, Union
 
 import aiofiles.os
 
-
 try:
     import pywintypes
 except ImportError:
