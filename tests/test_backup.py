@@ -62,6 +62,7 @@ async def test_rotate_backups_calls_old_file_remover_for_replication_paths(mocke
     await rotate_backups(infobase)
     assert remove_old_mock.await_count == len(replication_paths) + 1  # plus one for initial backup place
 
+
 @pytest.mark.asyncio
 async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
@@ -85,7 +86,9 @@ async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_type_object_when_succeeded(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_v8_return_backup_result_type_object_when_succeeded(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path
+):
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when succeeded
     """
@@ -143,7 +146,9 @@ async def test_backup_v8_return_result_for_exact_infobase_when_failed(
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_return_backup_result_succeeded_false_when_failed(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_v8_return_backup_result_succeeded_false_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path
+):
     """
     Backup with 1cv8 tools returns object with succeeded == False when failed
     """
@@ -263,9 +268,7 @@ async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, infobase):
 
 @pytest.mark.asyncio
 async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_is_not_postgres(
-    mocker: MockerFixture, 
-    infobase,
-    mock_cluster_mssql_infobase
+    mocker: MockerFixture, infobase, mock_cluster_mssql_infobase
 ):
     """
     `_backup_info_base` calls `_backup_v8` if BACKUP_PG == True, but infobase DBMS is not postgres
@@ -278,9 +281,7 @@ async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_
 
 @pytest.mark.asyncio
 async def test_backup_info_base_run_pgdump_backup_when_pgbackup_is_enabled_and_dbms_is_postgres(
-    mocker: MockerFixture, 
-    infobase,
-    mock_cluster_postgres_infobase
+    mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
     `_backup_info_base` calls `_backup_pgdump` if BACKUP_PG == True, and infobase DBMS is postgres
@@ -305,7 +306,9 @@ async def test_backup_info_base_returns_value_from_v8_backup(mocker: MockerFixtu
 
 
 @pytest.mark.asyncio
-async def test_backup_info_base_returns_value_from_pgdump_backup(mocker: MockerFixture, infobase, mock_cluster_postgres_infobase):
+async def test_backup_info_base_returns_value_from_pgdump_backup(
+    mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
+):
     """
     `_backup_info_base` returns value from underlying `_backup_pgdump` function
     """
@@ -339,7 +342,9 @@ async def test_backup_info_calls_rotate_backups(mocker: MockerFixture, infobase)
 
 
 @pytest.mark.asyncio
-async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_backup_was_successfull(mocker: MockerFixture, infobase):
+async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_backup_was_successfull(
+    mocker: MockerFixture, infobase
+):
     """
     `backup_info_base` calls `replicate_backup` if BACKUP_REPLICATION == True and backup was successfull
     """
@@ -354,7 +359,9 @@ async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_
 
 
 @pytest.mark.asyncio
-async def test_backup_info_dont_calls_replicate_backup_if_replication_is_enabled_and_backup_failed(mocker: MockerFixture, infobase):
+async def test_backup_info_dont_calls_replicate_backup_if_replication_is_enabled_and_backup_failed(
+    mocker: MockerFixture, infobase
+):
     """
     `backup_info_base` don't calls `replicate_backup` if BACKUP_REPLICATION == True and backup failed
     """
@@ -441,9 +448,8 @@ def test_analyze_results_calls_backup_analyze_if_aws_enabled(
     mocker.patch('backup.analyze_s3_result')
     analyze_backup_result_mock = mocker.patch('backup.analyze_backup_result')
     analyze_results(
-        infobases, 
-        mixed_backup_result, backup_datetime_start, backup_datetime_finish, 
-        mixed_aws_result, aws_datetime_start, aws_datetime_finish
+        infobases, mixed_backup_result, backup_datetime_start, backup_datetime_finish, mixed_aws_result,
+        aws_datetime_start, aws_datetime_finish
     )
     analyze_backup_result_mock.assert_called_with(
         mixed_backup_result, infobases, backup_datetime_start, backup_datetime_finish
@@ -464,16 +470,15 @@ def test_analyze_results_calls_aws_analyze_if_aws_enabled(
     mocker.patch('backup.analyze_backup_result')
     analyze_s3_result_mock = mocker.patch('backup.analyze_s3_result')
     analyze_results(
-        infobases, 
-        mixed_backup_result, backup_datetime_start, backup_datetime_finish, 
-        mixed_aws_result, aws_datetime_start, aws_datetime_finish
+        infobases, mixed_backup_result, backup_datetime_start, backup_datetime_finish, mixed_aws_result,
+        aws_datetime_start, aws_datetime_finish
     )
-    analyze_s3_result_mock.assert_called_with(
-        mixed_aws_result, infobases, aws_datetime_start, aws_datetime_finish
-    )
+    analyze_s3_result_mock.assert_called_with(mixed_aws_result, infobases, aws_datetime_start, aws_datetime_finish)
 
 
-def test_send_email_notification_does_nothing_when_disabled(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+def test_send_email_notification_does_nothing_when_disabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
     """
     `send_email_notification` does nothing when NOTIFY_EMAIL_ENABLED == False
     """
@@ -504,7 +509,9 @@ def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed
     make_html_table_mock.assert_called_with('Backup', mixed_backup_result)
 
 
-def test_send_email_notification_not_makes_aws_table_when_aws_disabled(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+def test_send_email_notification_not_makes_aws_table_when_aws_disabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
     """
     `send_email_notification` calls `make_html_table` only for backup results when AWS_ENABLED == False
     """
@@ -513,7 +520,6 @@ def test_send_email_notification_not_makes_aws_table_when_aws_disabled(mocker: M
     make_html_table_mock = mocker.patch('backup.make_html_table')
     send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_once()
-
 
 
 def test_send_email_notification_makes_aws_table_when_aws_enabled(

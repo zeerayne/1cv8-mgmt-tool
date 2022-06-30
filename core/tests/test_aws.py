@@ -94,7 +94,6 @@ async def test_upload_infobase_to_s3_return_success_result_for_exact_infobase(
     assert result.infobase_name == infobase
 
 
-
 @pytest.mark.asyncio
 async def test_upload_infobase_to_s3_return_success_result(infobase, success_backup_result, mock_upload_infobase_to_s3):
     """
@@ -130,7 +129,9 @@ async def test_upload_infobase_to_s3_return_failed_result(
 
 
 @pytest.mark.asyncio
-async def test_upload_infobase_to_s3_make_retries(infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error):
+async def test_upload_infobase_to_s3_make_retries(
+    infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error
+):
     """
     AWS uploader should retry if there is connection issues during upload
     """
@@ -140,7 +141,9 @@ async def test_upload_infobase_to_s3_make_retries(infobase, success_backup_resul
 
 
 @pytest.mark.asyncio
-async def test_internal_upload_infobase_to_s3_call(mocker: MockerFixture, infobase, success_backup_result, mock_aioboto3_session, mock_os_stat):
+async def test_internal_upload_infobase_to_s3_call(
+    mocker: MockerFixture, infobase, success_backup_result, mock_aioboto3_session, mock_os_stat
+):
     """
     boto3.Session.client.upload_file inside should be called when uploading files to AWS
     """
@@ -175,4 +178,6 @@ async def test_upload_to_s3(mocker: MockerFixture, mock_upload_infobase_to_s3, m
     mocker.patch('core.analyze._analyze_result')
     mocker.patch('conf.settings.AWS_ENABLED', new_callable=PropertyMock(return_value=True))
     await upload_to_s3(mixed_backup_result)
-    assert mock_upload_infobase_to_s3.await_count == reduce(lambda prev, curr: prev + int(curr.succeeded), mixed_backup_result, 0)
+    assert mock_upload_infobase_to_s3.await_count == reduce(
+        lambda prev, curr: prev + int(curr.succeeded), mixed_backup_result, 0
+    )

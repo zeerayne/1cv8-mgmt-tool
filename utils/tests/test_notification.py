@@ -76,6 +76,7 @@ def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_send
     send_notification('', '')
     mock_smtp.assert_called_with(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT)
 
+
 def test_send_notification_calls_smtp_login(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
     """
     To send email, should be logged in on smtp server

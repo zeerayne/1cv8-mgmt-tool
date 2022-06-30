@@ -24,11 +24,12 @@ def test_sizeof_fmt_big_value():
     result = sizeof_fmt(1024 ** 9)
     assert result == '1024.0YiB'
 
+
 def test_sizeof_fmt_custom_radix():
     """
     Check if values with custom radix are formatted correctly
     """
-    result = sizeof_fmt(2000, radix = 1000)
+    result = sizeof_fmt(2000, radix=1000)
     assert result == '2.0KiB'
 
 
@@ -36,7 +37,7 @@ def test_sizeof_fmt_custom_unit():
     """
     Check if values with custom unit are formatted correctly
     """
-    result = sizeof_fmt(1024 * 1.5, suffix = 'Q')
+    result = sizeof_fmt(1024 * 1.5, suffix='Q')
     assert result == '1.5KiQ'
 
 
@@ -44,5 +45,5 @@ def test_sizeof_fmt_custom_unit():
     """
     Check if values with custom radix suffix are formatted correctly
     """
-    result = sizeof_fmt(1024 ** 2 * 4.7, radix_suffix = '')
+    result = sizeof_fmt(1024 ** 2 * 4.7, radix_suffix='')
     assert result == '4.7MB'

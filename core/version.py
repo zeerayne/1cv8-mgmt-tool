@@ -14,7 +14,8 @@ def find_last_version(versions: List[str]) -> Version:
 
 
 def find_platform_last_version(platform_path: str) -> Version:
-    platforms = [name for name in os.listdir(platform_path)
+    platforms = [
+        name for name in os.listdir(platform_path)
         if (os.path.isdir(os.path.join(platform_path, name)) and name[0].isdigit())
     ]
     last_platform_version = find_last_version(platforms)
