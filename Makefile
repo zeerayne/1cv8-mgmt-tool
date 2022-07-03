@@ -11,6 +11,10 @@ install-dev:
 test:
 	poetry run pytest --spec -W ignore::DeprecationWarning:pytest_freezegun
 
+.PHONY: test-coverage
+test-coverage:
+	poetry run coverage run -m pytest -W ignore::DeprecationWarning:pytest_freezegun
+
 .PHONY: code-style
 code-style:
 	poetry run isort . && poetry run yapf --recursive --in-place --verbose .

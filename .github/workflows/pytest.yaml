@@ -1,0 +1,46 @@
+# This workflow will run tests with all supported python versions
+
+name: Pytest
+on: 
+  push
+jobs:
+  test:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"]
+        poetry-version: ["1.1.13"]
+        os: [ubuntu-latest]
+      runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v2.1.5
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install dependencies
+        run: make install-dev
+      - name: Test with coverage
+        run: make test-coverage
+      - name: Upload coverage data to coveralls.io
+        run: poetry run coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+  coveralls:
+    name: Indicate completion to coveralls.io
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+    - name: Finished
+      run: |
+        pip3 install --upgrade coveralls
+        coveralls --service=github --finish
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
