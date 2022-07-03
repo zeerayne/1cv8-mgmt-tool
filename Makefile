@@ -18,3 +18,7 @@ test-coverage:
 .PHONY: code-style
 code-style:
 	poetry run isort . && poetry run yapf --recursive --in-place --verbose .
+
+.PHONY: flake8
+flake8:
+	poetry run flake8 .
