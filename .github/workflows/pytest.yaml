@@ -1,8 +1,7 @@
 # This workflow will run tests with all supported python versions
 
-name: Pytest
-on: 
-  push
+name: pytest
+on: [push, pull_request]
 jobs:
   test:
     strategy:
