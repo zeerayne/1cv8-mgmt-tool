@@ -19,5 +19,8 @@ jobs:
       - name: Get changed files using defaults
         id: changed-files
         uses: tj-actions/changed-files@v23.1
+        with:
+          files: |
+            *.py
       - name: Check code with flake8
         run: poetry run flake8 ${{ steps.changed-files.outputs.all_modified_files }}
