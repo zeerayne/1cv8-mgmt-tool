@@ -1,9 +1,4 @@
 [flake8]
-ignore =
-    # line break before binary operator
-    W503,
-    # line break after binary operator
-    W504
 exclude =
     .git,
     .github,
