@@ -1,11 +1,11 @@
 import random
 import re
-
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock
 
-import pytest
 from botocore.exceptions import EndpointConnectionError
+
+import pytest
 from pytest_mock import MockerFixture
 
 from conf import settings
@@ -37,6 +37,7 @@ async def mock_upload_infobase_to_s3_connection_error(mocker: MockerFixture):
 
 @pytest.fixture
 async def mock_aioboto3_session(mocker: MockerFixture):
+
     class AsyncContextManagerStub:
 
         async def __aenter__(self, *args, **kwargs):
@@ -57,7 +58,9 @@ async def mock_aioboto3_session(mocker: MockerFixture):
 
 
 def create_bucket_object(mock_aioboto3_session, last_modified: datetime):
+
     class AsyncIteratorStub:
+
         def __init__(self, seq):
             self.iter = iter(seq)
 
@@ -90,7 +93,10 @@ def create_bucket_object(mock_aioboto3_session, last_modified: datetime):
 @pytest.fixture
 async def mock_aioboto3_bucket_objects_old(mock_aioboto3_session):
     from conf import settings
-    return create_bucket_object(mock_aioboto3_session, datetime.now(tz=timezone.utc) - timedelta(days=settings.AWS_RETENTION_DAYS + 2))
+    return create_bucket_object(
+        mock_aioboto3_session,
+        datetime.now(tz=timezone.utc) - timedelta(days=settings.AWS_RETENTION_DAYS + 2)
+    )
 
 
 @pytest.fixture
@@ -108,7 +114,9 @@ def mock_os_stat(mocker: MockerFixture):
 @pytest.fixture
 def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
     mocker.patch('os.path.isdir', return_value=True)
-    return mocker.patch('os.listdir', return_value=mock_platform_versions + ['test_common', 'test_conf', 'test_srvinfo'])
+    return mocker.patch(
+        'os.listdir', return_value=mock_platform_versions + ['test_common', 'test_conf', 'test_srvinfo']
+    )
 
 
 @pytest.fixture
@@ -151,17 +159,17 @@ def mock_infobases_com_obj(infobases):
 @pytest.fixture
 def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
     agent_connection_mock = Mock()
-    
+
     type(agent_connection_mock.return_value).GetInfoBases = mock_infobases_com_obj
     type(agent_connection_mock.return_value).Authenticate = Mock()
     type(agent_connection_mock.return_value).GetClusters = Mock(return_value=['test_cluster01', 'test_cluster02'])
-    
+
     working_process_mock = Mock()
     type(working_process_mock).MainPort = random.randint(1000, 2000)
     type(agent_connection_mock.return_value).GetWorkingProcesses = Mock(return_value=[working_process_mock])
 
     type(agent_connection_mock.return_value).GetInfoBaseSessions = Mock(
-        side_effect=lambda cluster, info_base_short: [f'test_{info_base_short.Name}_session_{i}' for i in range(1,5)]
+        side_effect=lambda cluster, info_base_short: [f'test_{info_base_short.Name}_session_{i}' for i in range(1, 5)]
     )
 
     type(mock_win32com_client_dispatch.return_value).ConnectAgent = agent_connection_mock
@@ -182,12 +190,14 @@ def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_c
 
 @pytest.fixture
 def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_version):
+
     def external_connection_mock_side_effect(connection_string):
         infobase_name = re.search(r'Ref="(?P<ref>[\w\d\-_]+)"', connection_string).group('ref')
         side_effect_mock = Mock()
         side_effect_mock.Metadata.Version = mock_infobase_version
         side_effect_mock.Metadata.Name = infobase_name
         return side_effect_mock
+
     external_connection_mock = Mock(side_effect=external_connection_mock_side_effect)
     type(mock_win32com_client_dispatch.return_value).Connect = external_connection_mock
     return external_connection_mock
@@ -207,7 +217,7 @@ def mock_excluded_infobases(mocker: MockerFixture, infobases):
 
 @pytest.fixture
 def mock_infobases_credentials(mocker: MockerFixture, infobases):
-    creds = { infobase: (f'test_{infobase}_login', f'test_{infobase}_password') for infobase in infobases}
+    creds = {infobase: (f'test_{infobase}_login', f'test_{infobase}_password') for infobase in infobases}
     creds.update(settings.V8_INFOBASES_CREDENTIALS)
     mocker.patch('conf.settings.V8_INFOBASES_CREDENTIALS', new_callable=PropertyMock(return_value=creds))
     return creds

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-
 from typing import Type
 
 from conf import settings
@@ -12,12 +11,12 @@ log = logging.getLogger(__name__)
 
 
 def _check_subprocess_return_code(
-    ib_name: str, 
-    subprocess: asyncio.subprocess.Process, 
-    log_filename: str, 
-    log_encoding: str, 
+    ib_name: str,
+    subprocess: asyncio.subprocess.Process,
+    log_filename: str,
+    log_encoding: str,
     exception_class: Type[SubprocessException] = SubprocessException,
-    log_output_on_success = False
+    log_output_on_success=False
 ):
     log.info(f'<{ib_name}> Return code is {str(subprocess.returncode)}')
     log_file_content = utils.read_file_content(log_filename, log_encoding)
@@ -30,7 +29,12 @@ def _check_subprocess_return_code(
 
 
 async def execute_v8_command(
-    ib_name: str, v8_command: str, log_filename: str, permission_code: str = None, timeout: int = None, log_output_on_success = False
+    ib_name: str,
+    v8_command: str,
+    log_filename: str,
+    permission_code: str = None,
+    timeout: int = None,
+    log_output_on_success=False
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -72,9 +76,9 @@ async def execute_v8_command(
             await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             await v8_process.terminate()
-        
+
         if permission_code:
-            # Снова получает соединение с рабочим процессом, 
+            # Снова получает соединение с рабочим процессом,
             # потому что за время работы процесса 1cv8 оно может закрыться
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
             # Снимает блокировку фоновых заданий и сеансов
@@ -85,7 +89,7 @@ async def execute_v8_command(
 
 
 async def execute_subprocess_command(
-    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None, log_output_on_success = False
+    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None, log_output_on_success=False
 ):
     subprocess = await asyncio.create_subprocess_shell(subprocess_command)
     log.debug(f'<{ib_name}> Subprocess PID is {str(subprocess.pid)}')
@@ -93,4 +97,6 @@ async def execute_subprocess_command(
         await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         await subprocess.terminate()
-    _check_subprocess_return_code(ib_name, subprocess, log_filename, 'utf-8', SubprocessException, log_output_on_success)
+    _check_subprocess_return_code(
+        ib_name, subprocess, log_filename, 'utf-8', SubprocessException, log_output_on_success
+    )

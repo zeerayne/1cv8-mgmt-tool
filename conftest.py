@@ -1,10 +1,10 @@
 import asyncio
 import random
+from packaging.version import Version
 from textwrap import dedent
 from unittest.mock import AsyncMock, Mock, mock_open
 
 import pytest
-from packaging.version import Version
 from pytest_mock import MockerFixture
 
 from core import types as core_types
@@ -43,19 +43,20 @@ def failed_base_result(infobases):
 @pytest.fixture
 def mixed_base_result(infobases):
     succeeded = True
-    return [core_types.InfoBaseTaskResultBase(
-        infobase_name=ib,
-        succeeded=(succeeded := not succeeded),
-    ) for ib in infobases]
+    return [
+        core_types.InfoBaseTaskResultBase(
+            infobase_name=ib,
+            succeeded=(succeeded := not succeeded),
+        ) for ib in infobases
+    ]
 
 
 @pytest.fixture
 def success_backup_result(infobases):
-    return [core_types.InfoBaseBackupTaskResult(
-        infobase_name=ib,
-        succeeded=True,
-        backup_filename=f'./{ib}.testbackup'
-    ) for ib in infobases]
+    return [
+        core_types.InfoBaseBackupTaskResult(infobase_name=ib, succeeded=True, backup_filename=f'./{ib}.testbackup')
+        for ib in infobases
+    ]
 
 
 @pytest.fixture
@@ -69,19 +70,18 @@ def failed_backup_result(infobases):
 @pytest.fixture
 def mixed_backup_result(infobases):
     succeeded = True
-    return [core_types.InfoBaseBackupTaskResult(
-        infobase_name=ib,
-        succeeded=(succeeded := not succeeded),
-        backup_filename=f'./{ib}.testbackup' if succeeded else ''
-    ) for ib in infobases]
+    return [
+        core_types.InfoBaseBackupTaskResult(
+            infobase_name=ib,
+            succeeded=(succeeded := not succeeded),
+            backup_filename=f'./{ib}.testbackup' if succeeded else ''
+        ) for ib in infobases
+    ]
 
 
 @pytest.fixture
 def success_maintenance_result(infobases):
-    return [core_types.InfoBaseMaintenanceTaskResult(
-        infobase_name=ib,
-        succeeded=True
-    ) for ib in infobases]
+    return [core_types.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
 
 
 @pytest.fixture
@@ -95,18 +95,15 @@ def failed_maintenance_result(infobases):
 @pytest.fixture
 def mixed_maintenance_result(infobases):
     succeeded = True
-    return [core_types.InfoBaseMaintenanceTaskResult(
-        infobase_name=ib,
-        succeeded=(succeeded := not succeeded)
-    ) for ib in infobases]
+    return [
+        core_types.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=(succeeded := not succeeded))
+        for ib in infobases
+    ]
 
 
 @pytest.fixture
 def success_update_result(infobases):
-    return [core_types.InfoBaseUpdateTaskResult(
-        infobase_name=ib,
-        succeeded=True
-    ) for ib in infobases]
+    return [core_types.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
 
 
 @pytest.fixture
@@ -120,37 +117,36 @@ def failed_update_result(infobases):
 @pytest.fixture
 def mixed_update_result(infobases):
     succeeded = True
-    return [core_types.InfoBaseUpdateTaskResult(
-        infobase_name=ib,
-        succeeded=(succeeded := not succeeded)
-    ) for ib in infobases]   
+    return [
+        core_types.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=(succeeded := not succeeded))
+        for ib in infobases
+    ]
 
 
 @pytest.fixture
 def success_aws_result(infobases):
-    return [core_types.InfoBaseAWSUploadTaskResult(
-        infobase_name=ib,
-        succeeded=True,
-        upload_size=random.randint(1000, 1000 ** 2)
-    ) for ib in infobases]
+    return [
+        core_types.InfoBaseAWSUploadTaskResult(
+            infobase_name=ib, succeeded=True, upload_size=random.randint(1000, 1000 ** 2)
+        ) for ib in infobases
+    ]
 
 
 @pytest.fixture
 def failed_aws_result(infobases):
-    return [core_types.InfoBaseAWSUploadTaskResult(
-        infobase_name=ib,
-        succeeded=False
-    ) for ib in infobases]
+    return [core_types.InfoBaseAWSUploadTaskResult(infobase_name=ib, succeeded=False) for ib in infobases]
 
 
 @pytest.fixture
 def mixed_aws_result(infobases):
     succeeded = True
-    return [core_types.InfoBaseAWSUploadTaskResult(
-        infobase_name=ib,
-        succeeded=(succeeded := not succeeded),
-        upload_size=random.randint(1000, 1000 ** 2) if succeeded else 0
-    ) for ib in infobases]
+    return [
+        core_types.InfoBaseAWSUploadTaskResult(
+            infobase_name=ib,
+            succeeded=(succeeded := not succeeded),
+            upload_size=random.randint(1000, 1000 ** 2) if succeeded else 0
+        ) for ib in infobases
+    ]
 
 
 @pytest.fixture
@@ -179,7 +175,7 @@ def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
         asyncio.sleep(10)
 
     subprocess_mock.communicate = AsyncMock(side_effect=subprocess_sleep)
-    
+
     return mocker.patch('asyncio.create_subprocess_shell', return_value=subprocess_mock)
 
 
@@ -232,7 +228,8 @@ def mock_configuration_metadata():
 
 @pytest.fixture
 def mock_configuration_manifest(mocker: MockerFixture):
-    content = dedent("""Vendor=Фирма "1С"
+    content = dedent(
+        """Vendor=Фирма "1С"
         Name=БухгалтерияПредприятия
         Version=3.0.111.25
         AppVersion=8.3
@@ -244,14 +241,16 @@ def mock_configuration_manifest(mocker: MockerFixture):
         Catalog=1С:Бухгалтерия предприятия /Бухгалтерия предприятия (демо) 
         Destination=1C/DemoAccounting
         Source=1Cv8.dt
-    """)
+    """
+    )
     mocker.patch('builtins.open', mock_open(read_data=content))
     return 'БухгалтерияПредприятия', Version('3.0.111.25')
 
 
 @pytest.fixture
 def mock_configuration_manifest_new(mocker: MockerFixture):
-    content = dedent("""Vendor=Фирма "1С"
+    content = dedent(
+        """Vendor=Фирма "1С"
         Name=БухгалтерияПредприятия
         Version=3.0.113.17
         AppVersion=8.3
@@ -263,26 +262,35 @@ def mock_configuration_manifest_new(mocker: MockerFixture):
         Catalog=1С:Бухгалтерия предприятия /Бухгалтерия предприятия (демо) 
         Destination=1C/DemoAccounting
         Source=1Cv8.dt
-    """)
+    """
+    )
     mocker.patch('builtins.open', mock_open(read_data=content))
     return 'БухгалтерияПредприятия', Version('3.0.113.17')
 
 
 @pytest.fixture
 def mock_configuration_manifest_updinfo(mocker: MockerFixture):
-    content = dedent("""Version=3.0.111.25
+    content = dedent(
+        """Version=3.0.111.25
         FromVersions=;3.0.108.206;3.0.109.61;3.0.110.20;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.20;
         UpdateDate=21.04.2022
-    """)
+    """
+    )
     mocker.patch('builtins.open', mock_open(read_data=content))
-    return [Version(v) for v in '3.0.108.206;3.0.109.61;3.0.110.20;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.20'.split(';')]
+    return [
+        Version(v) for v in '3.0.108.206;3.0.109.61;3.0.110.20;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.20'.split(';')
+    ]
 
 
 @pytest.fixture
 def mock_configuration_manifest_updinfo_new(mocker: MockerFixture):
-    content = dedent("""Version=3.0.113.17
+    content = dedent(
+        """Version=3.0.113.17
         FromVersions=;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.25;3.0.112.31;3.0.112.34;3.0.113.16;
         UpdateDate=26.05.2022
-    """)
+    """
+    )
     mocker.patch('builtins.open', mock_open(read_data=content))
-    return [Version(v) for v in '3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.25;3.0.112.31;3.0.112.34;3.0.113.16'.split(';')]
+    return [
+        Version(v) for v in '3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.25;3.0.112.31;3.0.112.34;3.0.113.16'.split(';')
+    ]

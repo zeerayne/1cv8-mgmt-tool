@@ -2,19 +2,17 @@ import logging
 from typing import List
 
 try:
-    import win32com.client as win32com_client
     import pywintypes
+    import win32com.client as win32com_client
 except ImportError:
     from surrogate import surrogate
     surrogate('win32com.client').prepare()
     surrogate('pywintypes').prepare()
-    import win32com.client as win32com_client
     import pywintypes
+    import win32com.client as win32com_client
     pywintypes.com_error = Exception
 
 from conf import settings
-
-
 r"""
 Для доступа к информационной базе из внешней программы используется COM объект COMConnector. 
 При установке платформы 1С, операционной системе автоматически регистрируется класс COMConnector. 
@@ -26,7 +24,6 @@ r"""
 Для того чтобы зарегистрировать ComConnector в 64 разрядной операционной системе Windows выполняется
 команда: regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll" 
 """
-
 
 log = logging.getLogger(__name__)
 
@@ -147,8 +144,13 @@ class ClusterControlInterface:
         del external_connection
         return name, version
 
-    def lock_info_base(self, working_process_connection, info_base, permission_code: str = '0000',
-                       message: str = 'Выполняется обслуживание ИБ'):
+    def lock_info_base(
+        self,
+        working_process_connection,
+        info_base,
+        permission_code: str = '0000',
+        message: str = 'Выполняется обслуживание ИБ'
+    ):
         """
         Блокирует фоновые задания и новые сеансы информационной базы
         :param working_process_connection: Соединение с рабочим процессом

@@ -1,9 +1,11 @@
+[![Coverage Status](https://coveralls.io/repos/github/zeerayne/1cv8-mgmt-tool/badge.svg?branch=master)](https://coveralls.io/github/zeerayne/1cv8-mgmt-tool?branch=master)
+
 # Описание
 
 Набор утилит, облегчающих эксплуатацию кластера 1С Предприятие 8. 
 
 Доступные функции:
-1. Резервное копирования информационных баз средствами платформы 1С или средствами PostgreSQL
+1. Резервное копирование информационных баз средствами платформы 1С или средствами PostgreSQL
 2. Копирование бэкапов в любое S3-совместимое хранилище
 3. Ротация бэкапов
 4. Ротация логов
@@ -75,7 +77,8 @@ git clone https://github.com/zeerayne/1cv8-mgmt-tool.git
 Создание виртуального окружения, установка сторонних зависимостей
 
 ```powershell
-$(cd 1cv8-mgmt-tool;$?) -and $(poetry install --no-root --no-dev;$?)
+cd 1cv8-mgmt-tool
+poetry install --no-root --no-dev
 ```
 
 # Настройка

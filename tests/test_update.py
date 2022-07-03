@@ -1,6 +1,8 @@
 from pytest_mock import MockerFixture
 
-from update import get_name_and_version_from_manifest, get_updatable_versions, _find_suitable_manifests, _get_suitable_manifest
+from update import (
+    _find_suitable_manifests, _get_suitable_manifest, get_name_and_version_from_manifest, get_updatable_versions
+)
 
 
 def test_get_name_and_version_from_manifest_returns_name_from_manifest(mock_configuration_manifest):
@@ -28,25 +30,20 @@ def test_get_updatable_versions_returns_versions_from_updinfo(mock_configuration
 
 
 def test_find_suitable_manifests_returns_updated_when_exists(
-    mocker: MockerFixture,
-    mock_configuration_metadata,
-    mock_configuration_manifest,
-    mock_configuration_manifest_updinfo
+    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest, mock_configuration_manifest_updinfo
 ):
     """
     Applicable update manifest is found
     """
     mocker.patch('update.get_name_and_version_from_manifest', return_value=mock_configuration_manifest)
     mocker.patch('update.get_updatable_versions', return_value=mock_configuration_manifest_updinfo)
-    result = _find_suitable_manifests(['manifest_test_path/1/1cv8.mft'], mock_configuration_metadata[0], mock_configuration_metadata[1])
+    result = _find_suitable_manifests(['manifest_test_path/1/1cv8.mft'], mock_configuration_metadata[0],
+                                      mock_configuration_metadata[1])
     assert len(result) == 1
 
 
 def test_find_suitable_manifests_returns_correct_manifest_filename(
-    mocker: MockerFixture,
-    mock_configuration_metadata,
-    mock_configuration_manifest,
-    mock_configuration_manifest_updinfo
+    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest, mock_configuration_manifest_updinfo
 ):
     """
     Applicable update manifest filename is correct
@@ -54,15 +51,13 @@ def test_find_suitable_manifests_returns_correct_manifest_filename(
     manifest_filename = 'manifest_test_path/1/1cv8.mft'
     mocker.patch('update.get_name_and_version_from_manifest', return_value=mock_configuration_manifest)
     mocker.patch('update.get_updatable_versions', return_value=mock_configuration_manifest_updinfo)
-    result = _find_suitable_manifests([manifest_filename], mock_configuration_metadata[0], mock_configuration_metadata[1])
+    result = _find_suitable_manifests([manifest_filename], mock_configuration_metadata[0],
+                                      mock_configuration_metadata[1])
     assert result[0][0] == manifest_filename
 
 
 def test_find_suitable_manifests_returns_correct_manifest_version(
-    mocker: MockerFixture,
-    mock_configuration_metadata,
-    mock_configuration_manifest,
-    mock_configuration_manifest_updinfo
+    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest, mock_configuration_manifest_updinfo
 ):
     """
     Applicable update manifest version is correct
@@ -70,14 +65,13 @@ def test_find_suitable_manifests_returns_correct_manifest_version(
     manifest_filename = 'manifest_test_path/1/1cv8.mft'
     mocker.patch('update.get_name_and_version_from_manifest', return_value=mock_configuration_manifest)
     mocker.patch('update.get_updatable_versions', return_value=mock_configuration_manifest_updinfo)
-    result = _find_suitable_manifests([manifest_filename], mock_configuration_metadata[0], mock_configuration_metadata[1])
+    result = _find_suitable_manifests([manifest_filename], mock_configuration_metadata[0],
+                                      mock_configuration_metadata[1])
     assert result[0][1] == mock_configuration_manifest[1]
 
 
 def test_find_suitable_manifests_returns_empty_list_when_no_manifests_are_applicable(
-    mocker: MockerFixture,
-    mock_configuration_metadata,
-    mock_configuration_manifest_new,
+    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest_new,
     mock_configuration_manifest_updinfo_new
 ):
     """
@@ -86,14 +80,13 @@ def test_find_suitable_manifests_returns_empty_list_when_no_manifests_are_applic
     manifest_filename = 'manifest_test_path/1/1cv8.mft'
     mocker.patch('update.get_name_and_version_from_manifest', return_value=mock_configuration_manifest_new)
     mocker.patch('update.get_updatable_versions', return_value=mock_configuration_manifest_updinfo_new)
-    result = _find_suitable_manifests([manifest_filename], mock_configuration_metadata[0], mock_configuration_metadata[1])
+    result = _find_suitable_manifests([manifest_filename], mock_configuration_metadata[0],
+                                      mock_configuration_metadata[1])
     assert len(result) == 0
 
 
 def test_get_suitable_manifest_returns_applicable_manifest(
-    mocker: MockerFixture,
-    mock_configuration_manifest, 
-    mock_configuration_manifest_new
+    mocker: MockerFixture, mock_configuration_manifest, mock_configuration_manifest_new
 ):
     """
     `_get_suitable_manifest` picks most recent update manifest

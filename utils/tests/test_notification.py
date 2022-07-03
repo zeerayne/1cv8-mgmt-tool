@@ -1,7 +1,6 @@
 from xml.etree import ElementTree
 
 from conf import settings
-
 from utils.notification import make_html_table, make_message, send_notification
 
 
@@ -76,6 +75,7 @@ def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_send
     """
     send_notification('', '')
     mock_smtp.assert_called_with(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT)
+
 
 def test_send_notification_calls_smtp_login(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
     """

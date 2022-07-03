@@ -1,7 +1,9 @@
 import pytest
 
 from conf import settings
-from utils.postgres import POSTGRES_DEFAULT_PORT, POSTGRES_NAME, dbms_is_postgres, get_postgres_host_and_port, prepare_postgres_connection_vars
+from utils.postgres import (
+    POSTGRES_DEFAULT_PORT, POSTGRES_NAME, dbms_is_postgres, get_postgres_host_and_port, prepare_postgres_connection_vars
+)
 
 
 def test_dbms_is_postgres_returns_true_for_postgres():

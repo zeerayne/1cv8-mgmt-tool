@@ -1,4 +1,5 @@
 import unittest
+
 from surrogate import surrogate
 
 
@@ -15,6 +16,7 @@ def imports():
 class TestSurrogateModuleStubs(unittest.TestCase):
 
     def test_surrogating(self):
+
         @surrogate('my')
         @surrogate('my.module.one')
         @surrogate('my.module.two')

@@ -2,7 +2,7 @@ from packaging.version import Version
 
 from pytest_mock import MockerFixture
 
-from core.version import get_version_from_string, find_last_version, find_platform_last_version
+from core.version import find_last_version, find_platform_last_version, get_version_from_string
 
 
 def test_get_version_from_string_returns_version(mock_platform_version):

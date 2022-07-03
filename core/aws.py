@@ -1,19 +1,16 @@
 import asyncio
-import aioboto3
-import os
 import logging
-
+import os
+from datetime import datetime, timedelta, timezone
 from typing import Dict
 
+import aioboto3
 import boto3
-
 from botocore.exceptions import EndpointConnectionError
-from datetime import datetime, timedelta, timezone
 
-from core import utils
 import core.types as core_types
-
 from conf import settings
+from core import utils
 from core.analyze import analyze_s3_result
 from utils.common import sizeof_fmt
 
@@ -38,7 +35,9 @@ def _get_aws_region_parameter() -> Dict[str, str]:
         return dict()
 
 
-async def upload_infobase_to_s3(ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseAWSUploadTaskResult:
+async def upload_infobase_to_s3(
+    ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore
+) -> core_types.InfoBaseAWSUploadTaskResult:
     aws_retries = settings.AWS_RETRIES
     async with semaphore:
         try:
@@ -76,7 +75,9 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         await s3c.upload_file(Filename=full_backup_path, Bucket=settings.AWS_BUCKET_NAME, Key=filename)
     datetime_finish = datetime.now()
     diff = (datetime_finish - datetime_start).total_seconds()
-    log.info(f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s')
+    log.info(
+        f'<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s'
+    )
     await _remove_old_infobase_backups_from_s3(ib_name, session)
     return core_types.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
 
@@ -88,7 +89,8 @@ async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Sess
     async with session.resource(service_name='s3', **_get_aws_endpoint_url_parameter()) as s3_resource:
         bucket = await s3_resource.Bucket(settings.AWS_BUCKET_NAME)
         async for o in bucket.objects.filter(Prefix=f'{utils.get_ib_name_with_separator(ib_name)}'):
-            if await o.last_modified < (datetime.now() - timedelta(days=settings.AWS_RETENTION_DAYS)).replace(tzinfo=timezone.utc):
+            if await o.last_modified < (datetime.now() -
+                                        timedelta(days=settings.AWS_RETENTION_DAYS)).replace(tzinfo=timezone.utc):
                 await o.delete()
 
 
@@ -102,12 +104,11 @@ async def upload_to_s3(backup_results: core_types.InfoBaseBackupTaskResult):
         semaphore = asyncio.Semaphore(concurrency)
         log.info(f'<{log_prefix}> Asyncio semaphore initialized: {concurrency} concurrent tasks')
         datetime_start = datetime.now()
-        result = await asyncio.gather(*[
-            upload_infobase_to_s3(
-                    backup_result.infobase_name, 
-                    backup_result.backup_filename, 
-                    semaphore
-                ) for backup_result in backup_results if backup_result.succeeded
-            ])
+        result = await asyncio.gather(
+            *[
+                upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, semaphore)
+                for backup_result in backup_results if backup_result.succeeded
+            ]
+        )
         datetime_finish = datetime.now()
         analyze_s3_result(result, [e.infobase_name for e in backup_results], datetime_start, datetime_finish)

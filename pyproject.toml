@@ -22,6 +22,11 @@ pytest-mock = "^3.7.0"
 pytest-asyncio = "^0.18.3"
 pytest-freezegun = "^0.4.2"
 pytest-env = "^0.6.2"
+yapf = "^0.32.0"
+isort = "^5.10.1"
+toml = "^0.10.2"
+pre-commit = "^2.19.0"
+coveralls = "^3.3.1"
 
 [tool.pytest.ini_options]
 spec_header_format = "Case: {test_case}\nPath: {module_path}"
@@ -34,6 +39,38 @@ env = """
     PYTHONPATH=.
     1CV8MGMT_SETTINGS_MODULE=tests.settings
     """
+
+[tool.isort]
+combine_as_imports = true
+extra_standard_library = "packaging"
+group_by_package = true
+known_pytest = [
+    "pytest",
+    "pytest_mock",
+]
+line_length = 120
+lines_after_imports = 2
+multi_line_output = 5
+sections = [
+    "FUTURE",
+    "STDLIB",
+    "THIRDPARTY",
+    "PYTEST",
+    "FIRSTPARTY",
+    "LOCALFOLDER",
+]
+
+[tool.yapf]
+based_on_style = "pep8"
+blank_lines_between_top_level_imports_and_variables = 2
+blank_lines_around_top_level_definition = 2
+coalesce_brackets = true
+column_limit = 120
+dedent_closing_brackets = true
+spaces_around_power_operator = true
+spaces_before_comment = 2
+space_between_ending_comma_and_closing_bracket = true
+split_before_logical_operator = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
