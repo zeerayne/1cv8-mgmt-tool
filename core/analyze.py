@@ -89,7 +89,11 @@ def analyze_s3_result(
                 size += task_result.upload_size
         diff = (datetime_finish - datetime_start).total_seconds()
         log.info(
-            f'<{log_prefix}{log_subprefix}> {succeeded} succeeded; {failed} failed; Uploaded {sizeof_fmt(size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(size / diff)}/s'
+            f'<{log_prefix}{log_subprefix}> \
+            {succeeded} succeeded; \
+            {failed} failed; \
+            Uploaded {sizeof_fmt(size)} in {diff:.1f}s. \
+            Avg. speed {sizeof_fmt(size / diff)}/s'
         )
 
     _analyze_result(resultset, workload, datetime_start, datetime_finish, log_message, log_subprefix)

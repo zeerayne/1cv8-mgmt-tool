@@ -1,4 +1,4 @@
-from unittest.mock import Mock, PropertyMock
+from unittest.mock import PropertyMock
 
 from pytest_mock import MockerFixture
 
@@ -32,7 +32,7 @@ def test_get_server_port_is_str():
 
 def test_cluster_control_interface_initialization(mock_win32com_client_dispatch):
     """
-    ClusterControlInterface instance is initialized sucessfully 
+    ClusterControlInterface instance is initialized sucessfully
     """
     ClusterControlInterface()
     assert mock_win32com_client_dispatch.called_once()
@@ -80,7 +80,8 @@ def test_cluster_control_interface_get_working_process_connection_admin_auth(
     mock_connect_agent, mock_connect_working_process
 ):
     """
-    `get_working_process_connection` makes `IWorkingProcessConnection.AuthenticateAdmin` call to authenticate as cluster admin
+    `get_working_process_connection` makes `IWorkingProcessConnection.AuthenticateAdmin` call
+    to authenticate as cluster admin
     """
     cci = ClusterControlInterface()
     cci.get_working_process_connection()
@@ -91,7 +92,7 @@ def test_cluster_control_interface_get_working_process_connection_info_base_auth
     mocker: MockerFixture, mock_connect_agent, mock_connect_working_process
 ):
     """
-    `get_working_process_connection_with_info_base_auth` makes `IWorkingProcessConnection.AddAuthentication` 
+    `get_working_process_connection_with_info_base_auth` makes `IWorkingProcessConnection.AddAuthentication`
     call for every infobase credentials
     """
     infobases_credentials = {
@@ -189,7 +190,7 @@ def test_cluster_control_interface_lock_info_base_set_sessions_denied(
     working_process_connection = cci.get_working_process_connection()
     infobase_com_obj = cci.get_info_base(working_process_connection, infobase)
     cci.lock_info_base(working_process_connection, infobase_com_obj)
-    assert infobase_com_obj.SessionsDenied == True
+    assert infobase_com_obj.SessionsDenied is True
 
 
 def test_cluster_control_interface_lock_info_base_set_scheduled_jobs_denied(
@@ -202,7 +203,7 @@ def test_cluster_control_interface_lock_info_base_set_scheduled_jobs_denied(
     working_process_connection = cci.get_working_process_connection()
     infobase_com_obj = cci.get_info_base(working_process_connection, infobase)
     cci.lock_info_base(working_process_connection, infobase_com_obj)
-    assert infobase_com_obj.ScheduledJobsDenied == True
+    assert infobase_com_obj.ScheduledJobsDenied is True
 
 
 def test_cluster_control_interface_lock_info_base_set_permission_code(
@@ -254,7 +255,7 @@ def test_cluster_control_interface_unlock_info_base_set_sessions_denied(
     working_process_connection = cci.get_working_process_connection()
     infobase_com_obj = cci.get_info_base(working_process_connection, infobase)
     cci.unlock_info_base(working_process_connection, infobase_com_obj)
-    assert infobase_com_obj.SessionsDenied == False
+    assert infobase_com_obj.SessionsDenied is False
 
 
 def test_cluster_control_interface_unlock_info_base_set_scheduled_jobs_denied(
@@ -267,7 +268,7 @@ def test_cluster_control_interface_unlock_info_base_set_scheduled_jobs_denied(
     working_process_connection = cci.get_working_process_connection()
     infobase_com_obj = cci.get_info_base(working_process_connection, infobase)
     cci.unlock_info_base(working_process_connection, infobase_com_obj)
-    assert infobase_com_obj.ScheduledJobsDenied == False
+    assert infobase_com_obj.ScheduledJobsDenied is False
 
 
 def test_cluster_control_interface_terminate_info_base_sessions_get_infobase_session(infobase, mock_connect_agent):

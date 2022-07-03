@@ -28,9 +28,9 @@ log_prefix = 'Update'
 def get_name_and_version_from_manifest(manifest_filename: str) -> Tuple[str, Version]:
     with open(file=manifest_filename, mode='r', encoding='UTF-8') as manifest_file:
         manifest_text = manifest_file.read()
-        name_matches = re.findall("Name=(.*)", manifest_text)
+        name_matches = re.findall('Name=(.*)', manifest_text)
         name_in_manifest = name_matches[0]
-        version_matches = re.findall("Version=(.*)", manifest_text)
+        version_matches = re.findall('Version=(.*)', manifest_text)
         version_in_manifest = get_version_from_string(version_matches[0])
     return name_in_manifest, version_in_manifest
 
@@ -38,13 +38,13 @@ def get_name_and_version_from_manifest(manifest_filename: str) -> Tuple[str, Ver
 def get_updatable_versions(updinfo_filename: str) -> List[Version]:
     with open(file=updinfo_filename, mode='r', encoding='UTF-8') as updinfo_file:
         updinfo_text = updinfo_file.read()
-        from_versions_matches = re.findall("FromVersions=(.*)", updinfo_text)
+        from_versions_matches = re.findall('FromVersions=(.*)', updinfo_text)
         from_version_match_result = from_versions_matches[0]
     if from_version_match_result.startswith(';'):
         from_version_match_result = from_version_match_result[1:]
     if from_version_match_result.endswith(';'):
         from_version_match_result = from_version_match_result[:-1]
-    return [get_version_from_string(v) for v in from_version_match_result.split(";")]
+    return [get_version_from_string(v) for v in from_version_match_result.split(';')]
 
 
 def _find_suitable_manifests(manifests: List[str], name_in_metadata: str,
@@ -138,7 +138,7 @@ async def _update_info_base(ib_name, dry=False):
     # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений
     current_version = version_in_metadata
     if is_multiupdate:
-        chain_str = " -> ".join([str(manifest[1]) for manifest in itertools.chain([current_version], update_chain)])
+        chain_str = ' -> '.join([str(manifest[1]) for manifest in itertools.chain([current_version], update_chain)])
         log.info(f'<{ib_name}> Created update chain [{chain_str}]')
     for selected_manifest in update_chain:
         log.info(f'<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]')
@@ -224,11 +224,11 @@ async def main():
         )
 
         log.info(f'<{log_prefix}> Done')
-    except Exception as e:
+    except Exception:
         log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         asyncio.get_event_loop().run_until_complete(main())

@@ -1,7 +1,5 @@
 from packaging.version import Version
 
-from pytest_mock import MockerFixture
-
 from core.version import find_last_version, find_platform_last_version, get_version_from_string
 
 

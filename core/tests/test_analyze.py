@@ -54,7 +54,8 @@ def test_analyze_result_all_failed(caplog, infobases, failed_base_result):
 
 def test_analyze_result_some_missed(caplog, infobases, mixed_base_result):
     """
-    Analyze log message shoud contain warning message with names of missed infobases when some jobs not provideded any result
+    Analyze log message shoud contain warning message with names of missed infobases
+    when some jobs not provideded any result
     """
     datetime_start = datetime.now()
     datetime_finish = datetime_start + timedelta(minutes=5)

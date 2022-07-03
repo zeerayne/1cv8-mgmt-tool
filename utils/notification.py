@@ -29,9 +29,12 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
         if task_result.succeeded:
             succeeded += 1
         else:
-            table_body += f"<tr style='color:#aa0000'><td {style}>{task_result.infobase_name}</td><td {style}>FAILED</td></tr>"
+            table_body += f"\
+            <tr style='color:#aa0000'><td {style}>{task_result.infobase_name}</td><td {style}>FAILED</td></tr>"
+
     if succeeded > 0:
-        table_body = f"<tr style='color:#00aa00'><td {style}>{succeeded}</td><td {style}>SUCCEEDED</td></tr>" + table_body
+        table_body = f"\
+        <tr style='color:#00aa00'><td {style}>{succeeded}</td><td {style}>SUCCEEDED</td></tr>" + table_body
     html = table.format(caption=caption, body=table_body)
     return html
 

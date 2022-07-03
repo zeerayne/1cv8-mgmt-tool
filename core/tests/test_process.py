@@ -22,7 +22,7 @@ def test_check_subprocess_return_code_raises_exception_when_subprocess_failed(mo
 
 def test_check_subprocess_return_code_logs_message_when_subprocess_succeeded(mocker: MockerFixture, caplog, infobase):
     """
-    `_check_subprocess_return_code` logs subprocess output when succeeded and log_output_on_success == True
+    `_check_subprocess_return_code` logs subprocess output when succeeded and log_output_on_success is True
     """
     subprocess_mock = Mock()
     subprocess_mock.returncode = 0
@@ -61,7 +61,7 @@ def test_check_subprocess_return_code_logs_message_when_subprocess_failed(mocker
     assert message in caplog.text
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_v8_command_pass_command_to_subprocess(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
@@ -76,7 +76,7 @@ async def test_execute_v8_command_pass_command_to_subprocess(
     mock_asyncio_subprocess_succeeded.assert_awaited_with(command)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_v8_command_raises_if_nonzero_return_code(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_failed
 ):
@@ -92,7 +92,7 @@ async def test_execute_v8_command_raises_if_nonzero_return_code(
 
 
 @pytest.mark.skip(reason='no clue how to create mock which can be timed out')
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_v8_command_terminates_subprocess_when_timed_out(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
 ):
@@ -107,7 +107,7 @@ async def test_execute_v8_command_terminates_subprocess_when_timed_out(
     mock_asyncio_subprocess_timeouted.terminate.assert_awaited()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_v8_command_locks_infobase_if_code_passed(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
@@ -123,7 +123,7 @@ async def test_execute_v8_command_locks_infobase_if_code_passed(
     cci_mock.return_value.__enter__.return_value.lock_info_base.assert_called_once()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_v8_command_unlocks_infobase_if_code_passed(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
@@ -139,7 +139,7 @@ async def test_execute_v8_command_unlocks_infobase_if_code_passed(
     cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_called_once()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_subprocess_command_pass_command_to_subprocess(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
@@ -153,7 +153,7 @@ async def test_execute_subprocess_command_pass_command_to_subprocess(
     mock_asyncio_subprocess_succeeded.assert_awaited_with(command)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_subprocess_command_raises_if_nonzero_return_code(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_failed
 ):
@@ -168,7 +168,7 @@ async def test_execute_subprocess_command_raises_if_nonzero_return_code(
 
 
 @pytest.mark.skip(reason='no clue how to create mock which can be timed out')
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_execute_subprocess_command_terminates_subprocess_when_timed_out(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
 ):

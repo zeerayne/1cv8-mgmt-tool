@@ -231,7 +231,7 @@ def test_path_leaf_on_filename():
     assert result == filename
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_com_func_wrapper_awaits_inner_func(infobase):
     """
     `com_func_wrapper` awaits inner coroutine
@@ -241,17 +241,18 @@ async def test_com_func_wrapper_awaits_inner_func(infobase):
     coroutine_mock.assert_awaited()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_com_func_wrapper_returns_value_of_inner_func(infobase):
     """
     `com_func_wrapper` returns value from inner coroutine
     """
     coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_types.InfoBaseTaskResultBase(ib_name, True))
     result = await com_func_wrapper(coroutine_mock, infobase)
-    assert result.infobase_name == infobase and result.succeeded == True
+    assert result.infobase_name == infobase
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_com_func_wrapper_handle_com_error(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `com_func_wrapper` returns value when com error raised
@@ -262,10 +263,11 @@ async def test_com_func_wrapper_handle_com_error(infobase, mock_connect_agent, m
 
     coroutine_mock = AsyncMock(side_effect=raise_com_error)
     result = await com_func_wrapper(coroutine_mock, infobase)
-    assert result.infobase_name == infobase and result.succeeded == False
+    assert result.infobase_name == infobase
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_com_func_wrapper_handle_v8_exception(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `com_func_wrapper` returns value when V8Exception raised
@@ -276,7 +278,8 @@ async def test_com_func_wrapper_handle_v8_exception(infobase, mock_connect_agent
 
     coroutine_mock = AsyncMock(side_effect=raise_v8_exception)
     result = await com_func_wrapper(coroutine_mock, infobase)
-    assert result.infobase_name == infobase and result.succeeded == False
+    assert result.infobase_name == infobase
+    assert result.succeeded is False
 
 
 def test_read_file_content_returns_content(mocker: MockerFixture):
@@ -299,7 +302,7 @@ def test_read_file_content_rstrips_content(mocker: MockerFixture):
     assert result == content.rstrip()
 
 
-def test_read_file_content_rstrips_content(mocker: MockerFixture):
+def test_read_file_gets_correct_encoding(mocker: MockerFixture):
     """
     File encoding is passed to `open`
     """
@@ -310,7 +313,7 @@ def test_read_file_content_rstrips_content(mocker: MockerFixture):
     builtin_open_mock.assert_called_with('', 'r', encoding=encoding)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixture):
     """
     Old files are removed according to retention policy
@@ -324,7 +327,7 @@ async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixtu
     assert aioremove_mock.await_count == len(files)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_remove_old_files_by_pattern_not_removes_new_files(mocker: MockerFixture):
     """
     New files are not removed according to retention policy

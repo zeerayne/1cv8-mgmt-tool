@@ -14,7 +14,7 @@ V8_SERVER_AGENT = {
     'address': 'localhost',
     'port': '1540',
 }
-V8_PERMISSION_CODE = "0000"
+V8_PERMISSION_CODE = '0000'
 V8_PLATFORM_PATH = join('C:\\', 'Program Files', '1cv8')
 
 ## ------ ##

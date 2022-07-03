@@ -26,7 +26,8 @@ def test_html_table_all_succeeded(success_base_result):
     HTML table for all succeeded results should contain only `SUCCEEDED` block
     """
     result = make_html_table('', success_base_result)
-    assert 'SUCCEEDED' in result and 'FAILED' not in result
+    assert 'SUCCEEDED' in result
+    assert 'FAILED' not in result
 
 
 def test_html_table_all_failed(failed_base_result):
@@ -34,7 +35,8 @@ def test_html_table_all_failed(failed_base_result):
     HTML table for all failed results should contain only `FAILED` block
     """
     result = make_html_table('', failed_base_result)
-    assert 'FAILED' in result and 'SUCCEEDED' not in result
+    assert 'FAILED' in result
+    assert 'SUCCEEDED' not in result
 
 
 def test_html_table_mixed(mixed_base_result):
@@ -42,7 +44,8 @@ def test_html_table_mixed(mixed_base_result):
     HTML table for mixed results should contain both `SUCCEEDED` and `FAILED` blocks
     """
     result = make_html_table('', mixed_base_result)
-    assert 'FAILED' in result and 'SUCCEEDED' in result
+    assert 'FAILED' in result
+    assert 'SUCCEEDED' in result
 
 
 def test_html_table_all_succeeded_output_is_valid_xml(success_base_result):
