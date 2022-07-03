@@ -16,11 +16,12 @@ jobs:
         uses: abatilo/actions-poetry@v2.1.5
       - name: Install dependencies
         run: make install-dev
-      - name: Get changed files using defaults
+      - name: Get changed python source files
         id: changed-files
         uses: tj-actions/changed-files@v23.1
         with:
           files: |
             *.py
       - name: Check code with flake8
-        run: poetry run flake8 ${{ steps.changed-files.outputs.all_modified_files }}
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: poetry run flake8 ${{ steps.changed-files.outputs.all_changed_files }}
