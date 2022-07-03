@@ -1,16 +1,14 @@
+import sys
+from functools import wraps
+
+
 __all__ = ('surrogate', 'VERSION')
 
 VERSION = '0.1'
 AUTHOR = 'Kostia Balitsky aka ikostia'
 
-import sys
-from functools import wraps
 
-
-__all__ = ('surrogate', )
-
-
-class surrogate(object):
+class surrogate:
     """
         Add empty module stub that can be imported
         for every subpath in path.
@@ -113,8 +111,7 @@ class surrogate(object):
             by stubs.
         """
         known = 0
-        while known < len(self.elements) and\
-                    '.'.join(self.elements[:known + 1]) in sys.modules:
+        while known < len(self.elements) and '.'.join(self.elements[:known + 1]) in sys.modules:
             known += 1
         self.known_path = '.'.join(self.elements[:known])
         self.elements = self.elements[known:]
@@ -148,8 +145,7 @@ class surrogate(object):
     def _add_module_stubs(self):
         """Push created module stubs into sys.modules"""
         for i, module in enumerate(self.modules):
-            module._importing_path =\
-                self._get_importing_path(self.elements[:i + 1])
+            module._importing_path = self._get_importing_path(self.elements[:i + 1])
             sys.modules[module._importing_path] = module
 
     def _remove_module_stubs(self):

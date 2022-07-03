@@ -16,12 +16,12 @@ from surrogate import surrogate
 random.seed(0)
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_analyze_result(mocker: MockerFixture):
     return mocker.patch('core.analyze.analyze_result', return_value=None)
 
 
-@pytest.fixture
+@pytest.fixture()
 async def mock_upload_infobase_to_s3(mocker: MockerFixture):
     async_mock = AsyncMock(
         side_effect=lambda ib_name, full_backup_path: core_types.InfoBaseAWSUploadTaskResult(ib_name, True, 1000)
@@ -29,13 +29,13 @@ async def mock_upload_infobase_to_s3(mocker: MockerFixture):
     return mocker.patch('core.aws._upload_infobase_to_s3', side_effect=async_mock)
 
 
-@pytest.fixture
+@pytest.fixture()
 async def mock_upload_infobase_to_s3_connection_error(mocker: MockerFixture):
     async_mock = AsyncMock(side_effect=EndpointConnectionError(endpoint_url='http://test.endpoint.url'))
     return mocker.patch('core.aws._upload_infobase_to_s3', side_effect=async_mock)
 
 
-@pytest.fixture
+@pytest.fixture()
 async def mock_aioboto3_session(mocker: MockerFixture):
 
     class AsyncContextManagerStub:
@@ -90,7 +90,7 @@ def create_bucket_object(mock_aioboto3_session, last_modified: datetime):
     return bucket_obj
 
 
-@pytest.fixture
+@pytest.fixture()
 async def mock_aioboto3_bucket_objects_old(mock_aioboto3_session):
     from conf import settings
     return create_bucket_object(
@@ -99,19 +99,19 @@ async def mock_aioboto3_bucket_objects_old(mock_aioboto3_session):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 async def mock_aioboto3_bucket_objects_new(mock_aioboto3_session):
     return create_bucket_object(mock_aioboto3_session, datetime.now(tz=timezone.utc))
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_os_stat(mocker: MockerFixture):
     os_stat_mock = Mock()
     os_stat_mock.st_size = 1000
     return mocker.patch('os.stat', return_value=os_stat_mock)
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
     mocker.patch('os.path.isdir', return_value=True)
     return mocker.patch(
@@ -119,34 +119,34 @@ def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_infobase_version():
     return f'{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}'
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_platform_version():
     return f'8.3.{random.randint(15,25)}.{random.randint(1000,3000)}'
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_platform_last_version():
     return f'8.3.99.{random.randint(1000,3000)}'
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_platform_versions(mock_platform_version, mock_platform_last_version):
     return [mock_platform_version, mock_platform_last_version]
 
 
 @surrogate('win32com.client')
-@pytest.fixture
+@pytest.fixture()
 def mock_win32com_client_dispatch(mocker: MockerFixture):
     import win32com.client as win32com_client
     return mocker.patch.object(win32com_client, 'Dispatch', create=True, return_value=Mock())
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_infobases_com_obj(infobases):
     infobases_com_obj = []
     for ib in infobases:
@@ -156,7 +156,7 @@ def mock_infobases_com_obj(infobases):
     return Mock(return_value=infobases_com_obj)
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
     agent_connection_mock = Mock()
 
@@ -176,7 +176,7 @@ def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
     return agent_connection_mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_com_obj):
     working_process_connection_mock = Mock()
     type(working_process_connection_mock.return_value).AuthenticateAdmin = Mock()
@@ -188,7 +188,7 @@ def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_c
     return working_process_connection_mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_version):
 
     def external_connection_mock_side_effect(connection_string):
@@ -203,19 +203,19 @@ def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_versio
     return external_connection_mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_datetime():
     return datetime(2022, 1, 1, 12, 1, 1)
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_excluded_infobases(mocker: MockerFixture, infobases):
     excluded_infobases = [infobases[-1]]
     mocker.patch('conf.settings.V8_INFOBASES_EXCLUDE', new_callable=PropertyMock(return_value=excluded_infobases))
     return excluded_infobases
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_infobases_credentials(mocker: MockerFixture, infobases):
     creds = {infobase: (f'test_{infobase}_login', f'test_{infobase}_password') for infobase in infobases}
     creds.update(settings.V8_INFOBASES_CREDENTIALS)

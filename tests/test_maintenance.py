@@ -10,7 +10,7 @@ from core.exceptions import SubprocessException, V8Exception
 from maintenance import _maintenance_v8, _maintenance_vacuumdb, analyze_results, maintenance_info_base, rotate_logs
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
     """
     `rotate_logs` calls `remove_old_files_by_pattern` for rotating logs
@@ -20,7 +20,7 @@ async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
     remove_old_files_mock.assert_awaited()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Maintenance with 1cv8 tools calls execute_v8_command to run created command
@@ -30,103 +30,101 @@ async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, in
     execute_v8_command_mock.assert_awaited()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if no errors
     """
-    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command')
+    mocker.patch('maintenance.execute_v8_command')
     result = await _maintenance_v8(infobase)
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
     """
-    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
+    mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_returns_success_result_for_exact_infobase(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
     """
     Maintenance with 1cv8 tools returns success result for exact infobase which was provided if no errors
     """
-    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command')
+    mocker.patch('maintenance.execute_v8_command')
     result = await _maintenance_v8(infobase)
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
     """
     Maintenance with 1cv8 tools returns failed result for exact infobase which was provided if an error occured
     """
-    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
+    mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Maintenance with 1cv8 tools returns success result if no errors
     """
-    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command')
+    mocker.patch('maintenance.execute_v8_command')
     result = await _maintenance_v8(infobase)
-    assert result.succeeded == True
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_v8_returns_failed_result_if_error(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
     """
     Maintenance with 1cv8 tools returns failed result if an error occured
     """
-    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
+    mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_succeeded(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no errors
     """
-    execute_subprocess_command_mock = mocker.patch('maintenance.execute_subprocess_command')
+    mocker.patch('maintenance.execute_subprocess_command')
     result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
     """
-    execute_subprocess_command_mock = mocker.patch(
-        'maintenance.execute_subprocess_command', side_effect=SubprocessException
-    )
+    mocker.patch('maintenance.execute_subprocess_command', side_effect=SubprocessException)
     result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_credentials(infobase):
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no credentials found for db
@@ -135,33 +133,31 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_cred
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_succeeded(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no errors
     """
-    execute_subprocess_command_mock = mocker.patch('maintenance.execute_subprocess_command')
+    mocker.patch('maintenance.execute_subprocess_command')
     result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_failed(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if an error occured
     """
-    execute_subprocess_command_mock = mocker.patch(
-        'maintenance.execute_subprocess_command', side_effect=SubprocessException
-    )
+    mocker.patch('maintenance.execute_subprocess_command', side_effect=SubprocessException)
     result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_credentials(infobase):
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no credentials found for db
@@ -170,42 +166,40 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_cr
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_sucess_result_when_succeeded(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
     """
     Maintenance with vacuumdb returns success result if no errors
     """
-    execute_subprocess_command_mock = mocker.patch('maintenance.execute_subprocess_command')
+    mocker.patch('maintenance.execute_subprocess_command')
     result = await _maintenance_vacuumdb(infobase, '', '', '')
-    assert result.succeeded == True
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_failed_result_when_failed(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
     """
     Maintenance with vacuumdb returns failed result if an error occured
     """
-    execute_subprocess_command_mock = mocker.patch(
-        'maintenance.execute_subprocess_command', side_effect=SubprocessException
-    )
+    mocker.patch('maintenance.execute_subprocess_command', side_effect=SubprocessException)
     result = await _maintenance_vacuumdb(infobase, '', '', '')
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_vacuumdb_returns_failed_result_when_no_credentials(infobase):
     """
     Maintenance with vacuumdb returns failed result if no credentials found for db
     """
     result = await _maintenance_vacuumdb(infobase, '', '', '')
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -218,12 +212,13 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if succeeded with MAINTENANCE_V8 == True
+    If succeeded with MAINTENANCE_V8 is True, maitenance infobase function returns result
+    of `InfoBaseMaintenanceTaskResult`
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -233,12 +228,13 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if succeeded with MAINTENANCE_PG == True
+    If succeeded with MAINTENANCE_PG is True, maitenance infobase function returns result
+    of `InfoBaseMaintenanceTaskResult`
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
@@ -248,13 +244,13 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` 
-    if succeeded with MAINTENANCE_V8 == True and MAINTENANCE_PG == True
+    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult`
+    if succeeded with MAINTENANCE_V8 is True and MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -266,7 +262,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -279,12 +275,12 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with MAINTENANCE_V8 == True
+    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -294,12 +290,12 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with MAINTENANCE_PG == True
+    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
@@ -309,13 +305,13 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` 
-    if failed with MAINTENANCE_V8 == True and MAINTENANCE_PG == True
+    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult`
+    if failed with MAINTENANCE_V8 is True and MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -327,55 +323,56 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == True if succeeded with default settings
+    Maitenance infobase function returns object with succeeded is True if succeeded with default settings
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == True
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == True if succeeded with MAINTENANCE_V8 == True
+    Maitenance infobase function returns object with succeeded is True if succeeded with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
     mocker.patch('core.utils.com_func_wrapper', return_value=return_value)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == True
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == True if succeeded with MAINTENANCE_PG == True
+    Maitenance infobase function returns object with succeeded is True if succeeded with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
     mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == True
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == True if succeeded with MAINTENANCE_V8 == True and MAINTENANCE_PG == True
+    If succeeded with MAINTENANCE_V8 is True and MAINTENANCE_PG is True, maitenance infobase function returns object
+    with succeeded is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -384,58 +381,59 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == True
+    assert result.succeeded is True
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if failed with default settings
+    Maitenance infobase function returns object with succeeded is False if failed with default settings
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if failed with MAINTENANCE_V8 == True
+    Maitenance infobase function returns object with succeeded is False if failed with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
     mocker.patch('core.utils.com_func_wrapper', return_value=return_value)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if failed with MAINTENANCE_PG == True
+    Maitenance infobase function returns object with succeeded is False if failed with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
     mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if failed with MAINTENANCE_V8 == True and MAINTENANCE_PG == True
+    If failed with MAINTENANCE_V8 is True and MAINTENANCE_PG is True, maitenance infobase function returns object
+    with succeeded is False
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -444,27 +442,29 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
     mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_rotate_logs_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` type if an error occured in `rotate_logs` function
+    If an error occured in `rotate_logs` function, maitenance infobase function returns result
+    of `InfoBaseMaintenanceTaskResult` type
     """
     mocker.patch('maintenance.rotate_logs', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_v8_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` type if an error occured in v8 maintenance function with MAINTENANCE_V8 == True
+    If an error occured in v8 maintenance function with MAINTENANCE_V8 is True, maitenance infobase function returns
+    result of `InfoBaseMaintenanceTaskResult` type
     """
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
     mocker.patch('core.utils.com_func_wrapper', side_effect=Exception)
@@ -472,12 +472,13 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_v8_rai
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_type_when_pg_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` type if an error occured in pg maintenance function with MAINTENANCE_PG == True
+    If an error occured in pg maintenance function with MAINTENANCE_PG is True, maitenance infobase function returns
+    result of `InfoBaseMaintenanceTaskResult` type
     """
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
     mocker.patch('maintenance._maintenance_vacuumdb', side_effect=Exception)
@@ -485,45 +486,47 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_pg_rai
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_rotate_logs_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if an error occured in `rotate_logs` function
+    Maitenance infobase function returns object with succeeded is False if an error occured in `rotate_logs` function
     """
     mocker.patch('maintenance.rotate_logs', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_v8_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if an error occured in v8 maintenance function with MAINTENANCE_V8 == True
+    If an error occured in v8 maintenance function with MAINTENANCE_V8 is True, maitenance infobase function returns
+    object with succeeded is False
     """
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
     mocker.patch('core.utils.com_func_wrapper', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_pg_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function returns object with succeeded == False if an error occured in pg maintenance function with MAINTENANCE_PG == True
+    If an error occured in pg maintenance function with MAINTENANCE_PG is True, maitenance infobase function returns
+    object with succeeded is False
     """
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
     mocker.patch('maintenance._maintenance_vacuumdb', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_calls_rotate_logs_by_default(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -535,12 +538,12 @@ async def test_maintenance_info_base_calls_rotate_logs_by_default(
     rotate_logs_mock.assert_awaited_with(infobase)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_calls_maintenance_v8_with_v8_enabled(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function calls `_maintenance_v8` with MAINTENANCE_V8 == True
+    Maitenance infobase function calls `_maintenance_v8` with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
@@ -550,12 +553,12 @@ async def test_maintenance_info_base_calls_maintenance_v8_with_v8_enabled(
     com_func_wrapper_mock.assert_awaited_with(_maintenance_v8, infobase)
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_maintenance_info_base_calls_maintenance_pg_with_pg_enabled(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
     """
-    Maitenance infobase function calls `_maintenance_pg` with MAINTENANCE_PG == True
+    Maitenance infobase function calls `_maintenance_pg` with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
     mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))

@@ -1,5 +1,7 @@
 import unittest
 
+import pytest
+
 from surrogate import surrogate
 
 
@@ -15,6 +17,10 @@ def imports():
 
 class TestSurrogateModuleStubs(unittest.TestCase):
 
+    def test_without_surrogating(self):
+        with pytest.raises(ImportError):
+            imports()
+
     def test_surrogating(self):
 
         @surrogate('my')
@@ -28,11 +34,6 @@ class TestSurrogateModuleStubs(unittest.TestCase):
         except Exception as e:
             raise Exception(f'Modules are not stubbed correctly: {e}')
 
-        with self.assertRaises(ImportError) as e:
-            imports()
-
     def test_context_manager(self):
-        with surrogate('my'):
-            with surrogate('my.module.one'):
-                with surrogate('my.module.two'):
-                    imports()
+        with surrogate('my'), surrogate('my.module.one'), surrogate('my.module.two'):
+            imports()

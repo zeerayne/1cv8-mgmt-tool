@@ -91,7 +91,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
                 ib_name, v8_command, log_filename, permission_code, timeout=1200, log_output_on_success=True
             )
             break
-        except V8Exception as e:
+        except V8Exception:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
                 log.exception(f'<{ib_name}> Backup failed, retries exceeded')
@@ -147,7 +147,7 @@ async def _backup_pgdump(
         try:
             await execute_subprocess_command(ib_name, pgdump_command, log_filename)
             break
-        except SubprocessException as e:
+        except SubprocessException:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
                 log.exception(f'<{ib_name}> Backup failed, retries exceeded')
@@ -228,7 +228,8 @@ async def main():
         backup_semaphore = asyncio.Semaphore(backup_concurrency)
         aws_semaphore = asyncio.Semaphore(aws_concurrency)
         log.info(
-            f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency'
+            f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} \
+                backup concurrency, {aws_concurrency} AWS concurrency'
         )
         backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
         backup_datetime_start = datetime.now()
@@ -264,14 +265,15 @@ async def main():
         send_email_notification(backup_results, aws_results)
 
         log.info(f'<{log_prefix}> Done')
-    except Exception as e:
+    except Exception:
         log.exception(f'<{log_prefix}> Unknown exception occurred in main coroutine')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
-        # Использование asyncio.run() в windows бросает исключение `RuntimeError: Event loop is closed` при завершении run
+        # Использование asyncio.run() в windows бросает исключение
+        # `RuntimeError: Event loop is closed` при завершении run.
         # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
         asyncio.get_event_loop().run_until_complete(main())
     else:

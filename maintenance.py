@@ -72,7 +72,7 @@ async def _maintenance_vacuumdb(
     vacuumdb_env['PGPASSWORD'] = db_pwd
     try:
         await execute_subprocess_command(ib_name, vacuumdb_command, log_filename)
-    except SubprocessException as e:
+    except SubprocessException:
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
 
@@ -135,7 +135,7 @@ async def main():
         log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         asyncio.get_event_loop().run_until_complete(main())

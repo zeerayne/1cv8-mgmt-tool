@@ -14,15 +14,15 @@ except ImportError:
 
 from conf import settings
 r"""
-Для доступа к информационной базе из внешней программы используется COM объект COMConnector. 
-При установке платформы 1С, операционной системе автоматически регистрируется класс COMConnector. 
+Для доступа к информационной базе из внешней программы используется COM объект COMConnector.
+При установке платформы 1С, операционной системе автоматически регистрируется класс COMConnector.
 Если по каким либо причинам регистрация не прошла, то его можно зарегистрировать вручную.
- 
+
 Если COMConnector не зарегистрирован в Windows, то при программном создании объекта будет появляться ошибка:
 > Ошибка при вызове конструктора (COMObject): -2147221164(0x80040154): Класс не зарегистрирован.
 
 Для того чтобы зарегистрировать ComConnector в 64 разрядной операционной системе Windows выполняется
-команда: regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll" 
+команда: regsvr32 "C:\Program Files\1cv8\[version]\bin\comcntr.dll"
 """
 
 log = logging.getLogger(__name__)
@@ -44,7 +44,7 @@ class ClusterControlInterface:
 
     def __init__(self):
         try:
-            self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
+            self.V8COMConnector = win32com_client.Dispatch('V83.COMConnector')
         except pywintypes.com_error as e:
             raise e
         self.server = get_server_address()
@@ -60,7 +60,7 @@ class ClusterControlInterface:
         del self.V8COMConnector
 
     def get_agent_connection(self):
-        agent_connection = self.V8COMConnector.ConnectAgent("{0}:{1}".format(self.server, self.agentPort))
+        agent_connection = self.V8COMConnector.ConnectAgent(f'{self.server}:{self.agentPort}')
         return agent_connection
 
     def get_cluster(self, agent_connection):
@@ -174,7 +174,7 @@ class ClusterControlInterface:
         """
         info_base.ScheduledJobsDenied = False
         info_base.SessionsDenied = False
-        info_base.DeniedMessage = ""
+        info_base.DeniedMessage = ''
         working_process_connection.UpdateInfoBase(info_base)
         log.debug(f'<{info_base.Name}> Unlock info base successfully')
 

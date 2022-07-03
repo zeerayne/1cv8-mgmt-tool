@@ -11,3 +11,12 @@ exclude =
     .vscode
     __pycache__
 max-line-length = 120
+per-file-ignores =
+    # too many leading '#' for block comment
+    conf/default_settings.py: E266
+    # Multi-line container not broken after opening character
+    core/analyze.py: JS101
+    # too many leading '#' for block comment
+    settings.tpl.py: E266
+    # module imported but unused
+    surrogate/tests/test_surrogate.py: F401

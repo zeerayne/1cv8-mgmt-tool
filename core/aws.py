@@ -54,7 +54,7 @@ async def upload_infobase_to_s3(
                         aws_retry_pause = settings.AWS_RETRY_PAUSE
                         log.debug(f'<{ib_name}> wait for {aws_retry_pause} seconds')
                         await asyncio.sleep(aws_retry_pause)
-        except Exception as e:
+        except Exception:
             log.exception(f'<{ib_name}> Unknown exception occurred in AWS coroutine')
             return core_types.InfoBaseAWSUploadTaskResult(ib_name, False)
 

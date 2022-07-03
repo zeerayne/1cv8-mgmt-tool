@@ -41,7 +41,7 @@ def test_sizeof_fmt_custom_unit():
     assert result == '1.5KiQ'
 
 
-def test_sizeof_fmt_custom_unit():
+def test_sizeof_fmt_custom_radix_suffix():
     """
     Check if values with custom radix suffix are formatted correctly
     """
