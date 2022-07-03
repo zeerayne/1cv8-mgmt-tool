@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/zeerayne/1cv8-mgmt-tool/badge.svg?branch=master)](https://coveralls.io/github/zeerayne/1cv8-mgmt-tool?branch=master)
+![Pytest](https://github.com/zeerayne/1cv8-mgmt-tool/actions/workflows/pytest.yaml/badge.svg) [![Coverage Status](https://coveralls.io/repos/github/zeerayne/1cv8-mgmt-tool/badge.svg?branch=master)](https://coveralls.io/github/zeerayne/1cv8-mgmt-tool?branch=master)
 
 # Описание
 
