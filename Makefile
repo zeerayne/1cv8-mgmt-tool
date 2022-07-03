@@ -5,6 +5,7 @@ install:
 .PHONY: install-dev
 install-dev:
 	poetry install --no-root
+	poetry run pre-commit install
 
 .PHONY: test
 test:

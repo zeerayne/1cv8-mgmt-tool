@@ -25,6 +25,7 @@ pytest-env = "^0.6.2"
 yapf = "^0.32.0"
 isort = "^5.10.1"
 toml = "^0.10.2"
+pre-commit = "^2.19.0"
 
 [tool.pytest.ini_options]
 spec_header_format = "Case: {test_case}\nPath: {module_path}"
