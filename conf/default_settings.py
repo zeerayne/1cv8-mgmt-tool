@@ -9,6 +9,7 @@ V8_INFOBASES_CREDENTIALS = {
     'default': ('Администратор', ''),
 }
 V8_INFOBASES_EXCLUDE = []
+V8_INFOBASES_ONLY = []
 V8_LOCK_INFO_BASE_PAUSE = 5
 V8_SERVER_AGENT = {
     'address': 'localhost',
