@@ -186,6 +186,16 @@ def test_get_info_bases_returns_all_but_excluded_infobases(
     assert all(infobase in result for infobase in set(infobases) - set(mock_excluded_infobases))
 
 
+def test_get_info_bases_returns_exact_only_infobases(
+    infobases, mock_only_infobases, mock_connect_agent, mock_connect_working_process
+):
+    """
+    `get_info_bases` returns exact only infobases
+    """
+    result = get_info_bases()
+    assert all(infobase in mock_only_infobases for infobase in result)
+
+
 def test_get_info_base_credentials_for_infobase(infobase, mock_infobases_credentials):
     """
     Infobase credentials are gained for proper infobase
