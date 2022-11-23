@@ -64,16 +64,28 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
 
 def get_info_bases() -> List[str]:
     """
-    Получает именя всех ИБ, кроме указанных в списке INFO_BASES_EXCLUDE
+    Получает именя всех ИБ, кроме указанных в списке V8_INFOBASES_EXCLUDE
+    Если список V8_INFOBASES_ONLY не пустой, получает список ИБ, указанных в этом списке и присутствующих в кластере
     :return: массив с именами ИБ
     """
     with ClusterControlInterface() as cci:
         working_process_connection = cci.get_working_process_connection_with_info_base_auth()
 
-        info_bases = cci.get_info_bases(working_process_connection)
-        info_bases = [
-            ib.Name for ib in info_bases if ib.Name.lower() not in [ib.lower() for ib in settings.V8_INFOBASES_EXCLUDE]
-        ]
+        info_bases_com = cci.get_info_bases(working_process_connection)
+        info_bases_raw = [ib.Name for ib in info_bases_com]
+        if settings.V8_INFOBASES_ONLY:
+            info_bases = list(
+                filter(
+                    lambda ib: ib.lower() in [ib_only.lower() for ib_only in settings.V8_INFOBASES_ONLY], info_bases_raw
+                )
+            )
+        else:
+            info_bases = list(
+                filter(
+                    lambda ib: ib.lower() not in [ib_exclude.lower() for ib_exclude in settings.V8_INFOBASES_EXCLUDE],
+                    info_bases_raw
+                )
+            )
         del working_process_connection
         return info_bases
 
