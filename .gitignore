@@ -136,3 +136,6 @@ dmypy.json
 
 # All distros
 *.tar.gz
+
+# Postgres datadir
+.postgres-data
