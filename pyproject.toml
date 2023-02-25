@@ -37,6 +37,9 @@ flake8-pytest-style = "*"
 flake8-quotes = "*"
 flake8-simplify = "*"
 
+[tool.poetry.group.debug.dependencies]
+debugpy = "^1.6.6"
+
 [tool.pytest.ini_options]
 spec_header_format = "Case: {test_case}\nPath: {module_path}"
 spec_test_format = '{result} {docstring_summary}'

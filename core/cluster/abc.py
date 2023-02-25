@@ -38,6 +38,14 @@ class ClusterControler(ABC):
         """
         ...
 
+    @abstractmethod
+    def get_info_base(self, infobase: str):
+        """
+        Получает сведения об ИБ из кластера
+        :param infobase: имя информационной базы
+        """
+        ...
+
     def get_info_bases(self) -> List[str]:
         """
         Получает имена всех ИБ, кроме указанных в списке V8_INFOBASES_EXCLUDE

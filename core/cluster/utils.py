@@ -16,11 +16,19 @@ from core.exceptions import V8Exception
 
 log = logging.getLogger(__name__)
 
+RAC_CLUSTER_CONTROL_MODE = "rac"
+COM_CLUSTER_CONTROL_MODE = "com"
+
 
 def get_cluster_controller_class():
-    from core.cluster.comcntr import ClusterCOMControler
+    if settings.V8_CLUSTER_CONTROL_MODE == RAC_CLUSTER_CONTROL_MODE:
+        from core.cluster.rac import ClusterRACControler
 
-    controller_class = ClusterCOMControler
+        controller_class = ClusterRACControler
+    else:
+        from core.cluster.comcntr import ClusterCOMControler
+
+        controller_class = ClusterCOMControler
     return controller_class
 
 

@@ -5,6 +5,7 @@ from os.path import expanduser, join
 ## ------------- ##
 
 V8_CLUSTER_ADMIN_CREDENTIALS = ("Администратор", "cluster_admin_password")
+V8_CLUSTER_CONTROL_MODE = "com"
 V8_INFOBASES_CREDENTIALS = {
     "default": ("Администратор", "infobase_user_password"),
     "accounting": ("БухАдминистратор", "infobase_user_password"),
@@ -12,6 +13,10 @@ V8_INFOBASES_CREDENTIALS = {
 }
 V8_INFOBASES_EXCLUDE = ["accounting_for_tests", "trade_copy"]
 V8_INFOBASES_ONLY = ["accounting_production", "trade_production"]
+V8_RAS = {
+    "address": "localhost",
+    "port": "1545",
+}
 V8_SERVER_AGENT = {
     "address": "localhost",
     "port": "1540",
