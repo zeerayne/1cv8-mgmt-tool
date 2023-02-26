@@ -30,6 +30,7 @@ COPY docker/ras-entrypoint.sh /opt/docker/entrypoint.sh
 ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 
 FROM python:3.10 as python-base
+ENV PYTHONUNBUFFERED 1
 ENV POETRY_VERSION=1.3.2
 ENV POETRY_HOME=/opt/poetry
 ENV POETRY_VENV=/opt/poetry-venv
