@@ -9,6 +9,9 @@ services:
       - db
     environment:
       - RAGENT_PORT=1540
+    hostname: ragent
+    volumes:
+      - .ragent-data:/home/1c
   ras:
     build:
       context: .
