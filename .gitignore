@@ -139,3 +139,5 @@ dmypy.json
 
 # Postgres datadir
 .postgres-data
+# Ragent datadir
+.ragent-data
