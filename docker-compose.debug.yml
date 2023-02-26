@@ -39,7 +39,7 @@ services:
     build:
       context: .
       target: rac
-    command: ["sh", "-c", "poetry run python -m debugpy --wait-for-client --listen 0.0.0.0:5678 rac.py"]
+    command: ["rac.py"]
     container_name: rac
     environment:
       - POETRY_VENV=/opt/poetry-venv
