@@ -17,8 +17,8 @@ RUN /distr/setup-*.run \
     --installer-language en \
     && rm -rf /distr
 RUN mkdir /home/1c
-CMD printf RAGENT_PORT=$RAGENT_PORT'\n'RAGENT_REGPORT=$RAGENT_REGPORT'\n'RAGENT_PORTRANGE=$RAGENT_PORTRANGE'\n' \
-    && ./x86_64/8.*/ragent -port $RAGENT_PORT -regport $RAGENT_REGPORT -range $RAGENT_PORTRANGE -d /home/1c
+COPY docker/ragent-entrypoint.sh /opt/docker/entrypoint.sh
+ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 
 FROM v8-base AS ras
 RUN /distr/setup-*.run \
@@ -26,8 +26,8 @@ RUN /distr/setup-*.run \
     --enable-components server_admin,liberica_jre,ru \
     --installer-language en \
     && rm -rf /distr
-CMD printf RAS_PORT=$RAS_PORT'\n'RAGENT_HOST=$RAGENT_HOST'\n'RAGENT_PORT=$RAGENT_PORT'\n' \
-    && ./x86_64/8.*/ras cluster --port $RAS_PORT $RAGENT_HOST:$RAGENT_PORT
+COPY docker/ras-entrypoint.sh /opt/docker/entrypoint.sh
+ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 
 FROM python:3.10 as python-base
 ENV POETRY_VERSION=1.3.2
@@ -48,3 +48,5 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN poetry check \
     && poetry install --no-interaction --no-cache --no-root --without dev --with debug
+COPY docker/rac-entrypoint.sh /opt/docker/entrypoint.sh
+ENTRYPOINT ["/opt/docker/entrypoint.sh"]
