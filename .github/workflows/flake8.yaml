@@ -18,7 +18,7 @@ jobs:
         run: make install-dev
       - name: Get changed python source files
         id: changed-files
-        uses: tj-actions/changed-files@v23.1
+        uses: tj-actions/changed-files@v40
         with:
           files: |
             *.py
