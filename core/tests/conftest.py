@@ -1,5 +1,4 @@
 import random
-import re
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, Mock, PropertyMock
 
