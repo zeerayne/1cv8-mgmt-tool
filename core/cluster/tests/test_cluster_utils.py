@@ -18,12 +18,20 @@ from core.cluster.utils import com_func_wrapper, get_cluster_controller_class
 from core.exceptions import V8Exception
 
 
-def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_com():
+def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_com(mock_cluster_control_mode_com):
     """
-    `get_cluster_controller_class` returns `ClusterCOMControler` class
+    `get_cluster_controller_class` returns `ClusterCOMControler` class when `V8_CLUSTER_CONTROL_MODE = 'com'`
     """
     controller_class = get_cluster_controller_class()
     assert controller_class == ClusterCOMControler
+
+
+def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_rac(mock_cluster_control_mode_rac):
+    """
+    `get_cluster_controller_class` returns `ClusterRACControler` class when `V8_CLUSTER_CONTROL_MODE = 'rac'`
+    """
+    controller_class = get_cluster_controller_class()
+    assert controller_class == ClusterRACControler
 
 
 @pytest.mark.asyncio()
