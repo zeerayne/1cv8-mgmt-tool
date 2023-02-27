@@ -5,11 +5,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from core.exceptions import SubprocessException, V8Exception
-from core.process import (
-    _check_subprocess_return_code,
-    execute_subprocess_command,
-    execute_v8_command,
-)
+from core.process import _check_subprocess_return_code, execute_subprocess_command, execute_v8_command
 
 
 def test_check_subprocess_return_code_raises_exception_when_subprocess_failed(mocker: MockerFixture, infobase):
@@ -75,7 +71,7 @@ async def test_execute_v8_command_pass_command_to_subprocess(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
     mock_asyncio_subprocess_succeeded.assert_awaited_with(command)
 
@@ -90,7 +86,7 @@ async def test_execute_v8_command_raises_if_nonzero_return_code(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     with pytest.raises(V8Exception):
         await execute_v8_command(infobase, command, "")
 
@@ -106,7 +102,7 @@ async def test_execute_v8_command_terminates_subprocess_when_timed_out(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", timeout=0.01)
     mock_asyncio_subprocess_timeouted.terminate.assert_awaited()
 
@@ -122,7 +118,7 @@ async def test_execute_v8_command_locks_infobase_if_code_passed(
     command = "test_command"
     permission_code = "test_permission_code"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", permission_code)
     cci_mock.return_value.__enter__.return_value.lock_info_base.assert_called_once()
 
@@ -138,7 +134,7 @@ async def test_execute_v8_command_unlocks_infobase_if_code_passed(
     command = "test_command"
     permission_code = "test_permission_code"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", permission_code)
     cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_called_once()
 
@@ -153,7 +149,7 @@ async def test_execute_v8_command_does_not_lock_infobase_if_code_is_none(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
     cci_mock.return_value.__enter__.return_value.lock_info_base.assert_not_called()
 
@@ -168,7 +164,7 @@ async def test_execute_v8_command_does_not_unlock_infobase_if_code_is_none(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
     cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_not_called()
 
@@ -183,7 +179,7 @@ async def test_execute_v8_command_terminates_infobase_sessions(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
     cci_mock.return_value.__enter__.return_value.terminate_info_base_sessions.assert_called_once()
 

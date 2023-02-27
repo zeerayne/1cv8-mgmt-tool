@@ -10,9 +10,10 @@ import aioshutil
 
 import core.types as core_types
 from conf import settings
-from core import cluster, utils
+from core import utils
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.aws import upload_infobase_to_s3
+from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
@@ -73,15 +74,14 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
     dt_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "dt"))
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER /S {cluster.get_server_address()}\{ib_name} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf'/UC "{permission_code}" '
-        rf"/DumpIB {dt_filename}"
-    )
-    log.debug(f"<{ib_name}> Created dump command [{v8_command}]")
+    v8_command = \
+        rf'"{utils.get_platform_full_path()}" ' \
+        rf'DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} ' \
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+        rf'/Out {log_filename} -NoTruncate ' \
+        rf'/UC "{permission_code}" ' \
+        rf'/DumpIB {dt_filename}'
+    log.debug(f'<{ib_name}> Created dump command [{v8_command}]')
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES_V8
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
@@ -164,9 +164,8 @@ async def _backup_pgdump(
 
 
 async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult:
-    with cluster.ClusterControlInterface() as cci:
-        wpc = cci.get_working_process_connection_with_info_base_auth()
-        ib_info = cci.get_info_base(wpc, ib_name)
+    with cluster_utils.get_cluster_controller_class()() as cci:
+        ib_info = cci.get_info_base(ib_name)
         db_server = ib_info.dbServerName
         dbms = ib_info.DBMS
         db_name = ib_info.dbName
@@ -174,7 +173,7 @@ async def _backup_info_base(ib_name: str) -> core_types.InfoBaseBackupTaskResult
     if settings.BACKUP_PG and postgres.dbms_is_postgres(dbms):
         result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
     else:
-        result = await utils.com_func_wrapper(_backup_v8, ib_name)
+        result = await cluster_utils.com_func_wrapper(_backup_v8, ib_name)
     return result
 
 

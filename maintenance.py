@@ -7,8 +7,9 @@ from typing import List
 
 import core.types as core_types
 from conf import settings
-from core import cluster, utils
+from core import utils
 from core.analyze import analyze_maintenance_result
+from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
@@ -40,13 +41,12 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER /S {cluster.get_server_address()}\{ib_name} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf"/ReduceEventLogSize {reduce_date_str}"
-    )
+    v8_command = \
+        rf'"{utils.get_platform_full_path()}" ' \
+        rf'DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} ' \
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
+        rf'/Out {log_filename} -NoTruncate ' \
+        rf'/ReduceEventLogSize {reduce_date_str}'
     try:
         await execute_v8_command(
             ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True
@@ -81,9 +81,8 @@ async def _maintenance_vacuumdb(
 
 
 async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseMaintenanceTaskResult:
-    with cluster.ClusterControlInterface() as cci:
-        wpc = cci.get_working_process_connection_with_info_base_auth()
-        ib_info = cci.get_info_base(wpc, ib_name)
+    with cluster_utils.get_cluster_controller_class()() as cci:
+        ib_info = cci.get_info_base(ib_name)
         db_server = ib_info.dbServerName
         dbms = ib_info.DBMS
         db_name = ib_info.dbName
@@ -92,7 +91,7 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
         try:
             succeeded = True
             if settings.MAINTENANCE_V8:
-                result_v8 = await utils.com_func_wrapper(_maintenance_v8, ib_name)
+                result_v8 = await cluster_utils.com_func_wrapper(_maintenance_v8, ib_name)
                 succeeded &= result_v8.succeeded
             if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(dbms):
                 result_pg = await _maintenance_vacuumdb(ib_name, db_server, db_name, db_user)

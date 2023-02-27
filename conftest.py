@@ -212,7 +212,7 @@ def mock_cluster_postgres_infobase(mocker: MockerFixture):
     info_base_mock.return_value.dbServerName = db_server
     info_base_mock.return_value.dbName = db_name
     info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface")
+    cci_mock = mocker.patch('core.cluster.comcntr.ClusterCOMControler')
     cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
     return db_server, db_name, db_user
 
@@ -227,7 +227,7 @@ def mock_cluster_mssql_infobase(mocker: MockerFixture):
     info_base_mock.return_value.dbServerName = db_server
     info_base_mock.return_value.dbName = db_name
     info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface")
+    cci_mock = mocker.patch('core.cluster.comcntr.ClusterCOMControler')
     cci_mock.return_value.__enter__.return_value.get_info_base = info_base_mock
     return db_server, db_name, db_user
 

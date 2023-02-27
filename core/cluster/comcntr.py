@@ -1,6 +1,9 @@
 import logging
 from typing import List
 
+from core.cluster.abc import ClusterControler
+from core.cluster.utils import get_server_agent_address, get_server_agent_port
+
 try:
     import pywintypes
     import win32com.client as win32com_client
@@ -31,15 +34,7 @@ r"""
 log = logging.getLogger(__name__)
 
 
-def get_server_address() -> str:
-    return settings.V8_SERVER_AGENT["address"]
-
-
-def get_server_port() -> str:
-    return str(settings.V8_SERVER_AGENT["port"])
-
-
-class ClusterControlInterface:
+class ClusterCOMControler(ClusterControler):
     """
     Примечание: любые COM-объекты не могут быть переданы между потоками,
     и должны использоваться только в потоке, в котоорм были созданы
@@ -50,8 +45,8 @@ class ClusterControlInterface:
             self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
         except pywintypes.com_error as e:
             raise e
-        self.server = get_server_address()
-        self.agentPort = get_server_port()
+        self.server = get_server_agent_address()
+        self.agentPort = get_server_agent_port()
         self.clusterAdminName = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
         self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
         self.infoBasesCredentials = settings.V8_INFOBASES_CREDENTIALS
@@ -60,37 +55,44 @@ class ClusterControlInterface:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        del self.V8COMConnector
+        pass
 
     def get_agent_connection(self):
-        agent_connection = self.V8COMConnector.ConnectAgent(f"{self.server}:{self.agentPort}")
-        return agent_connection
+        if getattr(self, 'agent_connection', None) is None:
+            self.agent_connection = self.V8COMConnector.ConnectAgent(f'{self.server}:{self.agentPort}')
+        return self.agent_connection
 
-    def get_cluster(self, agent_connection):
+    def get_cluster(self):
         """
         Получает первый кластер из списка
         :param agent_connection: Соединение с агентом сервера
         :return: Объект IClusterInfo
         """
-        cluster = agent_connection.GetClusters()[0]
-        return cluster
+        agent_connection = self.get_agent_connection()
+        if getattr(self, 'cluster', None) is None:
+            self.cluster = agent_connection.GetClusters()[0]
+        return self.cluster
 
-    def cluster_auth(self, agent_connection, cluster):
+    def cluster_auth(self):
         """
         Авторизует соединение с агентом сервера для указанного кластера. Данные для авторизации берутся из настроек
         :param agent_connection: Соединение с агентом сервера
         :param cluster: Кластер
+        :return: Объект IClusterInfo
         """
+        agent_connection = self.get_agent_connection()
+        cluster = self.get_cluster()
         agent_connection.Authenticate(cluster, self.clusterAdminName, self.clusterAdminPwd)
-
-    def get_cluster_with_auth(self, agent_connection):
-        cluster = self.get_cluster(agent_connection)
-        self.cluster_auth(agent_connection, cluster)
         return cluster
+
+    def get_cluster_with_auth(self):
+        if getattr(self, 'cluster_with_auth', None) is None:
+            self.cluster_with_auth = self.cluster_auth()
+        return self.cluster_with_auth
 
     def get_working_process_connection(self):
         agent_connection = self.get_agent_connection()
-        cluster = self.get_cluster_with_auth(agent_connection)
+        cluster = self.get_cluster_with_auth()
 
         working_process_0 = agent_connection.GetWorkingProcesses(cluster)[0]
         working_process_port = str(working_process_0.MainPort)
@@ -110,37 +112,38 @@ class ClusterControlInterface:
             working_process_connection.AddAuthentication(c[0], c[1])
         return working_process_connection
 
-    def _get_info_base(self, info_bases: List, name: str):
+    def _filter_infobase(self, info_bases: List, name: str):
         for ib in info_bases:
             if ib.Name.lower() == name.lower():
                 return ib
 
-    def get_info_bases(self, working_process_connection):
+    def get_cluster_info_bases(self):
+        working_process_connection = self.get_working_process_connection_with_info_base_auth()
         info_bases = working_process_connection.GetInfoBases()
         return info_bases
 
-    def get_info_base(self, working_process_connection, name):
-        info_bases = self.get_info_bases(working_process_connection)
-        return self._get_info_base(info_bases, name)
+    def get_info_base(self, name):
+        info_bases = self.get_cluster_info_bases()
+        return self._filter_infobase(info_bases, name)
 
-    def get_info_bases_short(self, agent_connection, cluster):
+    def get_cluster_info_bases_short(self, agent_connection, cluster):
         info_bases_short = agent_connection.GetInfoBases(cluster)
         return info_bases_short
 
-    def get_info_base_short(self, agent_connection, cluster, name: str):
-        info_bases_short = self.get_info_bases_short(agent_connection, cluster)
-        return self._get_info_base(info_bases_short, name)
+    def _get_info_base_short(self, agent_connection, cluster, name: str):
+        info_bases_short = self.get_cluster_info_bases_short(agent_connection, cluster)
+        return self._filter_infobase(info_bases_short, name)
 
-    def get_info_base_metadata(self, info_base: str, info_base_user: str, info_base_pwd: str):
+    def get_info_base_metadata(self, infobase: str, infobase_user: str, infobase_pwd: str):
         """
         Получает наименование и версию конфигурации
-        :param info_base: Имя информационной базы
-        :param info_base_user: Пользователь ИБ с правами администратора
-        :param info_base_pwd: Пароль пользователя ИБ
+        :param infobase: Имя информационной базы
+        :param infobase_user: Пользователь ИБ с правами администратора
+        :param infobase_pwd: Пароль пользователя ИБ
         :return: tuple(Наименование, Версия информационной базы)
         """
         external_connection = self.V8COMConnector.Connect(
-            f'Srvr="{self.server}";Ref="{info_base}";Usr="{info_base_user}";Pwd="{info_base_pwd}";'
+            f'Srvr="{self.server}";Ref="{infobase}";Usr="{infobase_user}";Pwd="{infobase_pwd}";'
         )
         version = external_connection.Metadata.Version
         name = external_connection.Metadata.Name
@@ -148,46 +151,47 @@ class ClusterControlInterface:
         return name, version
 
     def lock_info_base(
-        self,
-        working_process_connection,
-        info_base,
-        permission_code: str = "0000",
-        message: str = "Выполняется обслуживание ИБ",
+        self, infobase: str, permission_code: str = '0000', message: str = 'Выполняется обслуживание ИБ'
     ):
         """
         Блокирует фоновые задания и новые сеансы информационной базы
-        :param working_process_connection: Соединение с рабочим процессом
-        :param info_base: COM-Объект класса IInfoBaseInfo
+        :param infobase: имя информационной базы
         :param permission_code: Код доступа к информационной базе во время блокировки сеансов
         :param message: Сообщение будет выводиться при попытке установить сеанс с ИБ
         """
+        infobase_com_obj = self.get_info_base(infobase)
+        infobase_com_obj.ScheduledJobsDenied = True
+        infobase_com_obj.SessionsDenied = True
+        infobase_com_obj.PermissionCode = permission_code
+        infobase_com_obj.DeniedMessage = message
         # TODO: необходима проверка, есть ли у рабочего процесса необходимые авторизационные данные для этой ИБ
-        info_base.ScheduledJobsDenied = True
-        info_base.SessionsDenied = True
-        info_base.PermissionCode = permission_code
-        info_base.DeniedMessage = message
-        working_process_connection.UpdateInfoBase(info_base)
-        log.debug(f"<{info_base.Name}> Lock info base successfully")
+        working_process_connection = self.get_working_process_connection_with_info_base_auth()
+        working_process_connection.UpdateInfoBase(infobase_com_obj)
+        log.debug(f'<{infobase_com_obj.Name}> Lock info base successfully')
+        return infobase_com_obj
 
-    def unlock_info_base(self, working_process_connection, info_base):
+    def unlock_info_base(self, infobase: str):
         """
         Снимает блокировку фоновых заданий и сеансов информационной базы
-        :param working_process_connection: Соединение с рабочим процессом
-        :param info_base: COM-Объект класса IInfoBaseInfo
+        :param infobase: имя информационной базы
         """
-        info_base.ScheduledJobsDenied = False
-        info_base.SessionsDenied = False
-        info_base.DeniedMessage = ""
-        working_process_connection.UpdateInfoBase(info_base)
-        log.debug(f"<{info_base.Name}> Unlock info base successfully")
+        infobase_com_obj = self.get_info_base(infobase)
+        infobase_com_obj.ScheduledJobsDenied = False
+        infobase_com_obj.SessionsDenied = False
+        infobase_com_obj.DeniedMessage = ''
+        working_process_connection = self.get_working_process_connection_with_info_base_auth()
+        working_process_connection.UpdateInfoBase(infobase_com_obj)
+        log.debug(f'<{infobase_com_obj.Name}> Unlock info base successfully')
+        return infobase_com_obj
 
-    def terminate_info_base_sessions(self, agent_connection, cluster, info_base_short):
+    def terminate_info_base_sessions(self, infobase: str):
         """
         Принудительно завершает текущие сеансы информационной базы
-        :param agent_connection: Соединение с агентом сервера
-        :param cluster: Класер серверов
-        :param info_base_short: COM-Объект класса IInfoBaseShort
+        :param infobase: имя информационной базы
         """
-        info_base_sessions = agent_connection.GetInfoBaseSessions(cluster, info_base_short)
+        agent_connection = self.get_agent_connection()
+        cluster_with_auth = self.get_cluster_with_auth()
+        info_base_short = self._get_info_base_short(agent_connection, cluster_with_auth, infobase)
+        info_base_sessions = agent_connection.GetInfoBaseSessions(cluster_with_auth, info_base_short)
         for session in info_base_sessions:
-            agent_connection.TerminateSession(cluster, session)
+            agent_connection.TerminateSession(cluster_with_auth, session)

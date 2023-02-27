@@ -7,13 +7,7 @@ from pytest_mock import MockerFixture
 
 import core.types as core_types
 from core.exceptions import SubprocessException, V8Exception
-from maintenance import (
-    _maintenance_v8,
-    _maintenance_vacuumdb,
-    analyze_results,
-    maintenance_info_base,
-    rotate_logs,
-)
+from maintenance import _maintenance_v8, _maintenance_vacuumdb, analyze_results, maintenance_info_base, rotate_logs
 
 
 @pytest.mark.asyncio()
@@ -21,7 +15,7 @@ async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
     """
     `rotate_logs` calls `remove_old_files_by_pattern` for rotating logs
     """
-    remove_old_files_mock = mocker.patch("core.utils.remove_old_files_by_pattern")
+    remove_old_files_mock = mocker.patch('core.utils.remove_old_files_by_pattern')
     await rotate_logs(infobase)
     remove_old_files_mock.assert_awaited()
 
@@ -31,7 +25,7 @@ async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, in
     """
     Maintenance with 1cv8 tools calls execute_v8_command to run created command
     """
-    execute_v8_command_mock = mocker.patch("maintenance.execute_v8_command")
+    execute_v8_command_mock = mocker.patch('maintenance.execute_v8_command')
     await _maintenance_v8(infobase)
     execute_v8_command_mock.assert_awaited()
 
@@ -43,7 +37,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if no errors
     """
-    mocker.patch("maintenance.execute_v8_command")
+    mocker.patch('maintenance.execute_v8_command')
     result = await _maintenance_v8(infobase)
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -55,7 +49,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
     """
-    mocker.patch("maintenance.execute_v8_command", side_effect=V8Exception)
+    mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -67,7 +61,7 @@ async def test_maintenance_v8_returns_success_result_for_exact_infobase(
     """
     Maintenance with 1cv8 tools returns success result for exact infobase which was provided if no errors
     """
-    mocker.patch("maintenance.execute_v8_command")
+    mocker.patch('maintenance.execute_v8_command')
     result = await _maintenance_v8(infobase)
     assert result.infobase_name == infobase
 
@@ -79,7 +73,7 @@ async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
     """
     Maintenance with 1cv8 tools returns failed result for exact infobase which was provided if an error occured
     """
-    mocker.patch("maintenance.execute_v8_command", side_effect=V8Exception)
+    mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert result.infobase_name == infobase
 
@@ -89,7 +83,7 @@ async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, info
     """
     Maintenance with 1cv8 tools returns success result if no errors
     """
-    mocker.patch("maintenance.execute_v8_command")
+    mocker.patch('maintenance.execute_v8_command')
     result = await _maintenance_v8(infobase)
     assert result.succeeded is True
 
@@ -101,7 +95,7 @@ async def test_maintenance_v8_returns_failed_result_if_error(
     """
     Maintenance with 1cv8 tools returns failed result if an error occured
     """
-    mocker.patch("maintenance.execute_v8_command", side_effect=V8Exception)
+    mocker.patch('maintenance.execute_v8_command', side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert result.succeeded is False
 
@@ -113,8 +107,8 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_succeed
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no errors
     """
-    mocker.patch("maintenance.execute_subprocess_command")
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    mocker.patch('maintenance.execute_subprocess_command')
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
@@ -125,8 +119,8 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
     """
-    mocker.patch("maintenance.execute_subprocess_command", side_effect=SubprocessException)
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    mocker.patch('maintenance.execute_subprocess_command', side_effect=SubprocessException)
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
@@ -135,7 +129,7 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_cred
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no credentials found for db
     """
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
 
@@ -146,8 +140,8 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_succe
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no errors
     """
-    mocker.patch("maintenance.execute_subprocess_command")
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    mocker.patch('maintenance.execute_subprocess_command')
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.infobase_name == infobase
 
 
@@ -158,8 +152,8 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_faile
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if an error occured
     """
-    mocker.patch("maintenance.execute_subprocess_command", side_effect=SubprocessException)
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    mocker.patch('maintenance.execute_subprocess_command', side_effect=SubprocessException)
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.infobase_name == infobase
 
 
@@ -168,7 +162,7 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_cr
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no credentials found for db
     """
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.infobase_name == infobase
 
 
@@ -179,8 +173,8 @@ async def test_maintenance_vacuumdb_returns_sucess_result_when_succeeded(
     """
     Maintenance with vacuumdb returns success result if no errors
     """
-    mocker.patch("maintenance.execute_subprocess_command")
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    mocker.patch('maintenance.execute_subprocess_command')
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.succeeded is True
 
 
@@ -191,8 +185,8 @@ async def test_maintenance_vacuumdb_returns_failed_result_when_failed(
     """
     Maintenance with vacuumdb returns failed result if an error occured
     """
-    mocker.patch("maintenance.execute_subprocess_command", side_effect=SubprocessException)
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    mocker.patch('maintenance.execute_subprocess_command', side_effect=SubprocessException)
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.succeeded is False
 
 
@@ -201,7 +195,7 @@ async def test_maintenance_vacuumdb_returns_failed_result_when_no_credentials(in
     """
     Maintenance with vacuumdb returns failed result if no credentials found for db
     """
-    result = await _maintenance_vacuumdb(infobase, "", "", "")
+    result = await _maintenance_vacuumdb(infobase, '', '', '')
     assert result.succeeded is False
 
 
@@ -213,7 +207,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if succeeded with default settings
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -227,9 +221,9 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     of `InfoBaseMaintenanceTaskResult`
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -243,9 +237,9 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     of `InfoBaseMaintenanceTaskResult`
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -259,11 +253,11 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     if succeeded with MAINTENANCE_V8 is True and MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -276,7 +270,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with default settings
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -289,9 +283,9 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -304,9 +298,9 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     Maitenance infobase function returns result of `InfoBaseMaintenanceTaskResult` if failed with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -320,11 +314,11 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     if failed with MAINTENANCE_V8 is True and MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -337,7 +331,7 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     Maitenance infobase function returns object with succeeded is True if succeeded with default settings
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is True
 
@@ -350,9 +344,9 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     Maitenance infobase function returns object with succeeded is True if succeeded with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is True
 
@@ -365,9 +359,9 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     Maitenance infobase function returns object with succeeded is True if succeeded with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is True
 
@@ -381,11 +375,11 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     with succeeded is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, True)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is True
 
@@ -398,7 +392,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     Maitenance infobase function returns object with succeeded is False if failed with default settings
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -411,9 +405,9 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     Maitenance infobase function returns object with succeeded is False if failed with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -426,9 +420,9 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     Maitenance infobase function returns object with succeeded is False if failed with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -442,11 +436,11 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     with succeeded is False
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
-    mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
-    mocker.patch("maintenance.rotate_logs", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
+    mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
+    mocker.patch('maintenance.rotate_logs', return_value=return_value)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -459,7 +453,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_rotate
     If an error occured in `rotate_logs` function, maitenance infobase function returns result
     of `InfoBaseMaintenanceTaskResult` type
     """
-    mocker.patch("maintenance.rotate_logs", side_effect=Exception)
+    mocker.patch('maintenance.rotate_logs', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -472,8 +466,8 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_v8_rai
     If an error occured in v8 maintenance function with MAINTENANCE_V8 is True, maitenance infobase function returns
     result of `InfoBaseMaintenanceTaskResult` type
     """
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", side_effect=Exception)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -486,8 +480,8 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_pg_rai
     If an error occured in pg maintenance function with MAINTENANCE_PG is True, maitenance infobase function returns
     result of `InfoBaseMaintenanceTaskResult` type
     """
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance._maintenance_vacuumdb", side_effect=Exception)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance._maintenance_vacuumdb', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert isinstance(result, core_types.InfoBaseMaintenanceTaskResult)
 
@@ -499,7 +493,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_rota
     """
     Maitenance infobase function returns object with succeeded is False if an error occured in `rotate_logs` function
     """
-    mocker.patch("maintenance.rotate_logs", side_effect=Exception)
+    mocker.patch('maintenance.rotate_logs', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -512,8 +506,8 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_v8_r
     If an error occured in v8 maintenance function with MAINTENANCE_V8 is True, maitenance infobase function returns
     object with succeeded is False
     """
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("core.utils.com_func_wrapper", side_effect=Exception)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('core.cluster.utils.com_func_wrapper', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -526,8 +520,8 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_pg_r
     If an error occured in pg maintenance function with MAINTENANCE_PG is True, maitenance infobase function returns
     object with succeeded is False
     """
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance._maintenance_vacuumdb", side_effect=Exception)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance._maintenance_vacuumdb', side_effect=Exception)
     result = await maintenance_info_base(infobase, asyncio.Semaphore(1))
     assert result.succeeded is False
 
@@ -539,7 +533,7 @@ async def test_maintenance_info_base_calls_rotate_logs_by_default(
     """
     Maitenance infobase function calls `rotate_logs` by default
     """
-    rotate_logs_mock = mocker.patch("maintenance.rotate_logs")
+    rotate_logs_mock = mocker.patch('maintenance.rotate_logs')
     await maintenance_info_base(infobase, asyncio.Semaphore(1))
     rotate_logs_mock.assert_awaited_with(infobase)
 
@@ -552,9 +546,9 @@ async def test_maintenance_info_base_calls_maintenance_v8_with_v8_enabled(
     Maitenance infobase function calls `_maintenance_v8` with MAINTENANCE_V8 is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_V8", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance.rotate_logs")
-    com_func_wrapper_mock = mocker.patch("core.utils.com_func_wrapper", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_V8', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance.rotate_logs')
+    com_func_wrapper_mock = mocker.patch('core.cluster.utils.com_func_wrapper', return_value=return_value)
     await maintenance_info_base(infobase, asyncio.Semaphore(1))
     com_func_wrapper_mock.assert_awaited_with(_maintenance_v8, infobase)
 
@@ -567,9 +561,9 @@ async def test_maintenance_info_base_calls_maintenance_pg_with_pg_enabled(
     Maitenance infobase function calls `_maintenance_pg` with MAINTENANCE_PG is True
     """
     return_value = core_types.InfoBaseMaintenanceTaskResult(infobase, False)
-    mocker.patch("conf.settings.MAINTENANCE_PG", new_callable=PropertyMock(return_value=True))
-    mocker.patch("maintenance.rotate_logs")
-    maintenance_vacuumdb_mock = mocker.patch("maintenance._maintenance_vacuumdb", return_value=return_value)
+    mocker.patch('conf.settings.MAINTENANCE_PG', new_callable=PropertyMock(return_value=True))
+    mocker.patch('maintenance.rotate_logs')
+    maintenance_vacuumdb_mock = mocker.patch('maintenance._maintenance_vacuumdb', return_value=return_value)
     await maintenance_info_base(infobase, asyncio.Semaphore(1))
     maintenance_vacuumdb_mock.assert_awaited()
 
@@ -577,6 +571,6 @@ async def test_maintenance_info_base_calls_maintenance_pg_with_pg_enabled(
 def test_analyze_results_calls_inner_func(mocker: MockerFixture, infobases, mixed_maintenance_result):
     start = datetime.now()
     end = start + timedelta(minutes=5)
-    analyze_maintenance_result_mock = mocker.patch("maintenance.analyze_maintenance_result")
+    analyze_maintenance_result_mock = mocker.patch('maintenance.analyze_maintenance_result')
     analyze_results(infobases, mixed_maintenance_result, start, end)
     analyze_maintenance_result_mock.assert_called_with(mixed_maintenance_result, infobases, start, end)

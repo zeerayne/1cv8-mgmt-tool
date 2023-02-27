@@ -3,7 +3,8 @@ import logging
 from typing import Type
 
 from conf import settings
-from core import cluster, utils
+from core import utils
+from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
 
 log = logging.getLogger(__name__)
@@ -48,43 +49,29 @@ async def execute_v8_command(
     # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
-    with cluster.ClusterControlInterface() as cci:
-        agent_connection = cci.get_agent_connection()
-        cluster_with_auth = cci.get_cluster_with_auth(agent_connection)
+    with cluster_utils.get_cluster_controller_class()() as cci:
         if permission_code:
-            working_process_connection = cci.get_working_process_connection_with_info_base_auth()
-            ib = cci.get_info_base(working_process_connection, ib_name)
             # Блокирует фоновые задания и новые сеансы
-            cci.lock_info_base(working_process_connection, ib, permission_code)
+            cci.lock_info_base(ib_name, permission_code)
             # Перед завершением сеансов следует взять паузу,
             # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
             # после включения блокировки регламентных заданий
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
             log.debug(f"<{ib_name}> Wait for {pause} seconds")
             await asyncio.sleep(pause)
-            del working_process_connection
-        ib_short = cci.get_info_base_short(agent_connection, cluster_with_auth, ib_name)
         # Принудительно завершает текущие сеансы
-        cci.terminate_info_base_sessions(agent_connection, cluster_with_auth, ib_short)
-        del ib_short
-        del cluster_with_auth
-        del agent_connection
+        cci.terminate_info_base_sessions(ib_name)
         v8_process = await asyncio.create_subprocess_shell(v8_command)
-        log.debug(f"<{ib_name}> 1cv8.exe PID is {str(v8_process.pid)}")
+        log.debug(f'<{ib_name}> 1cv8 PID is {str(v8_process.pid)}')
         try:
             await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             await v8_process.terminate()
 
         if permission_code:
-            # Снова получает соединение с рабочим процессом,
-            # потому что за время работы процесса 1cv8 оно может закрыться
-            working_process_connection = cci.get_working_process_connection_with_info_base_auth()
             # Снимает блокировку фоновых заданий и сеансов
-            cci.unlock_info_base(working_process_connection, ib)
-            del ib
-            del working_process_connection
-    _check_subprocess_return_code(ib_name, v8_process, log_filename, "utf-8-sig", V8Exception, log_output_on_success)
+            cci.unlock_info_base(ib_name)
+    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception, log_output_on_success)
 
 
 async def execute_subprocess_command(
