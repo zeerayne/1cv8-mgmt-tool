@@ -14,9 +14,16 @@ except ImportError:
 
 from core import models as core_models
 from core.cluster.comcntr import ClusterCOMControler
-from core.cluster.rac import ClusterRACControler
 from core.cluster.utils import com_func_wrapper, get_cluster_controller_class
 from core.exceptions import V8Exception
+
+
+def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_com():
+    """
+    `get_cluster_controller_class` returns `ClusterCOMControler` class
+    """
+    controller_class = get_cluster_controller_class()
+    assert controller_class == ClusterCOMControler
 
 
 @pytest.mark.asyncio()

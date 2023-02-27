@@ -29,20 +29,6 @@ def mock_only_infobases(mocker: MockerFixture, infobases):
     return only_infobases
 
 
-@pytest.fixture()
-def mock_cluster_control_mode_com(mocker: MockerFixture):
-    cluster_control_mode = "com"
-    mocker.patch("conf.settings.V8_CLUSTER_CONTROL_MODE", new_callable=PropertyMock(return_value=cluster_control_mode))
-    return cluster_control_mode
-
-
-@pytest.fixture()
-def mock_cluster_control_mode_rac(mocker: MockerFixture):
-    cluster_control_mode = "rac"
-    mocker.patch("conf.settings.V8_CLUSTER_CONTROL_MODE", new_callable=PropertyMock(return_value=cluster_control_mode))
-    return cluster_control_mode
-
-
 @surrogate("win32com.client")
 @pytest.fixture()
 def mock_win32com_client_dispatch(mocker: MockerFixture):
