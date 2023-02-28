@@ -16,7 +16,8 @@ RUN /distr/setup-*.run \
     --enable-components server,ru \
     --installer-language en \
     && rm -rf /distr
-RUN mkdir /home/1c
+ENV RAGENT_HOME /home/1c
+RUN mkdir ${RAGENT_HOME}
 COPY docker/ragent-entrypoint.sh /opt/docker/entrypoint.sh
 ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 
