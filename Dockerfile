@@ -5,7 +5,7 @@ ENV RAGENT_REGPORT 1541
 ENV RAGENT_PORTRANGE 1560:1591
 ENV RAS_PORT 1545
 WORKDIR /distr
-COPY server64.tar.gz server64.tar.gz
+COPY /docker/server64.tar.gz server64.tar.gz
 RUN tar xzf server64.tar.gz \
     && rm server64.tar.gz
 WORKDIR /opt/1cv8
