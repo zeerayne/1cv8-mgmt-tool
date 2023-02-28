@@ -13,7 +13,7 @@ WORKDIR /opt/1cv8
 FROM v8-base AS ragent
 RUN /distr/setup-*.run \
     --mode unattended \
-    --enable-components server,liberica_jre,ru \
+    --enable-components server,ru \
     --installer-language en \
     && rm -rf /distr
 RUN mkdir /home/1c
@@ -23,7 +23,7 @@ ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 FROM v8-base AS ras
 RUN /distr/setup-*.run \
     --mode unattended \
-    --enable-components server_admin,liberica_jre,ru \
+    --enable-components server_admin,ru \
     --installer-language en \
     && rm -rf /distr
 COPY docker/ras-entrypoint.sh /opt/docker/entrypoint.sh
