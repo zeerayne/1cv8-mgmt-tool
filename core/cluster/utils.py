@@ -10,10 +10,9 @@ except ImportError:
 
 import logging
 
-import core.types as core_types
+import core.models as core_models
 from conf import settings
 from core.exceptions import V8Exception
-
 
 log = logging.getLogger(__name__)
 
@@ -41,7 +40,7 @@ def get_ras_port() -> str:
     return str(settings.V8_RAS["port"])
 
 
-async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseTaskResultBase:
+async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_models.InfoBaseTaskResultBase:
     """
     Оборачивает функцию для обработки COM-ошибок
     :param func: функция, которая будет обёрнута
@@ -59,7 +58,7 @@ async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseT
         except pywintypes.com_error:
             log.exception(f"<{ib_name}> COM Error occured during handling another COM Error")
         # После разблокировки возвращаем неуспешный результат
-        return core_types.InfoBaseTaskResultBase(ib_name, False)
+        return core_models.InfoBaseTaskResultBase(ib_name, False)
     except V8Exception:
-        return core_types.InfoBaseTaskResultBase(ib_name, False)
+        return core_models.InfoBaseTaskResultBase(ib_name, False)
     return result

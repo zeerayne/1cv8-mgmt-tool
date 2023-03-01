@@ -6,11 +6,13 @@ try:
     import pywintypes
 except ImportError:
     from surrogate import surrogate
-    surrogate('pywintypes').prepare()
+
+    surrogate("pywintypes").prepare()
     import pywintypes
+
     pywintypes.com_error = Exception
 
-from core import types as core_types
+from core import models as core_models
 from core.cluster.comcntr import ClusterCOMControler
 from core.cluster.rac import ClusterRACControler
 from core.cluster.utils import com_func_wrapper, get_cluster_controller_class
@@ -22,7 +24,7 @@ async def test_com_func_wrapper_awaits_inner_func(infobase):
     """
     `com_func_wrapper` awaits inner coroutine
     """
-    coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_types.InfoBaseTaskResultBase(ib_name, True))
+    coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_models.InfoBaseTaskResultBase(ib_name, True))
     await com_func_wrapper(coroutine_mock, infobase)
     coroutine_mock.assert_awaited()
 
@@ -32,7 +34,7 @@ async def test_com_func_wrapper_returns_value_of_inner_func(infobase):
     """
     `com_func_wrapper` returns value from inner coroutine
     """
-    coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_types.InfoBaseTaskResultBase(ib_name, True))
+    coroutine_mock = AsyncMock(side_effect=lambda ib_name: core_models.InfoBaseTaskResultBase(ib_name, True))
     result = await com_func_wrapper(coroutine_mock, infobase)
     assert result.infobase_name == infobase
     assert result.succeeded is True

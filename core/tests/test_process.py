@@ -5,7 +5,11 @@ import pytest
 from pytest_mock import MockerFixture
 
 from core.exceptions import SubprocessException, V8Exception
-from core.process import _check_subprocess_return_code, execute_subprocess_command, execute_v8_command
+from core.process import (
+    _check_subprocess_return_code,
+    execute_subprocess_command,
+    execute_v8_command,
+)
 
 
 def test_check_subprocess_return_code_raises_exception_when_subprocess_failed(mocker: MockerFixture, infobase):

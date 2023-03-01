@@ -7,7 +7,7 @@ import pytest
 from packaging.version import Version
 from pytest_mock import MockerFixture
 
-from core import types as core_types
+from core import models as core_models
 from utils.postgres import POSTGRES_NAME
 
 random.seed(0)
@@ -26,7 +26,7 @@ def infobase(infobases):
 @pytest.fixture()
 def success_base_result(infobases):
     return [
-        core_types.InfoBaseTaskResultBase(
+        core_models.InfoBaseTaskResultBase(
             infobase_name=ib,
             succeeded=True,
         )
@@ -37,7 +37,7 @@ def success_base_result(infobases):
 @pytest.fixture()
 def failed_base_result(infobases):
     return [
-        core_types.InfoBaseTaskResultBase(
+        core_models.InfoBaseTaskResultBase(
             infobase_name=ib,
             succeeded=False,
         )
@@ -49,7 +49,7 @@ def failed_base_result(infobases):
 def mixed_base_result(infobases):
     succeeded = True
     return [
-        core_types.InfoBaseTaskResultBase(
+        core_models.InfoBaseTaskResultBase(
             infobase_name=ib,
             succeeded=(succeeded := not succeeded),
         )
@@ -60,7 +60,7 @@ def mixed_base_result(infobases):
 @pytest.fixture()
 def success_backup_result(infobases):
     return [
-        core_types.InfoBaseBackupTaskResult(infobase_name=ib, succeeded=True, backup_filename=f"./{ib}.testbackup")
+        core_models.InfoBaseBackupTaskResult(infobase_name=ib, succeeded=True, backup_filename=f"./{ib}.testbackup")
         for ib in infobases
     ]
 
@@ -68,7 +68,7 @@ def success_backup_result(infobases):
 @pytest.fixture()
 def failed_backup_result(infobases):
     return [
-        core_types.InfoBaseBackupTaskResult(
+        core_models.InfoBaseBackupTaskResult(
             infobase_name=ib,
             succeeded=False,
         )
@@ -80,7 +80,7 @@ def failed_backup_result(infobases):
 def mixed_backup_result(infobases):
     succeeded = True
     return [
-        core_types.InfoBaseBackupTaskResult(
+        core_models.InfoBaseBackupTaskResult(
             infobase_name=ib,
             succeeded=(succeeded := not succeeded),
             backup_filename=f"./{ib}.testbackup" if succeeded else "",
@@ -91,13 +91,13 @@ def mixed_backup_result(infobases):
 
 @pytest.fixture()
 def success_maintenance_result(infobases):
-    return [core_types.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
+    return [core_models.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
 
 
 @pytest.fixture()
 def failed_maintenance_result(infobases):
     return [
-        core_types.InfoBaseMaintenanceTaskResult(
+        core_models.InfoBaseMaintenanceTaskResult(
             infobase_name=ib,
             succeeded=False,
         )
@@ -109,20 +109,20 @@ def failed_maintenance_result(infobases):
 def mixed_maintenance_result(infobases):
     succeeded = True
     return [
-        core_types.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=(succeeded := not succeeded))
+        core_models.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=(succeeded := not succeeded))
         for ib in infobases
     ]
 
 
 @pytest.fixture()
 def success_update_result(infobases):
-    return [core_types.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
+    return [core_models.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
 
 
 @pytest.fixture()
 def failed_update_result(infobases):
     return [
-        core_types.InfoBaseUpdateTaskResult(
+        core_models.InfoBaseUpdateTaskResult(
             infobase_name=ib,
             succeeded=False,
         )
@@ -134,7 +134,7 @@ def failed_update_result(infobases):
 def mixed_update_result(infobases):
     succeeded = True
     return [
-        core_types.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=(succeeded := not succeeded))
+        core_models.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=(succeeded := not succeeded))
         for ib in infobases
     ]
 
@@ -142,7 +142,7 @@ def mixed_update_result(infobases):
 @pytest.fixture()
 def success_aws_result(infobases):
     return [
-        core_types.InfoBaseAWSUploadTaskResult(
+        core_models.InfoBaseAWSUploadTaskResult(
             infobase_name=ib, succeeded=True, upload_size=random.randint(1000, 1000**2)
         )
         for ib in infobases
@@ -151,14 +151,14 @@ def success_aws_result(infobases):
 
 @pytest.fixture()
 def failed_aws_result(infobases):
-    return [core_types.InfoBaseAWSUploadTaskResult(infobase_name=ib, succeeded=False) for ib in infobases]
+    return [core_models.InfoBaseAWSUploadTaskResult(infobase_name=ib, succeeded=False) for ib in infobases]
 
 
 @pytest.fixture()
 def mixed_aws_result(infobases):
     succeeded = True
     return [
-        core_types.InfoBaseAWSUploadTaskResult(
+        core_models.InfoBaseAWSUploadTaskResult(
             infobase_name=ib,
             succeeded=(succeeded := not succeeded),
             upload_size=random.randint(1000, 1000**2) if succeeded else 0,
@@ -212,7 +212,7 @@ def mock_cluster_postgres_infobase(mocker: MockerFixture):
     info_base_mock.return_value.dbServerName = db_server
     info_base_mock.return_value.dbName = db_name
     info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch('core.cluster.comcntr.ClusterCOMControler')
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
     cci_mock.return_value.get_info_base = info_base_mock
     return db_server, db_name, db_user
 
@@ -227,7 +227,7 @@ def mock_cluster_mssql_infobase(mocker: MockerFixture):
     info_base_mock.return_value.dbServerName = db_server
     info_base_mock.return_value.dbName = db_name
     info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch('core.cluster.comcntr.ClusterCOMControler')
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
     cci_mock.return_value.get_info_base = info_base_mock
     return db_server, db_name, db_user
 

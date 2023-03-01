@@ -8,7 +8,7 @@ import aioboto3
 import boto3
 from botocore.exceptions import EndpointConnectionError
 
-import core.types as core_types
+import core.models as core_models
 from conf import settings
 from core import utils
 from core.analyze import analyze_s3_result
@@ -36,7 +36,7 @@ def _get_aws_region_parameter() -> Dict[str, str]:
 
 async def upload_infobase_to_s3(
     ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore
-) -> core_types.InfoBaseAWSUploadTaskResult:
+) -> core_models.InfoBaseAWSUploadTaskResult:
     aws_retries = settings.AWS_RETRIES
     async with semaphore:
         try:
@@ -55,10 +55,10 @@ async def upload_infobase_to_s3(
                         await asyncio.sleep(aws_retry_pause)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in AWS coroutine")
-            return core_types.InfoBaseAWSUploadTaskResult(ib_name, False)
+            return core_models.InfoBaseAWSUploadTaskResult(ib_name, False)
 
 
-async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_types.InfoBaseAWSUploadTaskResult:
+async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_models.InfoBaseAWSUploadTaskResult:
     log.info(f"<{ib_name}> Start upload {full_backup_path} to Amazon S3")
     session = aioboto3.Session(
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -78,7 +78,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
         f"<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s"
     )
     await _remove_old_infobase_backups_from_s3(ib_name, session)
-    return core_types.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
+    return core_models.InfoBaseAWSUploadTaskResult(ib_name, True, source_size)
 
 
 async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Session):
@@ -94,7 +94,7 @@ async def _remove_old_infobase_backups_from_s3(ib_name: str, session: boto3.Sess
                 await o.delete()
 
 
-async def upload_to_s3(backup_results: core_types.InfoBaseBackupTaskResult):
+async def upload_to_s3(backup_results: core_models.InfoBaseBackupTaskResult):
     """
     Загружает резервные копии информационных баз в Amazon S3.
     Распаралеливает задачу т.к. одна загрузка ограничена скоростью ~8 Мбит/с

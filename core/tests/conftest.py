@@ -7,7 +7,7 @@ from botocore.exceptions import EndpointConnectionError
 from pytest_mock import MockerFixture
 
 from conf import settings
-from core import types as core_types
+from core import models as core_models
 
 random.seed(0)
 
@@ -20,7 +20,7 @@ def mock_analyze_result(mocker: MockerFixture):
 @pytest.fixture()
 async def mock_upload_infobase_to_s3(mocker: MockerFixture):
     async_mock = AsyncMock(
-        side_effect=lambda ib_name, full_backup_path: core_types.InfoBaseAWSUploadTaskResult(ib_name, True, 1000)
+        side_effect=lambda ib_name, full_backup_path: core_models.InfoBaseAWSUploadTaskResult(ib_name, True, 1000)
     )
     return mocker.patch("core.aws._upload_infobase_to_s3", side_effect=async_mock)
 

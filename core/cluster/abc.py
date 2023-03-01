@@ -5,7 +5,6 @@ from conf import settings
 
 
 class ClusterControler(ABC):
-
     @abstractmethod
     def get_cluster_info_bases(self):
         """
@@ -57,7 +56,7 @@ class ClusterControler(ABC):
             info_bases = list(
                 filter(
                     lambda ib: ib.lower() not in [ib_exclude.lower() for ib_exclude in settings.V8_INFOBASES_EXCLUDE],
-                    info_bases_raw
+                    info_bases_raw,
                 )
             )
         return info_bases

@@ -52,8 +52,8 @@ class ClusterCOMControler(ClusterControler):
         self.infoBasesCredentials = settings.V8_INFOBASES_CREDENTIALS
 
     def get_agent_connection(self):
-        if getattr(self, 'agent_connection', None) is None:
-            self.agent_connection = self.V8COMConnector.ConnectAgent(f'{self.server}:{self.agentPort}')
+        if getattr(self, "agent_connection", None) is None:
+            self.agent_connection = self.V8COMConnector.ConnectAgent(f"{self.server}:{self.agentPort}")
         return self.agent_connection
 
     def get_cluster(self):
@@ -63,7 +63,7 @@ class ClusterCOMControler(ClusterControler):
         :return: Объект IClusterInfo
         """
         agent_connection = self.get_agent_connection()
-        if getattr(self, 'cluster', None) is None:
+        if getattr(self, "cluster", None) is None:
             self.cluster = agent_connection.GetClusters()[0]
         return self.cluster
 
@@ -80,7 +80,7 @@ class ClusterCOMControler(ClusterControler):
         return cluster
 
     def get_cluster_with_auth(self):
-        if getattr(self, 'cluster_with_auth', None) is None:
+        if getattr(self, "cluster_with_auth", None) is None:
             self.cluster_with_auth = self.cluster_auth()
         return self.cluster_with_auth
 
@@ -145,7 +145,7 @@ class ClusterCOMControler(ClusterControler):
         return name, version
 
     def lock_info_base(
-        self, infobase: str, permission_code: str = '0000', message: str = 'Выполняется обслуживание ИБ'
+        self, infobase: str, permission_code: str = "0000", message: str = "Выполняется обслуживание ИБ"
     ):
         """
         Блокирует фоновые задания и новые сеансы информационной базы
@@ -161,7 +161,7 @@ class ClusterCOMControler(ClusterControler):
         # TODO: необходима проверка, есть ли у рабочего процесса необходимые авторизационные данные для этой ИБ
         working_process_connection = self.get_working_process_connection_with_info_base_auth()
         working_process_connection.UpdateInfoBase(infobase_com_obj)
-        log.debug(f'<{infobase_com_obj.Name}> Lock info base successfully')
+        log.debug(f"<{infobase_com_obj.Name}> Lock info base successfully")
         return infobase_com_obj
 
     def unlock_info_base(self, infobase: str):
@@ -172,10 +172,10 @@ class ClusterCOMControler(ClusterControler):
         infobase_com_obj = self.get_info_base(infobase)
         infobase_com_obj.ScheduledJobsDenied = False
         infobase_com_obj.SessionsDenied = False
-        infobase_com_obj.DeniedMessage = ''
+        infobase_com_obj.DeniedMessage = ""
         working_process_connection = self.get_working_process_connection_with_info_base_auth()
         working_process_connection.UpdateInfoBase(infobase_com_obj)
-        log.debug(f'<{infobase_com_obj.Name}> Unlock info base successfully')
+        log.debug(f"<{infobase_com_obj.Name}> Unlock info base successfully")
         return infobase_com_obj
 
     def terminate_info_base_sessions(self, infobase: str):

@@ -11,7 +11,6 @@ import aiofiles.os
 from conf import settings
 from core import version
 
-
 log = logging.getLogger(__name__)
 
 
@@ -19,10 +18,10 @@ def get_platform_full_path() -> str:
     platformPath = settings.V8_PLATFORM_PATH
     platformVersion = version.find_platform_last_version(platformPath)
     platformDirectory = os.path.join(platformPath, str(platformVersion))
-    if platform.system() == 'Windows':
-        full_path = os.path.join(platformDirectory, 'bin', '1cv8.exe')
-    if platform.system() == 'Linux':
-        full_path = os.path.join(platformDirectory, '1cv8')
+    if platform.system() == "Windows":
+        full_path = os.path.join(platformDirectory, "bin", "1cv8.exe")
+    if platform.system() == "Linux":
+        full_path = os.path.join(platformDirectory, "1cv8")
     return full_path
 
 
@@ -35,19 +34,19 @@ def get_formatted_date_for_1cv8(datetime_value: Union[datetime, date]) -> str:
 
 
 def get_ib_name_with_separator(ib_name: str):
-    return f'{ib_name}{settings.FILENAME_SEPARATOR}'
+    return f"{ib_name}{settings.FILENAME_SEPARATOR}"
 
 
-def get_infobase_glob_pattern(ib_name: str, file_extension: str = '*'):
-    return f'*{get_ib_name_with_separator(ib_name)}*.{file_extension}'
+def get_infobase_glob_pattern(ib_name: str, file_extension: str = "*"):
+    return f"*{get_ib_name_with_separator(ib_name)}*.{file_extension}"
 
 
 def get_ib_and_time_string(ib_name: str) -> str:
-    return f'{get_ib_name_with_separator(ib_name)}{get_formatted_current_datetime()}'
+    return f"{get_ib_name_with_separator(ib_name)}{get_formatted_current_datetime()}"
 
 
 def append_file_extension_to_string(string: str, file_ext: str) -> str:
-    return f'{string}.{file_ext}'
+    return f"{string}.{file_ext}"
 
 
 def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
@@ -66,7 +65,7 @@ def get_info_base_credentials(ib_name) -> Tuple[str, str]:
     try:
         creds = settings.V8_INFOBASES_CREDENTIALS[ib_name]
     except KeyError:
-        creds = settings.V8_INFOBASES_CREDENTIALS['default']
+        creds = settings.V8_INFOBASES_CREDENTIALS["default"]
     return creds
 
 
@@ -80,8 +79,8 @@ def path_leaf(path: str) -> str:
     return tail or ntpath.basename(head)
 
 
-def read_file_content(filename, file_encoding='utf-8'):
-    with open(filename, 'r', encoding=file_encoding) as file:
+def read_file_content(filename, file_encoding="utf-8"):
+    with open(filename, "r", encoding=file_encoding) as file:
         read_data = file.read()
         # remove a trailing newline
         read_data = read_data.rstrip()

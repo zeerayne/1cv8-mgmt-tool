@@ -5,7 +5,7 @@ import sys
 from datetime import datetime, timedelta
 from typing import List
 
-import core.types as core_types
+import core.models as core_models
 from conf import settings
 from core import utils
 from core.analyze import analyze_maintenance_result
@@ -26,10 +26,10 @@ async def rotate_logs(ib_name):
     log.info(f"<{ib_name}> Removing logs older than {logRetentionDays} days")
     path = os.path.join(settings.LOG_PATH, filename_pattern)
     await utils.remove_old_files_by_pattern(path, logRetentionDays)
-    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
+    return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
     2. Удаляет старые резервные копии
@@ -41,30 +41,31 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
-    v8_command = \
-        rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} ' \
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
-        rf'/Out {log_filename} -NoTruncate ' \
-        rf'/ReduceEventLogSize {reduce_date_str}'
+    v8_command = (
+        rf'"{utils.get_platform_full_path()}" '
+        rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
+        rf"/Out {log_filename} -NoTruncate "
+        rf"/ReduceEventLogSize {reduce_date_str}"
+    )
     try:
         await execute_v8_command(
             ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True
         )
     except V8Exception:
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
+        return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
+    return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
 async def _maintenance_vacuumdb(
     ib_name: str, db_server: str, db_name: str, db_user: str, *args, **kwargs
-) -> core_types.InfoBaseMaintenanceTaskResult:
+) -> core_models.InfoBaseMaintenanceTaskResult:
     log.info(f"<{ib_name}> Start vacuumdb")
     try:
         db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(db_server, db_user)
     except KeyError as e:
         log.error(f"<{ib_name}> {str(e)}")
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+        return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     pg_vacuumdb_path = os.path.join(settings.PG_BIN_PATH, "vacuumdb.exe")
     vacuumdb_command = (
@@ -76,11 +77,13 @@ async def _maintenance_vacuumdb(
     try:
         await execute_subprocess_command(ib_name, vacuumdb_command, log_filename, env=vacuumdb_env)
     except SubprocessException:
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
+        return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
+    return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseMaintenanceTaskResult:
+async def maintenance_info_base(
+    ib_name: str, semaphore: asyncio.Semaphore
+) -> core_models.InfoBaseMaintenanceTaskResult:
     cci = cluster_utils.get_cluster_controller_class()()
     ib_info = cci.get_info_base(ib_name)
     db_server = ib_info.dbServerName
@@ -98,15 +101,15 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
                 succeeded &= result_pg.succeeded
             result_logs = await rotate_logs(ib_name)
             succeeded &= result_logs.succeeded
-            return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
+            return core_models.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
-            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+            return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
 
 
 def analyze_results(
     infobases: List[str],
-    update_result: List[core_types.InfoBaseMaintenanceTaskResult],
+    update_result: List[core_models.InfoBaseMaintenanceTaskResult],
     update_datetime_start: datetime,
     update_datetime_finish: datetime,
 ):

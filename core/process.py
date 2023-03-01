@@ -57,12 +57,12 @@ async def execute_v8_command(
         # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
         # после включения блокировки регламентных заданий
         pause = settings.V8_LOCK_INFO_BASE_PAUSE
-        log.debug(f'<{ib_name}> Wait for {pause} seconds')
+        log.debug(f"<{ib_name}> Wait for {pause} seconds")
         await asyncio.sleep(pause)
     # Принудительно завершает текущие сеансы
     cci.terminate_info_base_sessions(ib_name)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
-    log.debug(f'<{ib_name}> 1cv8 PID is {str(v8_process.pid)}')
+    log.debug(f"<{ib_name}> 1cv8 PID is {str(v8_process.pid)}")
     try:
         await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
@@ -71,7 +71,7 @@ async def execute_v8_command(
     if permission_code:
         # Снимает блокировку фоновых заданий и сеансов
         cci.unlock_info_base(ib_name)
-    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception, log_output_on_success)
+    _check_subprocess_return_code(ib_name, v8_process, log_filename, "utf-8-sig", V8Exception, log_output_on_success)
 
 
 async def execute_subprocess_command(

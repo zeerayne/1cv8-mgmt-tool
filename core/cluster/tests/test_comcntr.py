@@ -12,7 +12,7 @@ def test_get_server_agent_address_returns_exact_address_from_settings():
     Server address is exact same as is settings
     """
     result = get_server_agent_address()
-    assert result == settings.V8_SERVER_AGENT['address']
+    assert result == settings.V8_SERVER_AGENT["address"]
 
 
 def test_get_server_agent_port_returns_exact_port_from_settings():
@@ -20,7 +20,7 @@ def test_get_server_agent_port_returns_exact_port_from_settings():
     Server port is exact same as is settings
     """
     result = get_server_agent_port()
-    assert result == settings.V8_SERVER_AGENT['port']
+    assert result == settings.V8_SERVER_AGENT["port"]
 
 
 def test_get_server_agent_port_is_str():
@@ -94,11 +94,11 @@ def test_cluster_control_interface_get_working_process_connection_info_base_auth
     call for every infobase credentials
     """
     infobases_credentials = {
-        'test_infobase01': ('test_user01', 'test_password01'),
-        'test_infobase02': ('test_user02', 'test_password02'),
+        "test_infobase01": ("test_user01", "test_password01"),
+        "test_infobase02": ("test_user02", "test_password02"),
     }
     mocker.patch(
-        'conf.settings.V8_INFOBASES_CREDENTIALS', new_callable=PropertyMock(return_value=infobases_credentials)
+        "conf.settings.V8_INFOBASES_CREDENTIALS", new_callable=PropertyMock(return_value=infobases_credentials)
     )
     cci = ClusterCOMControler()
     cci.get_working_process_connection_with_info_base_auth()
@@ -150,7 +150,7 @@ def test_cluster_control_interface_get_info_base_metadata(infobase, mock_externa
     `get_info_base_metadata` calls `COMConnector.Connect`
     """
     cci = ClusterCOMControler()
-    cci.get_info_base_metadata(infobase, '', '')
+    cci.get_info_base_metadata(infobase, "", "")
     mock_external_connection.assert_called()
 
 
@@ -161,7 +161,7 @@ def test_cluster_control_interface_get_info_base_metadata_connects_to_correct_in
     `get_info_base_metadata` connects to correct infobase
     """
     cci = ClusterCOMControler()
-    metadata = cci.get_info_base_metadata(infobase, '', '')
+    metadata = cci.get_info_base_metadata(infobase, "", "")
     assert metadata[0] == infobase
 
 
@@ -202,7 +202,7 @@ def test_cluster_control_interface_lock_info_base_set_permission_code(
     """
     `lock_info_base` sets `PermissionCode` param
     """
-    permission_code = 'test_permission_code'
+    permission_code = "test_permission_code"
     cci = ClusterCOMControler()
     infobase_com_obj = cci.lock_info_base(infobase, permission_code)
     assert infobase_com_obj.PermissionCode == permission_code
@@ -214,7 +214,7 @@ def test_cluster_control_interface_lock_info_base_set_denied_message(
     """
     `lock_info_base` sets `DeniedMessage` param
     """
-    denied_message = 'test_denied_message'
+    denied_message = "test_denied_message"
     cci = ClusterCOMControler()
     infobase_com_obj = cci.lock_info_base(infobase, message=denied_message)
     assert infobase_com_obj.DeniedMessage == denied_message

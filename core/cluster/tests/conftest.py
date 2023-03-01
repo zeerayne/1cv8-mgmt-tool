@@ -7,48 +7,48 @@ from pytest_mock import MockerFixture
 
 from surrogate import surrogate
 
-
 random.seed(0)
 
 
 @pytest.fixture()
 def mock_infobase_version():
-    return f'{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}'
+    return f"{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}"
 
 
 @pytest.fixture()
 def mock_excluded_infobases(mocker: MockerFixture, infobases):
     excluded_infobases = [infobases[-1]]
-    mocker.patch('conf.settings.V8_INFOBASES_EXCLUDE', new_callable=PropertyMock(return_value=excluded_infobases))
+    mocker.patch("conf.settings.V8_INFOBASES_EXCLUDE", new_callable=PropertyMock(return_value=excluded_infobases))
     return excluded_infobases
 
 
 @pytest.fixture()
 def mock_only_infobases(mocker: MockerFixture, infobases):
     only_infobases = infobases[:-1]
-    mocker.patch('conf.settings.V8_INFOBASES_ONLY', new_callable=PropertyMock(return_value=only_infobases))
+    mocker.patch("conf.settings.V8_INFOBASES_ONLY", new_callable=PropertyMock(return_value=only_infobases))
     return only_infobases
 
 
 @pytest.fixture()
 def mock_cluster_control_mode_com(mocker: MockerFixture):
-    cluster_control_mode = 'com'
-    mocker.patch('conf.settings.V8_CLUSTER_CONTROL_MODE', new_callable=PropertyMock(return_value=cluster_control_mode))
+    cluster_control_mode = "com"
+    mocker.patch("conf.settings.V8_CLUSTER_CONTROL_MODE", new_callable=PropertyMock(return_value=cluster_control_mode))
     return cluster_control_mode
 
 
 @pytest.fixture()
 def mock_cluster_control_mode_rac(mocker: MockerFixture):
-    cluster_control_mode = 'rac'
-    mocker.patch('conf.settings.V8_CLUSTER_CONTROL_MODE', new_callable=PropertyMock(return_value=cluster_control_mode))
+    cluster_control_mode = "rac"
+    mocker.patch("conf.settings.V8_CLUSTER_CONTROL_MODE", new_callable=PropertyMock(return_value=cluster_control_mode))
     return cluster_control_mode
 
 
-@surrogate('win32com.client')
+@surrogate("win32com.client")
 @pytest.fixture()
 def mock_win32com_client_dispatch(mocker: MockerFixture):
     import win32com.client as win32com_client
-    return mocker.patch.object(win32com_client, 'Dispatch', create=True, return_value=Mock())
+
+    return mocker.patch.object(win32com_client, "Dispatch", create=True, return_value=Mock())
 
 
 @pytest.fixture()
@@ -67,14 +67,14 @@ def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
 
     type(agent_connection_mock.return_value).GetInfoBases = mock_infobases_com_obj
     type(agent_connection_mock.return_value).Authenticate = Mock()
-    type(agent_connection_mock.return_value).GetClusters = Mock(return_value=['test_cluster01', 'test_cluster02'])
+    type(agent_connection_mock.return_value).GetClusters = Mock(return_value=["test_cluster01", "test_cluster02"])
 
     working_process_mock = Mock()
     type(working_process_mock).MainPort = random.randint(1000, 2000)
     type(agent_connection_mock.return_value).GetWorkingProcesses = Mock(return_value=[working_process_mock])
 
     type(agent_connection_mock.return_value).GetInfoBaseSessions = Mock(
-        side_effect=lambda cluster, info_base_short: [f'test_{info_base_short.Name}_session_{i}' for i in range(1, 5)]
+        side_effect=lambda cluster, info_base_short: [f"test_{info_base_short.Name}_session_{i}" for i in range(1, 5)]
     )
 
     type(mock_win32com_client_dispatch.return_value).ConnectAgent = agent_connection_mock
@@ -95,9 +95,8 @@ def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_c
 
 @pytest.fixture()
 def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_version):
-
     def external_connection_mock_side_effect(connection_string):
-        infobase_name = re.search(r'Ref="(?P<ref>[\w\d\-_]+)"', connection_string).group('ref')
+        infobase_name = re.search(r'Ref="(?P<ref>[\w\d\-_]+)"', connection_string).group("ref")
         side_effect_mock = Mock()
         side_effect_mock.Metadata.Version = mock_infobase_version
         side_effect_mock.Metadata.Name = infobase_name

@@ -4,7 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List
 
-import core.types as core_types
+import core.models as core_models
 from conf import settings
 
 
@@ -20,7 +20,7 @@ def make_message(caption, html_body):
     return msg
 
 
-def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]) -> str:
+def make_html_table(caption: str, resultset: List[core_models.InfoBaseTaskResultBase]) -> str:
     style = "style='min-width: 100px; text-align: center; border: 1px solid black;'"
     table = "<table><caption style='white-space: nowrap;'>{caption}</caption>{body}</table>"
     table_body = ""
