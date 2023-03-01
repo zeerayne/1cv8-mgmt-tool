@@ -130,17 +130,17 @@ async def _update_info_base(ib_name, dry=False):
     """
     log.info(f'<{ib_name}> Initiate update')
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    with cluster_utils.get_cluster_controller_class()() as cci:
-        try:
-            # Получает тип конфигурации и её версию
-            # TODO: подумать, как сделать получение метаданных асинхронным
-            metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-        except pywintypes.com_error as e:
-            # Если начало сеанса с информационной базой запрещено, то можно снять блокировку и попробывать ещё раз
-            if e.excepinfo[5] == -2147467259:
-                # TODO: подумать нужно ли это делать, или база заблокирована не просто так
-                pass
-            raise e
+    cci = cluster_utils.get_cluster_controller_class()()
+    try:
+        # Получает тип конфигурации и её версию
+        # TODO: подумать, как сделать получение метаданных асинхронным
+        metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+    except pywintypes.com_error as e:
+        # Если начало сеанса с информационной базой запрещено, то можно снять блокировку и попробывать ещё раз
+        if e.excepinfo[5] == -2147467259:
+            # TODO: подумать нужно ли это делать, или база заблокирована не просто так
+            pass
+        raise e
     name_in_metadata = metadata[0]
     version_in_metadata = get_version_from_string(metadata[1])
     # Получает манифесты всех обновлений в указанной директории
@@ -184,11 +184,10 @@ async def _update_info_base(ib_name, dry=False):
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.
                 previous_version = current_version
-                with cluster_utils.get_cluster_controller_class()() as cci:
-                    try:
-                        metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-                    except pywintypes.com_error as e:
-                        raise e
+                try:
+                    metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+                except pywintypes.com_error as e:
+                    raise e
                 current_version = get_version_from_string(metadata[1])
                 if current_version == previous_version:
                     log.error(

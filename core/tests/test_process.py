@@ -120,7 +120,7 @@ async def test_execute_v8_command_locks_infobase_if_code_passed(
     mocker.patch("core.utils.read_file_content", return_value=message)
     cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", permission_code)
-    cci_mock.return_value.__enter__.return_value.lock_info_base.assert_called_once()
+    cci_mock.return_value.lock_info_base.assert_called_once()
 
 
 @pytest.mark.asyncio()
@@ -136,7 +136,7 @@ async def test_execute_v8_command_unlocks_infobase_if_code_passed(
     mocker.patch("core.utils.read_file_content", return_value=message)
     cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", permission_code)
-    cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_called_once()
+    cci_mock.return_value.unlock_info_base.assert_called_once()
 
 
 @pytest.mark.asyncio()
@@ -151,7 +151,7 @@ async def test_execute_v8_command_does_not_lock_infobase_if_code_is_none(
     mocker.patch("core.utils.read_file_content", return_value=message)
     cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
-    cci_mock.return_value.__enter__.return_value.lock_info_base.assert_not_called()
+    cci_mock.return_value.lock_info_base.assert_not_called()
 
 
 @pytest.mark.asyncio()
@@ -166,7 +166,7 @@ async def test_execute_v8_command_does_not_unlock_infobase_if_code_is_none(
     mocker.patch("core.utils.read_file_content", return_value=message)
     cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
-    cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_not_called()
+    cci_mock.return_value.unlock_info_base.assert_not_called()
 
 
 @pytest.mark.asyncio()
@@ -181,7 +181,7 @@ async def test_execute_v8_command_terminates_infobase_sessions(
     mocker.patch("core.utils.read_file_content", return_value=message)
     cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
-    cci_mock.return_value.__enter__.return_value.terminate_info_base_sessions.assert_called_once()
+    cci_mock.return_value.terminate_info_base_sessions.assert_called_once()
 
 
 @pytest.mark.asyncio()

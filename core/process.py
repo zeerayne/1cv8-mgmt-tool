@@ -49,28 +49,28 @@ async def execute_v8_command(
     # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
-    with cluster_utils.get_cluster_controller_class()() as cci:
-        if permission_code:
-            # Блокирует фоновые задания и новые сеансы
-            cci.lock_info_base(ib_name, permission_code)
-            # Перед завершением сеансов следует взять паузу,
-            # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
-            # после включения блокировки регламентных заданий
-            pause = settings.V8_LOCK_INFO_BASE_PAUSE
-            log.debug(f"<{ib_name}> Wait for {pause} seconds")
-            await asyncio.sleep(pause)
-        # Принудительно завершает текущие сеансы
-        cci.terminate_info_base_sessions(ib_name)
-        v8_process = await asyncio.create_subprocess_shell(v8_command)
-        log.debug(f'<{ib_name}> 1cv8 PID is {str(v8_process.pid)}')
-        try:
-            await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
-        except asyncio.TimeoutError:
-            await v8_process.terminate()
+    cci = cluster_utils.get_cluster_controller_class()()
+    if permission_code:
+        # Блокирует фоновые задания и новые сеансы
+        cci.lock_info_base(ib_name, permission_code)
+        # Перед завершением сеансов следует взять паузу,
+        # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
+        # после включения блокировки регламентных заданий
+        pause = settings.V8_LOCK_INFO_BASE_PAUSE
+        log.debug(f'<{ib_name}> Wait for {pause} seconds')
+        await asyncio.sleep(pause)
+    # Принудительно завершает текущие сеансы
+    cci.terminate_info_base_sessions(ib_name)
+    v8_process = await asyncio.create_subprocess_shell(v8_command)
+    log.debug(f'<{ib_name}> 1cv8 PID is {str(v8_process.pid)}')
+    try:
+        await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        await v8_process.terminate()
 
-        if permission_code:
-            # Снимает блокировку фоновых заданий и сеансов
-            cci.unlock_info_base(ib_name)
+    if permission_code:
+        # Снимает блокировку фоновых заданий и сеансов
+        cci.unlock_info_base(ib_name)
     _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception, log_output_on_success)
 
 

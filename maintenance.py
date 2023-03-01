@@ -81,12 +81,12 @@ async def _maintenance_vacuumdb(
 
 
 async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseMaintenanceTaskResult:
-    with cluster_utils.get_cluster_controller_class()() as cci:
-        ib_info = cci.get_info_base(ib_name)
-        db_server = ib_info.dbServerName
-        dbms = ib_info.DBMS
-        db_name = ib_info.dbName
-        db_user = ib_info.dbUser
+    cci = cluster_utils.get_cluster_controller_class()()
+    ib_info = cci.get_info_base(ib_name)
+    db_server = ib_info.dbServerName
+    dbms = ib_info.DBMS
+    db_name = ib_info.dbName
+    db_user = ib_info.dbUser
     async with semaphore:
         try:
             succeeded = True

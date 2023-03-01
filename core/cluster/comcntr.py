@@ -51,12 +51,6 @@ class ClusterCOMControler(ClusterControler):
         self.clusterAdminPwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
         self.infoBasesCredentials = settings.V8_INFOBASES_CREDENTIALS
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
-
     def get_agent_connection(self):
         if getattr(self, 'agent_connection', None) is None:
             self.agent_connection = self.V8COMConnector.ConnectAgent(f'{self.server}:{self.agentPort}')

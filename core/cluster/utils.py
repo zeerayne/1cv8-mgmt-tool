@@ -54,8 +54,8 @@ async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseT
         log.exception(f"<{ib_name}> COM Error occured")
         # Если произошла ошибка, пытаемся снять блокировку ИБ
         try:
-            with get_cluster_controller_class()() as cci:
-                cci.unlock_info_base(ib_name)
+            cci = get_cluster_controller_class()()
+            cci.unlock_info_base(ib_name)
         except pywintypes.com_error:
             log.exception(f"<{ib_name}> COM Error occured during handling another COM Error")
         # После разблокировки возвращаем неуспешный результат
