@@ -24,11 +24,14 @@ services:
       - RAGENT_PORT=1540
       - RAS_PORT=1545
   db:
+    build:
+      context: .
+      dockerfile: Dockerfile-postgres
     container_name: db
-    image: postgres:15-alpine
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=supersecretpassword
+      - PG_DATADIR=/var/lib/postgresql/data
+      - PG_USER=postgres
+      - PG_PASSWORD=supersecretpassword
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
