@@ -9,9 +9,13 @@ services:
       - db
     environment:
       - RAGENT_PORT=1540
+      - RAGENT_REGPORT=1541
+      - RAGENT_VOLUME=/home/1c/volume
     hostname: ragent
     volumes:
-      - .ragent-data:/home/1c
+      - .ragent-data/1cv8wsrv.lst:/home/1c/volume/1cv8wsrv.lst
+      - .ragent-data/rescntsrv.lst:/home/1c/volume/rescntsrv.lst
+      - .ragent-data/1CV8Clst.lst:/home/1c/volume/1CV8Clst.lst
   ras:
     build:
       context: .
