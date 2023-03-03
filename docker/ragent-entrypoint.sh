@@ -35,6 +35,8 @@ sync
 
 trap 'sync_reverse' SIGTERM
 
+echo "Starting ragent"
+
 ragent -port $RAGENT_PORT -regport $RAGENT_REGPORT -range $RAGENT_PORTRANGE -d $RAGENT_HOME &
 
 wait $!
