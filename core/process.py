@@ -89,9 +89,10 @@ async def execute_v8_command(
 
 
 async def execute_subprocess_command(
-    ib_name: str, subprocess_command: str, log_filename: str, timeout: int = None, log_output_on_success=False
+    ib_name: str, subprocess_command: str, log_filename: str, env: dict = None, timeout: int = None, log_output_on_success=False
 ):
-    subprocess = await asyncio.create_subprocess_shell(subprocess_command)
+    subprc_coro = asyncio.create_subprocess_shell(subprocess_command, env=env) if env is not None else asyncio.create_subprocess_shell(subprocess_command)
+    subprocess = await subprc_coro
     log.debug(f'<{ib_name}> Subprocess PID is {str(subprocess.pid)}')
     try:
         await asyncio.wait_for(subprocess.communicate(), timeout=timeout)

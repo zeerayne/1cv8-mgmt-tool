@@ -71,7 +71,7 @@ async def _maintenance_vacuumdb(
     vacuumdb_env = os.environ.copy()
     vacuumdb_env['PGPASSWORD'] = db_pwd
     try:
-        await execute_subprocess_command(ib_name, vacuumdb_command, log_filename)
+        await execute_subprocess_command(ib_name, vacuumdb_command, log_filename, env=vacuumdb_env)
     except SubprocessException:
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)

@@ -145,7 +145,7 @@ async def _backup_pgdump(
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_subprocess_command(ib_name, pgdump_command, log_filename)
+            await execute_subprocess_command(ib_name, pgdump_command, log_filename, env=pgdump_env)
             break
         except SubprocessException:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
