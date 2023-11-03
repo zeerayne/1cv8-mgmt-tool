@@ -133,3 +133,13 @@ dmypy.json
 
 # VS Code
 .vscode
+
+# All distros
+*.tar.gz
+# All deb packages
+*.deb
+
+# Postgres datadir
+.postgres-data
+# Ragent datadir
+.ragent-data
