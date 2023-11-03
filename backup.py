@@ -133,7 +133,7 @@ async def _backup_pgdump(
     # Together with the directory output format, this is the most flexible output format in that it allows
     # manual selection and reordering of archived items during restore. This format is also compressed by default.
     pgdump_command = \
-        rf'{pg_dump_path} ' \
+        rf'"{pg_dump_path}" ' \
         rf'--host={db_host} --port={db_port} --username={db_user} ' \
         rf'--format=custom --blobs --verbose ' \
         rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
@@ -145,7 +145,7 @@ async def _backup_pgdump(
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_subprocess_command(ib_name, pgdump_command, log_filename)
+            await execute_subprocess_command(ib_name, pgdump_command, log_filename, env=pgdump_env)
             break
         except SubprocessException:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует

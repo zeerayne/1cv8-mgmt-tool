@@ -11,6 +11,7 @@ V8_INFOBASES_CREDENTIALS = {
     'trade': ('УТАдминистратор', 'infobase_user_password'),
 }
 V8_INFOBASES_EXCLUDE = ['accounting_for_tests', 'trade_copy']
+V8_INFOBASES_ONLY = ['accounting_production', 'trade_production']
 V8_SERVER_AGENT = {
     'address': 'localhost',
     'port': '1540',
