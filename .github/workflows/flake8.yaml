@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v2.1.5
+        uses: abatilo/actions-poetry@v2.3.0
       - name: Install dependencies
         run: make install-dev
       - name: Get changed python source files

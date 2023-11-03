@@ -152,6 +152,19 @@ async def test_execute_subprocess_command_pass_command_to_subprocess(
     await execute_subprocess_command(infobase, command, '')
     mock_asyncio_subprocess_succeeded.assert_awaited_with(command)
 
+@pytest.mark.asyncio()
+async def test_execute_subprocess_command_pass_env_to_subprocess(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_subprocess_command` pass command to create subprocess correctly
+    """
+    message = 'test_message'
+    command = 'test_command'
+    env = {'test': 'env'}
+    mocker.patch('core.utils.read_file_content', return_value=message)
+    await execute_subprocess_command(infobase, command, '', env=env)
+    mock_asyncio_subprocess_succeeded.assert_awaited_with(command, env=env)
 
 @pytest.mark.asyncio()
 async def test_execute_subprocess_command_raises_if_nonzero_return_code(
