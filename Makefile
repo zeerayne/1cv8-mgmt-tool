@@ -9,11 +9,11 @@ install-dev:
 
 .PHONY: test
 test:
-	poetry run pytest --spec -W ignore::DeprecationWarning:pytest_freezegun
+	poetry run pytest --spec
 
 .PHONY: test-coverage
 test-coverage:
-	poetry run coverage run -m pytest -W ignore::DeprecationWarning:pytest_freezegun
+	poetry run coverage run -m pytest
 
 .PHONY: code-style
 code-style:
