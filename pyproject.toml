@@ -12,7 +12,7 @@ pywin32 = [
 aioboto3 = "^9.6.0"
 filechunkio = "^1.8"
 aioshutil = "^1.1"
-aiofiles = "^0.8.0"
+aiofiles = "^23.2.1"
 packaging = "23.2"
 
 [tool.poetry.group.dev.dependencies]
