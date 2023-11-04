@@ -31,7 +31,7 @@ def success_base_result(infobases):
             succeeded=True,
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -42,7 +42,7 @@ def failed_base_result(infobases):
             succeeded=False,
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -54,7 +54,7 @@ def mixed_base_result(infobases):
             succeeded=(succeeded := not succeeded),
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -73,7 +73,7 @@ def failed_backup_result(infobases):
             succeeded=False,
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -86,7 +86,7 @@ def mixed_backup_result(infobases):
             backup_filename=f"./{ib}.testbackup" if succeeded else "",
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -102,7 +102,7 @@ def failed_maintenance_result(infobases):
             succeeded=False,
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -127,7 +127,7 @@ def failed_update_result(infobases):
             succeeded=False,
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -146,7 +146,7 @@ def success_aws_result(infobases):
             infobase_name=ib, succeeded=True, upload_size=random.randint(1000, 1000**2)
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
@@ -164,7 +164,7 @@ def mixed_aws_result(infobases):
             upload_size=random.randint(1000, 1000**2) if succeeded else 0,
         )
         for ib in infobases
-    ]  # yapf: disable
+    ]
 
 
 @pytest.fixture()
