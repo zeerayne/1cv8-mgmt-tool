@@ -1,9 +1,15 @@
 repos:
-- repo: https://github.com/pycqa/isort
-  rev: 5.10.1
-  hooks:
-    - id: isort
-- repo: https://github.com/google/yapf
-  rev: v0.32.0
-  hooks:
-  -   id: yapf
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        args: ["--profile", "black", "--filter-files"]
+  - repo: https://github.com/psf/black-pre-commit-mirror  # Using this mirror lets us use mypyc-compiled black, which is about 2x faster
+    rev: 23.10.1
+    hooks:
+      - id: black
+        # It is recommended to specify the latest version of Python
+        # supported by your project here, or alternatively use
+        # pre-commit's default_language_version, see
+        # https://pre-commit.com/#top_level-default_language_version
+        language_version: python3.11

@@ -19,9 +19,8 @@ from utils import postgres
 from utils.log import configure_logging
 from utils.notification import make_html_table, send_notification
 
-
 log = logging.getLogger(__name__)
-log_prefix = 'Backup'
+log_prefix = "Backup"
 
 
 async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
@@ -30,10 +29,10 @@ async def replicate_backup(backup_fullpath: str, replication_paths: List[str]):
         try:
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             replication_fullpath = os.path.join(path, backup_filename)
-            log.info(f'Replicating {backup_fullpath} to {replication_fullpath}')
+            log.info(f"Replicating {backup_fullpath} to {replication_fullpath}")
             await aioshutil.copyfile(backup_fullpath, replication_fullpath)
         except Exception as e:
-            log.exception(f'Problems while replicating to {path}: {e}')
+            log.exception(f"Problems while replicating to {path}: {e}")
 
 
 async def rotate_backups(ib_name):
@@ -44,7 +43,7 @@ async def rotate_backups(ib_name):
         rotate_paths += settings.BACKUP_REPLICATION_PATHS
     # Удаляет старые резервные копии
     for rotation_path in rotate_paths:
-        log.info(f'<{ib_name}> Removing backups older than {backup_retention_days} days from {rotation_path}')
+        log.info(f"<{ib_name}> Removing backups older than {backup_retention_days} days from {rotation_path}")
         path = os.path.join(rotation_path, filename_pattern)
         await utils.remove_old_files_by_pattern(path, backup_retention_days)
 
@@ -65,23 +64,24 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
 
     ?. Посмотреть как будет работать, если база в монопольном режиме.
     """
-    log.info(f'<{ib_name}> Start backup')
+    log.info(f"<{ib_name}> Start backup")
     # Код блокировки новых сеансов
     permission_code = settings.V8_PERMISSION_CODE
     # Формирует команду для выгрузки
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
-    dt_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'dt'))
-    log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
+    dt_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "dt"))
+    log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
-    v8_command = \
-        rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {cluster.get_server_address()}\{ib_name} ' \
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
-        rf'/Out {log_filename} -NoTruncate ' \
-        rf'/UC "{permission_code}" ' \
-        rf'/DumpIB {dt_filename}'
-    log.debug(f'<{ib_name}> Created dump command [{v8_command}]')
+    v8_command = (
+        rf'"{utils.get_platform_full_path()}" '
+        rf"DESIGNER /S {cluster.get_server_address()}\{ib_name} "
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
+        rf"/Out {log_filename} -NoTruncate "
+        rf'/UC "{permission_code}" '
+        rf"/DumpIB {dt_filename}"
+    )
+    log.debug(f"<{ib_name}> Created dump command [{v8_command}]")
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES_V8
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
@@ -94,10 +94,10 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
         except V8Exception:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
-                log.exception(f'<{ib_name}> Backup failed, retries exceeded')
+                log.exception(f"<{ib_name}> Backup failed, retries exceeded")
                 return core_types.InfoBaseBackupTaskResult(ib_name, False)
             else:
-                log.exception(f'<{ib_name}> Backup failed, retrying')
+                log.exception(f"<{ib_name}> Backup failed, retrying")
     return core_types.InfoBaseBackupTaskResult(ib_name, True, dt_filename)
 
 
@@ -112,18 +112,18 @@ async def _backup_pgdump(
     :param ib_name:
     :return:
     """
-    log.info(f'<{ib_name}> Start pgdump')
+    log.info(f"<{ib_name}> Start pgdump")
     try:
         db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(db_server, db_user)
     except (ValueError, KeyError) as e:
-        log.error(f'<{ib_name}> {str(e)}')
+        log.error(f"<{ib_name}> {str(e)}")
         return core_types.InfoBaseBackupTaskResult(ib_name, False)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(
-        settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'pgdump')
+        settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "pgdump")
     )
-    log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, 'log'))
-    pg_dump_path = os.path.join(settings.PG_BIN_PATH, 'pg_dump.exe')
+    log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
+    pg_dump_path = os.path.join(settings.PG_BIN_PATH, "pg_dump.exe")
     # --blobs
     # Include large objects in the dump.
     # This is the default behavior except when --schema, --table, or --schema-only is specified.
@@ -132,14 +132,15 @@ async def _backup_pgdump(
     # Output a custom-format archive suitable for input into pg_restore.
     # Together with the directory output format, this is the most flexible output format in that it allows
     # manual selection and reordering of archived items during restore. This format is also compressed by default.
-    pgdump_command = \
-        rf'"{pg_dump_path}" ' \
-        rf'--host={db_host} --port={db_port} --username={db_user} ' \
-        rf'--format=custom --blobs --verbose ' \
-        rf'--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1'
+    pgdump_command = (
+        rf'"{pg_dump_path}" '
+        rf"--host={db_host} --port={db_port} --username={db_user} "
+        rf"--format=custom --blobs --verbose "
+        rf"--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1"
+    )
     pgdump_env = os.environ.copy()
-    pgdump_env['PGPASSWORD'] = db_pwd
-    log.debug(f'<{ib_name}> Created pgdump command [{pgdump_command}]')
+    pgdump_env["PGPASSWORD"] = db_pwd
+    log.debug(f"<{ib_name}> Created pgdump command [{pgdump_command}]")
     # Делает резервную копию базы данных в *.pgdump файл
     backup_retries = settings.BACKUP_RETRIES_PG
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
@@ -150,10 +151,10 @@ async def _backup_pgdump(
         except SubprocessException:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
-                log.exception(f'<{ib_name}> Backup failed, retries exceeded')
+                log.exception(f"<{ib_name}> Backup failed, retries exceeded")
                 return core_types.InfoBaseBackupTaskResult(ib_name, False)
             else:
-                log.exception(f'<{ib_name}> Backup failed, retrying')
+                log.exception(f"<{ib_name}> Backup failed, retrying")
     return core_types.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 
@@ -177,26 +178,30 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_t
         try:
             result = await _backup_info_base(ib_name)
         except Exception:
-            log.exception(f'<{ib_name}> Unknown exception occurred in `_backup_info_base` coroutine')
+            log.exception(f"<{ib_name}> Unknown exception occurred in `_backup_info_base` coroutine")
             return core_types.InfoBaseBackupTaskResult(ib_name, False)
         try:
             # Если включена репликация и результат бэкапа успешен
             if settings.BACKUP_REPLICATION and result.succeeded:
                 await replicate_backup(result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
         except Exception:
-            log.exception(f'<{ib_name}> Unknown exception occurred in `replicate_backup` coroutine')
+            log.exception(f"<{ib_name}> Unknown exception occurred in `replicate_backup` coroutine")
         try:
             # Ротация бэкапов, удаляет старые
             await rotate_backups(ib_name)
         except Exception:
-            log.exception(f'<{ib_name}> Unknown exception occurred in `rotate_backups` coroutine')
+            log.exception(f"<{ib_name}> Unknown exception occurred in `rotate_backups` coroutine")
         return result
 
 
 def analyze_results(
-    infobases: List[str], backup_result: List[core_types.InfoBaseBackupTaskResult], backup_datetime_start: datetime,
-    backup_datetime_finish: datetime, aws_result: List[core_types.InfoBaseAWSUploadTaskResult],
-    aws_datetime_start: datetime, aws_datetime_finish: datetime
+    infobases: List[str],
+    backup_result: List[core_types.InfoBaseBackupTaskResult],
+    backup_datetime_start: datetime,
+    backup_datetime_finish: datetime,
+    aws_result: List[core_types.InfoBaseAWSUploadTaskResult],
+    aws_datetime_start: datetime,
+    aws_datetime_finish: datetime,
 ):
     analyze_backup_result(backup_result, infobases, backup_datetime_start, backup_datetime_finish)
     if settings.AWS_ENABLED:
@@ -207,11 +212,11 @@ def send_email_notification(
     backup_result: List[core_types.InfoBaseBackupTaskResult], aws_result: List[core_types.InfoBaseAWSUploadTaskResult]
 ):
     if settings.NOTIFY_EMAIL_ENABLED:
-        log.info(f'<{log_prefix}> Sending email notification')
-        msg = ''
-        msg += make_html_table('Backup', backup_result)
+        log.info(f"<{log_prefix}> Sending email notification")
+        msg = ""
+        msg += make_html_table("Backup", backup_result)
         if settings.AWS_ENABLED:
-            msg += make_html_table('AWS upload', aws_result)
+            msg += make_html_table("AWS upload", aws_result)
         send_notification(settings.NOTIFY_EMAIL_CAPTION, msg)
 
 
@@ -228,8 +233,7 @@ async def main():
         backup_semaphore = asyncio.Semaphore(backup_concurrency)
         aws_semaphore = asyncio.Semaphore(aws_concurrency)
         log.info(
-            f'<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} \
-                backup concurrency, {aws_concurrency} AWS concurrency'
+            f"<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency"
         )
         backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
         backup_datetime_start = datetime.now()
@@ -248,7 +252,7 @@ async def main():
                         upload_infobase_to_s3(
                             backup_result.infobase_name, backup_result.backup_filename, aws_semaphore
                         ),
-                        name=f'Task :: Upload {backup_result.infobase_name} to S3'
+                        name=f"Task :: Upload {backup_result.infobase_name} to S3",
                     )
                 )
 
@@ -258,18 +262,23 @@ async def main():
         aws_datetime_finish = datetime.now()
 
         analyze_results(
-            info_bases, backup_results, backup_datetime_start, backup_datetime_finish, aws_results, aws_datetime_start,
-            aws_datetime_finish
+            info_bases,
+            backup_results,
+            backup_datetime_start,
+            backup_datetime_finish,
+            aws_results,
+            aws_datetime_start,
+            aws_datetime_finish,
         )
 
         send_email_notification(backup_results, aws_results)
 
-        log.info(f'<{log_prefix}> Done')
+        log.info(f"<{log_prefix}> Done")
     except Exception:
-        log.exception(f'<{log_prefix}> Unknown exception occurred in main coroutine')
+        log.exception(f"<{log_prefix}> Unknown exception occurred in main coroutine")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         # Использование asyncio.run() в windows бросает исключение

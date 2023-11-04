@@ -6,6 +6,9 @@ exclude =
     .vscode
     __pycache__
 max-line-length = 120
+ignore =
+    E501
+    W503
 per-file-ignores =
     # too many leading '#' for block comment
     conf/default_settings.py: E266
@@ -15,3 +18,4 @@ per-file-ignores =
     settings.tpl.py: E266
     # module imported but unused
     surrogate/tests/test_surrogate.py: F401
+inline-quotes = "

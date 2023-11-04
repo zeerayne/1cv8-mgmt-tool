@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "1cv8-mgmt-tool"
-version = "2022.05.15"
+version = "2023.11.03"
 description = ""
 authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
 
@@ -9,20 +9,20 @@ python = "^3.8"
 pywin32 = [
     { version = "^304", platform = "win32" },
 ]
-aioboto3 = "^9.6.0"
+aioboto3 = "^12.0.0"
 filechunkio = "^1.8"
 aioshutil = "^1.1"
-aiofiles = "^0.8.0"
-packaging = "^21.3"
+aiofiles = "^23.2.1"
+packaging = "23.2"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
+black = "^23.10.1"
 pytest = "^7.1.2"
 pytest-spec = "^3.2.0"
 pytest-mock = "^3.7.0"
 pytest-asyncio = "^0.18.3"
 pytest-freezegun = "^0.4.2"
 pytest-env = "^0.6.2"
-yapf = {extras = ["toml"], version = "^0.32.0"}
 isort = "^5.10.1"
 pre-commit = "^2.19.0"
 coveralls = "^3.3.1"
@@ -49,36 +49,11 @@ env = """
     """
 
 [tool.isort]
-combine_as_imports = true
-extra_standard_library = "packaging"
-group_by_package = true
-known_pytest = [
-    "pytest",
-    "pytest_mock",
-]
-line_length = 120
-lines_after_imports = 2
-multi_line_output = 5
-sections = [
-    "FUTURE",
-    "STDLIB",
-    "THIRDPARTY",
-    "PYTEST",
-    "FIRSTPARTY",
-    "LOCALFOLDER",
-]
+profile = "black"
 
-[tool.yapf]
-based_on_style = "pep8"
-blank_lines_between_top_level_imports_and_variables = 2
-blank_lines_around_top_level_definition = 2
-coalesce_brackets = true
-column_limit = 120
-dedent_closing_brackets = true
-spaces_around_power_operator = true
-spaces_before_comment = 2
-space_between_ending_comma_and_closing_bracket = true
-split_before_logical_operator = true
+[tool.black]
+line-length = 120
+target-version = ['py311']
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
