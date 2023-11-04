@@ -73,7 +73,7 @@ async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_ty
     async with session.client(service_name="s3", **_get_aws_endpoint_url_parameter()) as s3c:
         await s3c.upload_file(Filename=full_backup_path, Bucket=settings.AWS_BUCKET_NAME, Key=filename)
     datetime_finish = datetime.now()
-    diff = (datetime_finish - datetime_start).total_seconds()
+    diff = (datetime_finish - datetime_start).total_seconds() or 1
     log.info(
         f"<{ib_name}> Uploaded {sizeof_fmt(source_size)} in {diff:.1f}s. Avg. speed {sizeof_fmt(source_size / diff)}/s"
     )
