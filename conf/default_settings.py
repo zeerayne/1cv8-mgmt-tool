@@ -5,7 +5,7 @@ from os.path import expanduser, join
 ## ------------- ##
 
 V8_CLUSTER_ADMIN_CREDENTIALS = ("Администратор", "")
-V8_CLUSTER_CONTROL_MODE = 'com'
+V8_CLUSTER_CONTROL_MODE = "com"
 V8_INFOBASES_CREDENTIALS = {
     "default": ("Администратор", ""),
 }
@@ -13,8 +13,8 @@ V8_INFOBASES_EXCLUDE = []
 V8_INFOBASES_ONLY = []
 V8_LOCK_INFO_BASE_PAUSE = 5
 V8_RAS = {
-    'address': 'localhost',
-    'port': '1545',
+    "address": "localhost",
+    "port": "1545",
 }
 V8_SERVER_AGENT = {
     "address": "localhost",

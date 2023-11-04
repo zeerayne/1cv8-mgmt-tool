@@ -1,4 +1,3 @@
 import os
 
-
-print(os.getenv('PATH'))
+print(os.getenv("PATH"))
