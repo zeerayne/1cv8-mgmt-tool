@@ -6,7 +6,6 @@ from conf import settings
 from core import cluster, utils
 from core.exceptions import SubprocessException, V8Exception
 
-
 log = logging.getLogger(__name__)
 
 
@@ -16,11 +15,11 @@ def _check_subprocess_return_code(
     log_filename: str,
     log_encoding: str,
     exception_class: Type[SubprocessException] = SubprocessException,
-    log_output_on_success=False
+    log_output_on_success=False,
 ):
-    log.info(f'<{ib_name}> Return code is {str(subprocess.returncode)}')
+    log.info(f"<{ib_name}> Return code is {str(subprocess.returncode)}")
     log_file_content = utils.read_file_content(log_filename, log_encoding)
-    msg = f'<{ib_name}> Log message :: {log_file_content}'
+    msg = f"<{ib_name}> Log message :: {log_file_content}"
     if subprocess.returncode != 0:
         log.error(msg)
         raise exception_class(log_file_content)
@@ -34,7 +33,7 @@ async def execute_v8_command(
     log_filename: str,
     permission_code: str = None,
     timeout: int = None,
-    log_output_on_success=False
+    log_output_on_success=False,
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -61,7 +60,7 @@ async def execute_v8_command(
             # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
             # после включения блокировки регламентных заданий
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
-            log.debug(f'<{ib_name}> Wait for {pause} seconds')
+            log.debug(f"<{ib_name}> Wait for {pause} seconds")
             await asyncio.sleep(pause)
             ib_short = cci.get_info_base_short(agent_connection, cluster_with_auth, ib_name)
             # Принудительно завершает текущие сеансы
@@ -71,7 +70,7 @@ async def execute_v8_command(
             del ib_short
             del working_process_connection
         v8_process = await asyncio.create_subprocess_shell(v8_command)
-        log.debug(f'<{ib_name}> 1cv8.exe PID is {str(v8_process.pid)}')
+        log.debug(f"<{ib_name}> 1cv8.exe PID is {str(v8_process.pid)}")
         try:
             await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
@@ -85,19 +84,28 @@ async def execute_v8_command(
             cci.unlock_info_base(working_process_connection, ib)
             del ib
             del working_process_connection
-    _check_subprocess_return_code(ib_name, v8_process, log_filename, 'utf-8-sig', V8Exception, log_output_on_success)
+    _check_subprocess_return_code(ib_name, v8_process, log_filename, "utf-8-sig", V8Exception, log_output_on_success)
 
 
 async def execute_subprocess_command(
-    ib_name: str, subprocess_command: str, log_filename: str, env: dict = None, timeout: int = None, log_output_on_success=False
+    ib_name: str,
+    subprocess_command: str,
+    log_filename: str,
+    env: dict = None,
+    timeout: int = None,
+    log_output_on_success=False,
 ):
-    subprc_coro = asyncio.create_subprocess_shell(subprocess_command, env=env) if env is not None else asyncio.create_subprocess_shell(subprocess_command)
+    subprc_coro = (
+        asyncio.create_subprocess_shell(subprocess_command, env=env)
+        if env is not None
+        else asyncio.create_subprocess_shell(subprocess_command)
+    )
     subprocess = await subprc_coro
-    log.debug(f'<{ib_name}> Subprocess PID is {str(subprocess.pid)}')
+    log.debug(f"<{ib_name}> Subprocess PID is {str(subprocess.pid)}")
     try:
         await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         await subprocess.terminate()
     _check_subprocess_return_code(
-        ib_name, subprocess, log_filename, 'utf-8', SubprocessException, log_output_on_success
+        ib_name, subprocess, log_filename, "utf-8", SubprocessException, log_output_on_success
     )

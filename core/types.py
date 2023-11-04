@@ -12,25 +12,22 @@ class InfoBaseTaskResultBase:
 class InfoBaseBackupTaskResult(InfoBaseTaskResultBase):
     backup_filename: str = None
 
-    def __init__(self, infobase_name, succeeded, backup_filename='', **kwargs):
+    def __init__(self, infobase_name, succeeded, backup_filename="", **kwargs):
         super().__init__(infobase_name, succeeded, **kwargs)
         self.backup_filename = backup_filename
 
 
 class InfoBaseV8TaskResult(InfoBaseTaskResultBase):
-
     def __init__(self, infobase_name, succeeded, **kwargs):
         super().__init__(infobase_name, succeeded, **kwargs)
 
 
 class InfoBaseMaintenanceTaskResult(InfoBaseTaskResultBase):
-
     def __init__(self, infobase_name, succeeded, **kwargs):
         super().__init__(infobase_name, succeeded, **kwargs)
 
 
 class InfoBaseUpdateTaskResult(InfoBaseTaskResultBase):
-
     def __init__(self, infobase_name, succeeded, **kwargs):
         super().__init__(infobase_name, succeeded, **kwargs)
 

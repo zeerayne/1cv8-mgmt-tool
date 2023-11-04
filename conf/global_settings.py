@@ -1,4 +1,4 @@
-DATE_FORMAT_1CV8 = '%Y-%m-%d'
-DATETIME_FORMAT = '%Y-%m-%d-%H-%M-%S'
+DATE_FORMAT_1CV8 = "%Y-%m-%d"
+DATETIME_FORMAT = "%Y-%m-%d-%H-%M-%S"
 
-FILENAME_SEPARATOR = '_'
+FILENAME_SEPARATOR = "_"

@@ -14,16 +14,15 @@ from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
 from utils.log import configure_logging
 
-
 log = logging.getLogger(__name__)
-log_prefix = 'Maintenance'
+log_prefix = "Maintenance"
 
 
 async def rotate_logs(ib_name):
     logRetentionDays = settings.MAINTENANCE_LOG_RETENTION_DAYS
-    filename_pattern = utils.get_infobase_glob_pattern(ib_name, 'log')
+    filename_pattern = utils.get_infobase_glob_pattern(ib_name, "log")
     # Получает список log-файлов, удаляет старые
-    log.info(f'<{ib_name}> Removing logs older than {logRetentionDays} days')
+    log.info(f"<{ib_name}> Removing logs older than {logRetentionDays} days")
     path = os.path.join(settings.LOG_PATH, filename_pattern)
     await utils.remove_old_files_by_pattern(path, logRetentionDays)
     return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
@@ -35,18 +34,19 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
     2. Удаляет старые резервные копии
     3. Удаляет старые log-файлы
     """
-    log.info(f'<{ib_name}> Start 1cv8 maintenance')
+    log.info(f"<{ib_name}> Start 1cv8 maintenance")
     # Формирует команду для урезания журнала регистрации
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
+    log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
-    v8_command = \
-        rf'"{utils.get_platform_full_path()}" ' \
-        rf'DESIGNER /S {cluster.get_server_address()}\{ib_name} ' \
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" ' \
-        rf'/Out {log_filename} -NoTruncate ' \
-        rf'/ReduceEventLogSize {reduce_date_str}'
+    v8_command = (
+        rf'"{utils.get_platform_full_path()}" '
+        rf"DESIGNER /S {cluster.get_server_address()}\{ib_name} "
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
+        rf"/Out {log_filename} -NoTruncate "
+        rf"/ReduceEventLogSize {reduce_date_str}"
+    )
     try:
         await execute_v8_command(ib_name, v8_command, log_filename, timeout=600, log_output_on_success=True)
     except V8Exception:
@@ -57,19 +57,20 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
 async def _maintenance_vacuumdb(
     ib_name: str, db_server: str, db_name: str, db_user: str, *args, **kwargs
 ) -> core_types.InfoBaseMaintenanceTaskResult:
-    log.info(f'<{ib_name}> Start vacuumdb')
+    log.info(f"<{ib_name}> Start vacuumdb")
     try:
         db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(db_server, db_user)
     except KeyError as e:
-        log.error(f'<{ib_name}> {str(e)}')
+        log.error(f"<{ib_name}> {str(e)}")
         return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, 'log'))
-    pg_vacuumdb_path = os.path.join(settings.PG_BIN_PATH, 'vacuumdb.exe')
-    vacuumdb_command = \
-        f'"{pg_vacuumdb_path}" --host={db_host} --port={db_port} --username={db_user} ' \
-        f'--analyze --verbose --dbname={db_name} > {log_filename} 2>&1'
+    log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
+    pg_vacuumdb_path = os.path.join(settings.PG_BIN_PATH, "vacuumdb.exe")
+    vacuumdb_command = (
+        f'"{pg_vacuumdb_path}" --host={db_host} --port={db_port} --username={db_user} '
+        f"--analyze --verbose --dbname={db_name} > {log_filename} 2>&1"
+    )
     vacuumdb_env = os.environ.copy()
-    vacuumdb_env['PGPASSWORD'] = db_pwd
+    vacuumdb_env["PGPASSWORD"] = db_pwd
     try:
         await execute_subprocess_command(ib_name, vacuumdb_command, log_filename, env=vacuumdb_env)
     except SubprocessException:
@@ -98,7 +99,7 @@ async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> c
             succeeded &= result_logs.succeeded
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
         except Exception:
-            log.exception(f'<{ib_name}> Unknown exception occurred in coroutine')
+            log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
             return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
 
 
@@ -116,7 +117,7 @@ async def main():
         info_bases = utils.get_info_bases()
         maintenance_concurrency = settings.MAINTENANCE_CONCURRENCY
         maintenance_semaphore = asyncio.Semaphore(maintenance_concurrency)
-        log.info(f'<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency')
+        log.info(f"<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency")
         maintenance_datetime_start = datetime.now()
         maintenance_results = await asyncio.gather(
             *[maintenance_info_base(ib_name, maintenance_semaphore) for ib_name in info_bases]
@@ -130,12 +131,12 @@ async def main():
             maintenance_datetime_finish,
         )
 
-        log.info(f'<{log_prefix}> Done')
+        log.info(f"<{log_prefix}> Done")
     except Exception:
-        log.exception(f'<{log_prefix}> Unknown exception occured in main coroutine')
+        log.exception(f"<{log_prefix}> Unknown exception occured in main coroutine")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     configure_logging(settings.LOG_LEVEL)
     if sys.version_info < (3, 10):
         asyncio.get_event_loop().run_until_complete(main())

@@ -1,35 +1,34 @@
 import sys
 from functools import wraps
 
+__all__ = ("surrogate", "VERSION")
 
-__all__ = ('surrogate', 'VERSION')
-
-VERSION = '0.1'
-AUTHOR = 'Kostia Balitsky aka ikostia'
+VERSION = "0.1"
+AUTHOR = "Kostia Balitsky aka ikostia"
 
 
 class surrogate:
     """
-        Add empty module stub that can be imported
-        for every subpath in path.
-        Those stubs can later be patched by mock's
-        patch decorator.
+    Add empty module stub that can be imported
+    for every subpath in path.
+    Those stubs can later be patched by mock's
+    patch decorator.
 
-        Example:
+    Example:
 
-        @surrogate('sys.my.cool.module1')
-        @surrogate('sys.my.cool.module2')
-        @mock.patch('sys.my.cool.module1', mock1)
-        @mock.patch('sys.my.cool.module2', mock2)
-        def function():
-            from sys.my import cool
-            from sys.my.cool import module1
-            from sys.my.cool import module2
+    @surrogate('sys.my.cool.module1')
+    @surrogate('sys.my.cool.module2')
+    @mock.patch('sys.my.cool.module1', mock1)
+    @mock.patch('sys.my.cool.module2', mock2)
+    def function():
+        from sys.my import cool
+        from sys.my.cool import module1
+        from sys.my.cool import module2
     """
 
     def __init__(self, path):
         self.path = path
-        self.elements = self.path.split('.')
+        self.elements = self.path.split(".")
 
     def __enter__(self):
         self.prepared = self.prepare()
@@ -39,7 +38,6 @@ class surrogate:
             self.restore()
 
     def __call__(self, func):
-
         @wraps(func)
         def _wrapper(*args, **kwargs):
             prepared = self.prepare()
@@ -72,9 +70,9 @@ class surrogate:
 
     def _get_importing_path(self, elements):
         """Return importing path for a module that is last in elements list"""
-        ip = '.'.join(elements)
+        ip = ".".join(elements)
         if self.known_path:
-            ip = self.known_path + '.' + ip
+            ip = self.known_path + "." + ip
         return ip
 
     def _create_module_stubs(self):
@@ -82,10 +80,7 @@ class surrogate:
         # last module in our sequence
         # it should be loaded
         last_module = type(
-            self.elements[-1], (object, ), {
-                '__all__': [],
-                '_importing_path': self._get_importing_path(self.elements)
-            }
+            self.elements[-1], (object,), {"__all__": [], "_importing_path": self._get_importing_path(self.elements)}
         )
         modules = [last_module]
 
@@ -97,33 +92,33 @@ class surrogate:
         # sequence
         for element in reversed(self.elements[:-1]):
             next_module = modules[-1]
-            module = type(element, (object, ), {next_module.__name__: next_module, '__all__': [next_module.__name__]})
+            module = type(element, (object,), {next_module.__name__: next_module, "__all__": [next_module.__name__]})
             modules.append(module)
         self.modules = list(reversed(modules))
         self.modules[0].__path__ = []
 
     def _determine_existing_modules(self):
         """
-            Find out which of the modules
-            from specified path are already
-            imported (e.g. present in sys.modules)
-            those modules should not be replaced
-            by stubs.
+        Find out which of the modules
+        from specified path are already
+        imported (e.g. present in sys.modules)
+        those modules should not be replaced
+        by stubs.
         """
         known = 0
-        while known < len(self.elements) and '.'.join(self.elements[:known + 1]) in sys.modules:
+        while known < len(self.elements) and ".".join(self.elements[: known + 1]) in sys.modules:
             known += 1
-        self.known_path = '.'.join(self.elements[:known])
+        self.known_path = ".".join(self.elements[:known])
         self.elements = self.elements[known:]
 
     def _save_base_module(self):
         """
-            Remember state of the last of existing modules
+        Remember state of the last of existing modules
 
-            The last of the sequence of existing modules
-            is the only one we will change. So we must
-            remember it's state in order to restore it
-            afterwards.
+        The last of the sequence of existing modules
+        is the only one we will change. So we must
+        remember it's state in order to restore it
+        afterwards.
         """
 
         try:
@@ -134,7 +129,7 @@ class surrogate:
 
         # save `__all__` attribute of the base_module
         self.base_all = []
-        if hasattr(self.base_module, '__all__'):
+        if hasattr(self.base_module, "__all__"):
             self.base_all = list(self.base_module.__all__)
         if self.base_module:
             # change base_module's `__all__` attribute
@@ -145,7 +140,7 @@ class surrogate:
     def _add_module_stubs(self):
         """Push created module stubs into sys.modules"""
         for i, module in enumerate(self.modules):
-            module._importing_path = self._get_importing_path(self.elements[:i + 1])
+            module._importing_path = self._get_importing_path(self.elements[: i + 1])
             sys.modules[module._importing_path] = module
 
     def _remove_module_stubs(self):
