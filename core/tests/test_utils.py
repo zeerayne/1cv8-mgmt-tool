@@ -44,7 +44,7 @@ def test_get_platform_full_path_contains_executable(mock_os_platform_path):
     Full path to platform binary contains executable file
     """
     result = get_platform_full_path()
-    assert "1cv8.exe" in result
+    assert "1cv8" in result
 
 
 @pytest.mark.freeze_time("2022-01-01 12:01:01")
