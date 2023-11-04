@@ -17,7 +17,8 @@ test-coverage:
 
 .PHONY: code-style
 code-style:
-	poetry run isort . && poetry run black .
+	poetry run isort . 
+	poetry run black .
 
 .PHONY: flake8
 flake8:
