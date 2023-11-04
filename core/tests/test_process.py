@@ -162,7 +162,7 @@ async def test_execute_subprocess_command_pass_env_to_subprocess(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
     """
-    `execute_subprocess_command` pass command to create subprocess correctly
+    `execute_subprocess_command` pass env to create subprocess correctly
     """
     message = "test_message"
     command = "test_command"
