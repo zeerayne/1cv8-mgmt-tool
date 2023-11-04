@@ -9,7 +9,7 @@ python = "^3.8"
 pywin32 = [
     { version = "^304", platform = "win32" },
 ]
-aioboto3 = "^9.6.0"
+aioboto3 = "^12.0.0"
 filechunkio = "^1.8"
 aioshutil = "^1.1"
 aiofiles = "^23.2.1"

@@ -2,17 +2,17 @@
 
 [[package]]
 name = "aioboto3"
-version = "9.6.0"
+version = "12.0.0"
 description = "Async boto3 wrapper"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "aioboto3-9.6.0-py3-none-any.whl", hash = "sha256:a62de3203c7372b5f1247057b9705eeb26c45ee65b5d1fab91767e4f31fd7b47"},
-    {file = "aioboto3-9.6.0.tar.gz", hash = "sha256:abac5dcfa871627b7040e6586a69e3359e2dfc4e15dc66135969f2d26fbdcb3b"},
+    {file = "aioboto3-12.0.0-py3-none-any.whl", hash = "sha256:23895e734f83e34827a38d3a08ccc3f4178cc8d4e3a7b7031a0cbf8efc875555"},
+    {file = "aioboto3-12.0.0.tar.gz", hash = "sha256:c2bbb990b4efd2e474a1e8a42a80291faf6434b2dc8678f163208d338b2dba39"},
 ]
 
 [package.dependencies]
-aiobotocore = {version = "2.3.0", extras = ["boto3"]}
+aiobotocore = {version = "2.7.0", extras = ["boto3"]}
 
 [package.extras]
 chalice = ["chalice (>=1.24.0)"]
@@ -20,24 +20,25 @@ s3cse = ["cryptography (>=2.3.1)"]
 
 [[package]]
 name = "aiobotocore"
-version = "2.3.0"
+version = "2.7.0"
 description = "Async client for aws services using botocore and aiohttp"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "aiobotocore-2.3.0.tar.gz", hash = "sha256:fc3d3d6061410bc194d09ec545e30b4469d5f74770f937aca5f6aa45e62a1bfe"},
+    {file = "aiobotocore-2.7.0-py3-none-any.whl", hash = "sha256:aec605df77ce4635a0479b50fd849aa6b640900f7b295021ecca192e1140e551"},
+    {file = "aiobotocore-2.7.0.tar.gz", hash = "sha256:506591374cc0aee1bdf0ebe290560424a24af176dfe2ea7057fe1df97c4f0467"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.3.1"
-aioitertools = ">=0.5.1"
-boto3 = {version = ">=1.21.21,<1.21.22", optional = true, markers = "extra == \"boto3\""}
-botocore = ">=1.24.21,<1.24.22"
-wrapt = ">=1.10.10"
+aiohttp = ">=3.7.4.post0,<4.0.0"
+aioitertools = ">=0.5.1,<1.0.0"
+boto3 = {version = ">=1.28.16,<1.28.65", optional = true, markers = "extra == \"boto3\""}
+botocore = ">=1.31.16,<1.31.65"
+wrapt = ">=1.10.10,<2.0.0"
 
 [package.extras]
-awscli = ["awscli (>=1.22.76,<1.22.77)"]
-boto3 = ["boto3 (>=1.21.21,<1.21.22)"]
+awscli = ["awscli (>=1.29.16,<1.29.65)"]
+boto3 = ["boto3 (>=1.28.16,<1.28.65)"]
 
 [[package]]
 name = "aiofiles"
@@ -284,41 +285,44 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.21.21"
+version = "1.28.64"
 description = "The AWS SDK for Python"
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.21.21-py3-none-any.whl", hash = "sha256:8fa32fcc8be38327bd667237223d71e5e4b2475f39d6882aca4dbad19fff8c29"},
-    {file = "boto3-1.21.21.tar.gz", hash = "sha256:6fa0622f308cfd1da758966fc98b52fbd74b80606d14586c8ad82c7a6c4f32d0"},
+    {file = "boto3-1.28.64-py3-none-any.whl", hash = "sha256:a99150a30c038c73e89662836820a8cce914afab5ea377942a37c484b85f4438"},
+    {file = "boto3-1.28.64.tar.gz", hash = "sha256:a5cf93b202568e9d378afdc84be55a6dedf11d30156289fe829e23e6d7dccabb"},
 ]
 
 [package.dependencies]
-botocore = ">=1.24.21,<1.25.0"
+botocore = ">=1.31.64,<1.32.0"
 jmespath = ">=0.7.1,<2.0.0"
-s3transfer = ">=0.5.0,<0.6.0"
+s3transfer = ">=0.7.0,<0.8.0"
 
 [package.extras]
 crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.24.21"
+version = "1.31.64"
 description = "Low-level, data-driven core of boto 3."
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.24.21-py3-none-any.whl", hash = "sha256:92daca8775e738a9db9b465d533019285f09d541e903233261299fd87c2f842c"},
-    {file = "botocore-1.24.21.tar.gz", hash = "sha256:7e976cfd0a61601e74624ef8f5246b40a01f2cce73a011ef29cf80a6e371d0fa"},
+    {file = "botocore-1.31.64-py3-none-any.whl", hash = "sha256:7b709310343a5b430ec9025b2e17c0bac6b16c05f1ac1d9521dece3f10c71bac"},
+    {file = "botocore-1.31.64.tar.gz", hash = "sha256:d8eb4b724ac437343359b318d73de0cfae0fecb24095827e56135b0ad6b44caf"},
 ]
 
 [package.dependencies]
 jmespath = ">=0.7.1,<2.0.0"
 python-dateutil = ">=2.1,<3.0.0"
-urllib3 = ">=1.25.4,<1.27"
+urllib3 = [
+    {version = ">=1.25.4,<1.27", markers = "python_version < \"3.10\""},
+    {version = ">=1.25.4,<2.1", markers = "python_version >= \"3.10\""},
+]
 
 [package.extras]
-crt = ["awscrt (==0.13.5)"]
+crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "certifi"
@@ -1346,13 +1350,13 @@ use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
 name = "s3transfer"
-version = "0.5.2"
+version = "0.7.0"
 description = "An Amazon S3 Transfer Manager"
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">= 3.7"
 files = [
-    {file = "s3transfer-0.5.2-py3-none-any.whl", hash = "sha256:7a6f4c4d1fdb9a2b640244008e142cbc2cd3ae34b386584ef044dd0f27101971"},
-    {file = "s3transfer-0.5.2.tar.gz", hash = "sha256:95c58c194ce657a5f4fb0b9e60a84968c808888aed628cd98ab8771fe1db98ed"},
+    {file = "s3transfer-0.7.0-py3-none-any.whl", hash = "sha256:10d6923c6359175f264811ef4bf6161a3156ce8e350e705396a7557d6293c33a"},
+    {file = "s3transfer-0.7.0.tar.gz", hash = "sha256:fd3889a66f5fe17299fe75b82eae6cf722554edca744ca5d5fe308b104883d2e"},
 ]
 
 [package.dependencies]
@@ -1620,4 +1624,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "22fc2b8d3aaaa2a93048e449a29eb8db6ca23bedc3fd01718b07f8fd370c3c00"
+content-hash = "4e5c04c97c14d7a1f69ba118ecb34d7d3fc0346cee504ee414cbb88568b48b55"
