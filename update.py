@@ -7,7 +7,7 @@ import random
 import re
 import sys
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Iterable
 
 import pywintypes
 from packaging.version import Version
@@ -93,7 +93,7 @@ def _get_suitable_manifest(
 
 def _get_update_chain(
     manifests: List[str], name_in_metadata: str, version_in_metadata: Version
-) -> Tuple[List[Tuple[str, Version]], bool]:
+) -> List[Tuple[str, Version]]:
     update_chain = []
     suitable_manifest_search_flag = True
     v = version_in_metadata
@@ -106,7 +106,17 @@ def _get_update_chain(
             v = suitable_manifest[1]
         else:
             suitable_manifest_search_flag = False
-    return update_chain, len(update_chain) > 1
+    return update_chain
+
+
+def _get_full_update_version_chain(
+    version_in_metadata: Version, update_chain: List[Tuple[str, Version]]
+) -> Iterable[Version]:
+    return itertools.chain([version_in_metadata], map(lambda e: e[1], update_chain))
+
+
+def _build_update_chain_string(versions: Iterable[Version]):
+    return " -> ".join([str(version) for version in versions])
 
 
 async def _update_info_base(ib_name, dry=False):
@@ -136,12 +146,13 @@ async def _update_info_base(ib_name, dry=False):
     # Получает манифесты всех обновлений в указанной директории
     path = os.path.join(settings.UPDATE_PATH, "**", "1cv8.mft")
     manifests = glob.glob(pathname=path, recursive=True)
-    update_chain, is_multiupdate = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
+    update_chain = _get_update_chain(manifests, name_in_metadata, version_in_metadata)
+    is_multiupdate = len(update_chain) > 1
+    if is_multiupdate:
+        chain_str = _build_update_chain_string(_get_full_update_version_chain(version_in_metadata, update_chain))
+        log.info(f"<{ib_name}> Created update chain [{chain_str}]")
     # Использует отдельную переменную для версии для корректного вывода логов в цепочке обновлений
     current_version = version_in_metadata
-    if is_multiupdate:
-        chain_str = " -> ".join([str(manifest[1]) for manifest in itertools.chain([current_version], update_chain)])
-        log.info(f"<{ib_name}> Created update chain [{chain_str}]")
     for selected_manifest in update_chain:
         log.info(f"<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]")
         selected_update_filename = selected_manifest[0].replace("1cv8.mft", "1cv8.cfu")
