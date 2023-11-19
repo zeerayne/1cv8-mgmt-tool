@@ -6,13 +6,16 @@ try:
     import win32com.client as win32com_client
 except ImportError:
     from surrogate import surrogate
-    surrogate('win32com.client').prepare()
-    surrogate('pywintypes').prepare()
+
+    surrogate("win32com.client").prepare()
+    surrogate("pywintypes").prepare()
     import pywintypes
     import win32com.client as win32com_client
+
     pywintypes.com_error = Exception
 
 from conf import settings
+
 r"""
 Для доступа к информационной базе из внешней программы используется COM объект COMConnector.
 При установке платформы 1С, операционной системе автоматически регистрируется класс COMConnector.
@@ -29,11 +32,11 @@ log = logging.getLogger(__name__)
 
 
 def get_server_address() -> str:
-    return settings.V8_SERVER_AGENT['address']
+    return settings.V8_SERVER_AGENT["address"]
 
 
 def get_server_port() -> str:
-    return str(settings.V8_SERVER_AGENT['port'])
+    return str(settings.V8_SERVER_AGENT["port"])
 
 
 class ClusterControlInterface:
@@ -44,7 +47,7 @@ class ClusterControlInterface:
 
     def __init__(self):
         try:
-            self.V8COMConnector = win32com_client.Dispatch('V83.COMConnector')
+            self.V8COMConnector = win32com_client.Dispatch("V83.COMConnector")
         except pywintypes.com_error as e:
             raise e
         self.server = get_server_address()
@@ -60,7 +63,7 @@ class ClusterControlInterface:
         del self.V8COMConnector
 
     def get_agent_connection(self):
-        agent_connection = self.V8COMConnector.ConnectAgent(f'{self.server}:{self.agentPort}')
+        agent_connection = self.V8COMConnector.ConnectAgent(f"{self.server}:{self.agentPort}")
         return agent_connection
 
     def get_cluster(self, agent_connection):
@@ -92,7 +95,7 @@ class ClusterControlInterface:
         working_process_0 = agent_connection.GetWorkingProcesses(cluster)[0]
         working_process_port = str(working_process_0.MainPort)
         working_process_connection = self.V8COMConnector.ConnectWorkingProcess(
-            f'tcp://{self.server}:{working_process_port}'
+            f"tcp://{self.server}:{working_process_port}"
         )
         # Выполняет аутентификацию администратора кластера.
         # Администратор кластера должен быть аутентифицирован для создания в этом кластере новой информационной базы.
@@ -148,8 +151,8 @@ class ClusterControlInterface:
         self,
         working_process_connection,
         info_base,
-        permission_code: str = '0000',
-        message: str = 'Выполняется обслуживание ИБ'
+        permission_code: str = "0000",
+        message: str = "Выполняется обслуживание ИБ",
     ):
         """
         Блокирует фоновые задания и новые сеансы информационной базы
@@ -164,7 +167,7 @@ class ClusterControlInterface:
         info_base.PermissionCode = permission_code
         info_base.DeniedMessage = message
         working_process_connection.UpdateInfoBase(info_base)
-        log.debug(f'<{info_base.Name}> Lock info base successfully')
+        log.debug(f"<{info_base.Name}> Lock info base successfully")
 
     def unlock_info_base(self, working_process_connection, info_base):
         """
@@ -174,9 +177,9 @@ class ClusterControlInterface:
         """
         info_base.ScheduledJobsDenied = False
         info_base.SessionsDenied = False
-        info_base.DeniedMessage = ''
+        info_base.DeniedMessage = ""
         working_process_connection.UpdateInfoBase(info_base)
-        log.debug(f'<{info_base.Name}> Unlock info base successfully')
+        log.debug(f"<{info_base.Name}> Unlock info base successfully")
 
     def terminate_info_base_sessions(self, agent_connection, cluster, info_base_short):
         """

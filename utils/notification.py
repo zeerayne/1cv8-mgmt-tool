@@ -10,12 +10,12 @@ from conf import settings
 
 def make_message(caption, html_body):
     now = datetime.now()
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = '{0} {1}'.format(caption, now.strftime('%d.%m.%Y'))
-    msg['From'] = settings.NOTIFY_EMAIL_FROM
-    msg['To'] = ','.join(settings.NOTIFY_EMAIL_TO)
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = "{0} {1}".format(caption, now.strftime("%d.%m.%Y"))
+    msg["From"] = settings.NOTIFY_EMAIL_FROM
+    msg["To"] = ",".join(settings.NOTIFY_EMAIL_TO)
 
-    part = MIMEText(html_body, 'html')
+    part = MIMEText(html_body, "html")
     msg.attach(part)
     return msg
 
@@ -23,7 +23,7 @@ def make_message(caption, html_body):
 def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultBase]) -> str:
     style = "style='min-width: 100px; text-align: center; border: 1px solid black;'"
     table = "<table><caption style='white-space: nowrap;'>{caption}</caption>{body}</table>"
-    table_body = ''
+    table_body = ""
     succeeded = 0
     for task_result in resultset:
         if task_result.succeeded:
@@ -33,8 +33,11 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
             <tr style='color:#aa0000'><td {style}>{task_result.infobase_name}</td><td {style}>FAILED</td></tr>"
 
     if succeeded > 0:
-        table_body = f"\
-        <tr style='color:#00aa00'><td {style}>{succeeded}</td><td {style}>SUCCEEDED</td></tr>" + table_body
+        table_body = (
+            f"\
+        <tr style='color:#00aa00'><td {style}>{succeeded}</td><td {style}>SUCCEEDED</td></tr>"
+            + table_body
+        )
     html = table.format(caption=caption, body=table_body)
     return html
 

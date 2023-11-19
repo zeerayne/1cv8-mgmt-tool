@@ -1,6 +1,10 @@
 from packaging.version import Version
 
-from core.version import find_last_version, find_platform_last_version, get_version_from_string
+from core.version import (
+    find_last_version,
+    find_platform_last_version,
+    get_version_from_string,
+)
 
 
 def test_get_version_from_string_returns_version(mock_platform_version):
@@ -31,5 +35,5 @@ def test_find_platform_last_version_finds_correctly(mock_os_platform_path, mock_
     """
     Last platform version is found correctly
     """
-    result = find_platform_last_version('')
+    result = find_platform_last_version("")
     assert result == Version(mock_platform_last_version)

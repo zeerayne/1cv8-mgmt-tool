@@ -6,7 +6,7 @@ from pytest_mock import MockerFixture
 
 @pytest.fixture()
 def mock_smtp(mocker: MockerFixture):
-    return mocker.patch('smtplib.SMTP', return_value=MagicMock())
+    return mocker.patch("smtplib.SMTP", return_value=MagicMock())
 
 
 @pytest.fixture()
@@ -25,4 +25,4 @@ def mock_smtp_sendmail(mock_smtp):
 
 @pytest.fixture()
 def mock_email_message(mocker: MockerFixture):
-    return mocker.patch('email.mime.multipart.MIMEMultipart.as_string', return_value='test_email_message_string')
+    return mocker.patch("email.mime.multipart.MIMEMultipart.as_string", return_value="test_email_message_string")
