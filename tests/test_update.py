@@ -1,8 +1,12 @@
 from pytest_mock import MockerFixture
 
+from packaging.version import Version
+
 from update import (
     _find_suitable_manifests,
+    _get_full_update_version_chain,
     _get_suitable_manifest,
+    _build_update_chain_string,
     get_name_and_version_from_manifest,
     get_updatable_versions,
 )
@@ -105,3 +109,23 @@ def test_get_suitable_manifest_returns_applicable_manifest(
     mocker.patch("update._find_suitable_manifests", return_value=[manifest1, manifest2])
     result = _get_suitable_manifest(None, None, None)
     assert result == manifest2
+
+
+def test_get_full_update_version_chain_returns_proper_iterable():
+    """
+    `_get_full_update_version_chain` returns proper iterable
+    """
+    versions = [Version(v) for v in ["1.0", "1.5", "2.0"]]
+    version_in_metadata = versions[0]
+    update_chain = [("test", v) for v in [versions[1], versions[2]]]
+    result = _get_full_update_version_chain(version_in_metadata, update_chain)
+    assert list(result) == versions
+
+
+def test_build_update_chain_string_returns_proper_string():
+    """
+    `_build_update_chain_string` create proper string
+    """
+    versions = ["1.0", "1.5", "2.0"]
+    result = _build_update_chain_string([Version(v) for v in versions])
+    assert result == " -> ".join(versions)
