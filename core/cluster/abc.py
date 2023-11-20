@@ -23,7 +23,7 @@ class ClusterControler(ABC):
         ...
 
     @abstractmethod
-    def unlock_info_base(self, info_base: str):
+    def unlock_info_base(self, infobase: str):
         """
         Снимает блокировку фоновых заданий и сеансов информационной базы
         :param infobase: имя информационной базы
@@ -40,7 +40,7 @@ class ClusterControler(ABC):
 
     def get_info_bases(self) -> List[str]:
         """
-        Получает именя всех ИБ, кроме указанных в списке V8_INFOBASES_EXCLUDE
+        Получает имена всех ИБ, кроме указанных в списке V8_INFOBASES_EXCLUDE
         Если список V8_INFOBASES_ONLY не пустой, получает список ИБ, указанных в этом списке и присутствующих в кластере
         :return: массив с именами ИБ
         """
