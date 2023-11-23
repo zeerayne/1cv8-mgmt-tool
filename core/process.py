@@ -16,7 +16,7 @@ def _check_subprocess_return_code(
     log_filename: str,
     log_encoding: str,
     exception_class: Type[SubprocessException] = SubprocessException,
-    log_output_on_success=False,
+    log_output_on_success: bool = False,
 ):
     log.info(f"<{ib_name}> Return code is {str(subprocess.returncode)}")
     log_file_content = utils.read_file_content(log_filename, log_encoding)
@@ -47,7 +47,7 @@ async def execute_v8_command(
     log_filename: str,
     permission_code: str = None,
     timeout: int = None,
-    log_output_on_success=False,
+    log_output_on_success: bool = False,
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -100,7 +100,7 @@ async def execute_subprocess_command(
     log_filename: str,
     env: dict = None,
     timeout: int = None,
-    log_output_on_success=False,
+    log_output_on_success: bool = False,
 ):
     subprc_coro = (
         asyncio.create_subprocess_shell(subprocess_command, env=env)
