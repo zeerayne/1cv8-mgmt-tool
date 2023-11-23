@@ -270,6 +270,22 @@ async def test_execute_subprocess_command_pass_env_to_subprocess(
 
 
 @pytest.mark.asyncio()
+async def test_execute_subprocess_command_passes_timeout_to_asyncio_wait_for(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_subprocess_command` passes timeout value to `asyncio.wait_for`
+    """
+    message = "test_message"
+    command = "test_command"
+    timeout = 0.01
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mock_asyncio_wait_for = mocker.patch("asyncio.wait_for")
+    await execute_subprocess_command(infobase, command, "", timeout=timeout)
+    mock_asyncio_wait_for.assert_awaited_with(ANY, timeout=timeout)
+
+
+@pytest.mark.asyncio()
 async def test_execute_subprocess_command_raises_if_nonzero_return_code(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_failed
 ):
@@ -283,7 +299,6 @@ async def test_execute_subprocess_command_raises_if_nonzero_return_code(
         await execute_subprocess_command(infobase, command, "")
 
 
-@pytest.mark.skip(reason="no clue how to create mock which can be timed out")
 @pytest.mark.asyncio()
 async def test_execute_subprocess_command_terminates_subprocess_when_timed_out(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
@@ -294,5 +309,38 @@ async def test_execute_subprocess_command_terminates_subprocess_when_timed_out(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    await execute_subprocess_command(infobase, command, "", timeout=0.01)
-    mock_asyncio_subprocess_timeouted.terminate.assert_awaited()
+    mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    await execute_subprocess_command(infobase, command, "")
+    mock_asyncio_subprocess_timeouted.return_value.terminate.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_subprocess_command_calls_emergency_on_termination_error(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_termination_error
+):
+    """
+    `execute_subprocess_command` calls `_kill_process_emergency` when got expection while terminating subprocess
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
+    await execute_subprocess_command(infobase, command, "")
+    mock_kill_process_emergency.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_subprocess_command_calls_emergency_on_communication_error(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
+):
+    """
+    `execute_subprocess_command` calls `_kill_process_emergency` when got expection while communicating with subprocess
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("asyncio.wait_for", side_effect=Exception)
+    mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
+    await execute_subprocess_command(infobase, command, "")
+    mock_kill_process_emergency.assert_awaited()
