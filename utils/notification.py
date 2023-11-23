@@ -43,7 +43,9 @@ def make_html_table(caption: str, resultset: List[core_types.InfoBaseTaskResultB
 
 
 def send_notification(caption, html_body):
-    with smtplib.SMTP(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT) as session:
+    with smtplib.SMTP(
+        settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT, timeout=settings.NOTIFY_EMAIL_CONNECT_TIMEOUT
+    ) as session:
         if settings.NOTIFY_EMAIL_SMTP_SSL_REQUIRED:
             session.starttls()
         session.login(settings.NOTIFY_EMAIL_LOGIN, settings.NOTIFY_EMAIL_PASSWORD)
