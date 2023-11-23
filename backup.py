@@ -88,7 +88,12 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseBackup
     for i in range(0, backup_retries + 1):
         try:
             await execute_v8_command(
-                ib_name, v8_command, log_filename, permission_code, timeout=1200, log_output_on_success=True
+                ib_name,
+                v8_command,
+                log_filename,
+                permission_code,
+                timeout=settings.BACKUP_TIMEOUT_V8,
+                log_output_on_success=True,
             )
             break
         except V8Exception:
