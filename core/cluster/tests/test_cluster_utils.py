@@ -20,6 +20,7 @@ from core.cluster.utils import (
     get_cluster_controller,
     get_cluster_controller_class,
 )
+from core.cluster.rac import ClusterRACControler
 from core.exceptions import V8Exception
 
 
