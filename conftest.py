@@ -198,6 +198,17 @@ def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
 
 
 @pytest.fixture()
+def mock_asyncio_subprocess_termination_error(mocker: MockerFixture):
+    subprocess_mock = AsyncMock()
+    subprocess_mock.returncode = 0
+    subprocess_mock.pid = random.randint(1000, 3000)
+
+    subprocess_mock.terminate = AsyncMock(side_effect=Exception)
+
+    return mocker.patch("asyncio.create_subprocess_shell", return_value=subprocess_mock)
+
+
+@pytest.fixture()
 def mock_get_platform_full_path(mocker: MockerFixture):
     return mocker.patch("core.utils.get_platform_full_path", return_value="")
 
