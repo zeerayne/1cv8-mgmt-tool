@@ -144,6 +144,51 @@ async def test_execute_v8_command_unlocks_infobase_if_code_passed(
 
 
 @pytest.mark.asyncio()
+async def test_execute_v8_command_does_not_lock_infobase_if_code_is_none(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` does not lock infobase if permission code is none
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    await execute_v8_command(infobase, command, "")
+    cci_mock.return_value.__enter__.return_value.lock_info_base.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_does_not_unlock_infobase_if_code_is_none(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` does not unlock infobase if permission code is none
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    await execute_v8_command(infobase, command, "")
+    cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_terminates_infobase_sessions(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` terminates infobase sessions
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    await execute_v8_command(infobase, command, "")
+    cci_mock.return_value.__enter__.return_value.terminate_info_base_sessions.assert_called_once()
+
+
+@pytest.mark.asyncio()
 async def test_execute_subprocess_command_pass_command_to_subprocess(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
