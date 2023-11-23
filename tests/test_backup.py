@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, PropertyMock
 
@@ -31,6 +32,20 @@ async def test_replicate_backup_replicate_to_every_path(mocker: MockerFixture):
     aiocopyfile_mock = mocker.patch("aioshutil.copyfile", return_value=AsyncMock())
     await replicate_backup(backup_file_path, replication_paths)
     assert aiocopyfile_mock.await_count == len(replication_paths)
+
+
+@pytest.mark.asyncio()
+async def test_replicate_backup_replicate_log_exception_when_failed(mocker: MockerFixture, caplog):
+    """
+    `replicate_backup` logs exception when failed
+    """
+    backup_file_path = "test/backup.filename"
+    replication_paths = ["test/replication/path/01", "test/replication/path/02"]
+    mocker.patch("pathlib.Path")
+    aiocopyfile_mock = mocker.patch("aioshutil.copyfile", side_effect=Exception)
+    with caplog.at_level(logging.ERROR):
+        await replicate_backup(backup_file_path, replication_paths)
+    assert "Problems while replicating" in caplog.text
 
 
 @pytest.mark.asyncio()
@@ -259,6 +274,44 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
     mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
     assert result.infobase_name == infobase
+
+
+@pytest.mark.asyncio()
+async def test_backup_pgdump_return_negative_result_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
+    """
+    Backup with pgdump returns object with `succeeded == False` when failed
+    """
+    mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    result = await _backup_pgdump(infobase, "", "", "")
+    assert result.succeeded == False
+
+
+@pytest.mark.asyncio()
+async def test_backup_pgdump_return_result_for_exact_infobase_when_failed_to_find_creds(
+    mocker: MockerFixture,
+    infobase,
+):
+    """
+    Backup with pgdump returns object for exact infobase which was provided when failed to find db credentials
+    """
+    mocker.patch("utils.postgres.prepare_postgres_connection_vars", side_effect=KeyError)
+    result = await _backup_pgdump(infobase, "", "", "")
+    assert result.infobase_name == infobase
+
+
+@pytest.mark.asyncio()
+async def test_backup_pgdump_return_negative_result_when_failed_to_find_creds(
+    mocker: MockerFixture,
+    infobase,
+):
+    """
+    Backup with pgdump returns object with `succeeded == False` when failed to find db credentials
+    """
+    mocker.patch("utils.postgres.prepare_postgres_connection_vars", side_effect=KeyError)
+    result = await _backup_pgdump(infobase, "", "", "")
+    assert result.succeeded == False
 
 
 @pytest.mark.asyncio()
