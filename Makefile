@@ -1,6 +1,6 @@
 .PHONY: install
 install:
-	poetry install --no-root --no-dev
+	poetry install --no-root --only main
 
 .PHONY: install-dev
 install-dev:
