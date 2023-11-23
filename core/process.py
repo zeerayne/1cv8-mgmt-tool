@@ -49,9 +49,9 @@ async def execute_v8_command(
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
     with cluster.ClusterControlInterface() as cci:
+        agent_connection = cci.get_agent_connection()
+        cluster_with_auth = cci.get_cluster_with_auth(agent_connection)
         if permission_code:
-            agent_connection = cci.get_agent_connection()
-            cluster_with_auth = cci.get_cluster_with_auth(agent_connection)
             working_process_connection = cci.get_working_process_connection_with_info_base_auth()
             ib = cci.get_info_base(working_process_connection, ib_name)
             # Блокирует фоновые задания и новые сеансы
@@ -62,13 +62,13 @@ async def execute_v8_command(
             pause = settings.V8_LOCK_INFO_BASE_PAUSE
             log.debug(f"<{ib_name}> Wait for {pause} seconds")
             await asyncio.sleep(pause)
-            ib_short = cci.get_info_base_short(agent_connection, cluster_with_auth, ib_name)
-            # Принудительно завершает текущие сеансы
-            cci.terminate_info_base_sessions(agent_connection, cluster_with_auth, ib_short)
-            del agent_connection
-            del cluster_with_auth
-            del ib_short
             del working_process_connection
+        ib_short = cci.get_info_base_short(agent_connection, cluster_with_auth, ib_name)
+        # Принудительно завершает текущие сеансы
+        cci.terminate_info_base_sessions(agent_connection, cluster_with_auth, ib_short)
+        del ib_short
+        del cluster_with_auth
+        del agent_connection
         v8_process = await asyncio.create_subprocess_shell(v8_command)
         log.debug(f"<{ib_name}> 1cv8.exe PID is {str(v8_process.pid)}")
         try:
