@@ -1,11 +1,12 @@
 import asyncio
+import logging
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, PropertyMock
 
 import pytest
 from pytest_mock import MockerFixture
 
-import core.types as core_types
+import core.models as core_models
 from backup import (
     _backup_info_base,
     _backup_pgdump,
@@ -31,6 +32,20 @@ async def test_replicate_backup_replicate_to_every_path(mocker: MockerFixture):
     aiocopyfile_mock = mocker.patch("aioshutil.copyfile", return_value=AsyncMock())
     await replicate_backup(backup_file_path, replication_paths)
     assert aiocopyfile_mock.await_count == len(replication_paths)
+
+
+@pytest.mark.asyncio()
+async def test_replicate_backup_replicate_log_exception_when_failed(mocker: MockerFixture, caplog):
+    """
+    `replicate_backup` logs exception when failed
+    """
+    backup_file_path = "test/backup.filename"
+    replication_paths = ["test/replication/path/01", "test/replication/path/02"]
+    mocker.patch("pathlib.Path")
+    aiocopyfile_mock = mocker.patch("aioshutil.copyfile", side_effect=Exception)
+    with caplog.at_level(logging.ERROR):
+        await replicate_backup(backup_file_path, replication_paths)
+    assert "Problems while replicating" in caplog.text
 
 
 @pytest.mark.asyncio()
@@ -100,7 +115,7 @@ async def test_backup_v8_return_backup_result_type_object_when_succeeded(
     """
     mocker.patch("backup.execute_v8_command", return_value=AsyncMock())
     result = await _backup_v8(infobase)
-    assert isinstance(result, core_types.InfoBaseBackupTaskResult)
+    assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio()
@@ -112,7 +127,7 @@ async def test_backup_v8_return_backup_result_type_object_when_failed(
     """
     mocker.patch("backup.execute_v8_command", side_effect=V8Exception)
     result = await _backup_v8(infobase)
-    assert isinstance(result, core_types.InfoBaseBackupTaskResult)
+    assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio()
@@ -198,7 +213,7 @@ async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
     """
     mocker.patch("backup.execute_subprocess_command", return_value=AsyncMock())
     result = await _backup_pgdump(infobase, "", "", "")
-    assert isinstance(result, core_types.InfoBaseBackupTaskResult)
+    assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio()
@@ -210,7 +225,7 @@ async def test_backup_pgdump_return_backup_result_type_object_when_failed(
     """
     mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
-    assert isinstance(result, core_types.InfoBaseBackupTaskResult)
+    assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
 
 @pytest.mark.asyncio()
@@ -262,12 +277,50 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
 
 
 @pytest.mark.asyncio()
+async def test_backup_pgdump_return_negative_result_when_failed(
+    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+):
+    """
+    Backup with pgdump returns object with `succeeded == False` when failed
+    """
+    mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    result = await _backup_pgdump(infobase, "", "", "")
+    assert result.succeeded == False
+
+
+@pytest.mark.asyncio()
+async def test_backup_pgdump_return_result_for_exact_infobase_when_failed_to_find_creds(
+    mocker: MockerFixture,
+    infobase,
+):
+    """
+    Backup with pgdump returns object for exact infobase which was provided when failed to find db credentials
+    """
+    mocker.patch("utils.postgres.prepare_postgres_connection_vars", side_effect=KeyError)
+    result = await _backup_pgdump(infobase, "", "", "")
+    assert result.infobase_name == infobase
+
+
+@pytest.mark.asyncio()
+async def test_backup_pgdump_return_negative_result_when_failed_to_find_creds(
+    mocker: MockerFixture,
+    infobase,
+):
+    """
+    Backup with pgdump returns object with `succeeded == False` when failed to find db credentials
+    """
+    mocker.patch("utils.postgres.prepare_postgres_connection_vars", side_effect=KeyError)
+    result = await _backup_pgdump(infobase, "", "", "")
+    assert result.succeeded == False
+
+
+@pytest.mark.asyncio()
 async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, infobase):
     """
     `_backup_info_base` calls `_backup_v8` by default
     """
-    mocker.patch("core.cluster.ClusterControlInterface")
-    com_func_wrapper_mock = mocker.patch("core.utils.com_func_wrapper")
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler")
+    com_func_wrapper_mock = mocker.patch("core.cluster.utils.com_func_wrapper")
     await _backup_info_base(infobase)
     com_func_wrapper_mock.assert_awaited_with(_backup_v8, infobase)
 
@@ -280,7 +333,7 @@ async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_
     `_backup_info_base` calls `_backup_v8` if BACKUP_PG is True, but infobase DBMS is not postgres
     """
     mocker.patch("conf.settings.BACKUP_PG", new_callable=PropertyMock(return_value=True))
-    com_func_wrapper_mock = mocker.patch("core.utils.com_func_wrapper")
+    com_func_wrapper_mock = mocker.patch("core.cluster.utils.com_func_wrapper")
     await _backup_info_base(infobase)
     com_func_wrapper_mock.assert_awaited_with(_backup_v8, infobase)
 
@@ -304,9 +357,9 @@ async def test_backup_info_base_returns_value_from_v8_backup(mocker: MockerFixtu
     """
     `_backup_info_base` returns value from underlying `com_func_wrapper` function
     """
-    value = core_types.InfoBaseBackupTaskResult(infobase, True, "")
-    mocker.patch("core.cluster.ClusterControlInterface")
-    mocker.patch("core.utils.com_func_wrapper", return_value=value)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "")
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler")
+    mocker.patch("core.cluster.utils.com_func_wrapper", return_value=value)
     result = await _backup_info_base(infobase)
     assert result == value
 
@@ -318,7 +371,7 @@ async def test_backup_info_base_returns_value_from_pgdump_backup(
     """
     `_backup_info_base` returns value from underlying `_backup_pgdump` function
     """
-    value = core_types.InfoBaseBackupTaskResult(infobase, True, "")
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "")
     mocker.patch("conf.settings.BACKUP_PG", new_callable=PropertyMock(return_value=True))
     mocker.patch("backup._backup_pgdump", return_value=value)
     result = await _backup_info_base(infobase)
@@ -355,7 +408,7 @@ async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_
     `backup_info_base` calls `replicate_backup` if BACKUP_REPLICATION is True and backup was successfull
     """
     backup_path = "test/backup.path"
-    value = core_types.InfoBaseBackupTaskResult(infobase, True, backup_path)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, backup_path)
     mocker.patch("backup.rotate_backups")
     mocker.patch("backup._backup_info_base", return_value=value)
     mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
@@ -371,7 +424,7 @@ async def test_backup_info_dont_calls_replicate_backup_if_replication_is_enabled
     """
     `backup_info_base` don't calls `replicate_backup` if BACKUP_REPLICATION is True and backup failed
     """
-    value = core_types.InfoBaseBackupTaskResult(infobase, False)
+    value = core_models.InfoBaseBackupTaskResult(infobase, False)
     mocker.patch("backup.rotate_backups")
     mocker.patch("backup._backup_info_base", return_value=value)
     mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
@@ -385,7 +438,7 @@ async def test_backup_info_returns_value_from_inner_func(mocker: MockerFixture, 
     """
     `backup_info_base` returns value from inner backup function
     """
-    value = core_types.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
     mocker.patch("backup._backup_info_base", return_value=value)
     mocker.patch("backup.rotate_backups")
     result = await backup_info_base(infobase, asyncio.Semaphore(1))
@@ -408,7 +461,7 @@ async def test_backup_info_returns_value_from_inner_func_if_rotate_backups_fails
     """
     `backup_info_base` returns value from inner backup function if `rotate_backups` fails
     """
-    value = core_types.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
     mocker.patch("backup._backup_info_base", return_value=value)
     mocker.patch("backup.rotate_backups", side_effect=Exception)
     result = await backup_info_base(infobase, asyncio.Semaphore(1))
@@ -420,7 +473,7 @@ async def test_backup_info_returns_value_from_inner_func_if_replicate_backup_fai
     """
     `backup_info_base` returns value from inner backup function if `replicate_backup` fails
     """
-    value = core_types.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
     mocker.patch("backup.rotate_backups")
     mocker.patch("backup._backup_info_base", return_value=value)
     mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))

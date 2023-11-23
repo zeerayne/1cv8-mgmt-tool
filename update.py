@@ -7,15 +7,16 @@ import random
 import re
 import sys
 from datetime import datetime
-from typing import List, Tuple, Iterable
+from typing import Iterable, List, Tuple
 
 import pywintypes
 from packaging.version import Version
 
-import core.types as core_types
+import core.models as core_models
 from conf import settings
-from core import cluster, utils
+from core import utils
 from core.analyze import analyze_update_result
+from core.cluster import utils as cluster_utils
 from core.process import execute_v8_command
 from core.version import get_version_from_string
 from utils.log import configure_logging
@@ -130,17 +131,17 @@ async def _update_info_base(ib_name, dry=False):
     """
     log.info(f"<{ib_name}> Initiate update")
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    with cluster.ClusterControlInterface() as cci:
-        try:
-            # Получает тип конфигурации и её версию
-            # TODO: подумать, как сделать получение метаданных асинхронным
-            metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-        except pywintypes.com_error as e:
-            # Если начало сеанса с информационной базой запрещено, то можно снять блокировку и попробывать ещё раз
-            if e.excepinfo[5] == -2147467259:
-                # TODO: подумать нужно ли это делать, или база заблокирована не просто так
-                pass
-            raise e
+    cci = cluster_utils.get_cluster_controller_class()()
+    try:
+        # Получает тип конфигурации и её версию
+        # TODO: подумать, как сделать получение метаданных асинхронным
+        metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+    except pywintypes.com_error as e:
+        # Если начало сеанса с информационной базой запрещено, то можно снять блокировку и попробывать ещё раз
+        if e.excepinfo[5] == -2147467259:
+            # TODO: подумать нужно ли это делать, или база заблокирована не просто так
+            pass
+        raise e
     name_in_metadata = metadata[0]
     version_in_metadata = get_version_from_string(metadata[1])
     # Получает манифесты всех обновлений в указанной директории
@@ -163,7 +164,7 @@ async def _update_info_base(ib_name, dry=False):
         # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
         v8_command = (
             rf'"{utils.get_platform_full_path()}" '
-            rf"DESIGNER /S {cluster.get_server_address()}\{ib_name} "
+            rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
             rf'/N"{info_base_user}" /P"{info_base_pwd}" '
             rf"/Out {log_filename} -NoTruncate "
             rf'/UC "{permission_code}" '
@@ -185,34 +186,34 @@ async def _update_info_base(ib_name, dry=False):
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.
                 previous_version = current_version
-                with cluster.ClusterControlInterface() as cci:
-                    try:
-                        metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-                    except pywintypes.com_error as e:
-                        raise e
+                try:
+                    metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+                except pywintypes.com_error as e:
+                    raise e
                 current_version = get_version_from_string(metadata[1])
                 if current_version == previous_version:
                     log.error(
-                        f"<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] was not applied, next chain updates will not be applied"
+                        f"<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] "
+                        f"was not applied, next chain updates will not be applied"
                     )
-                    return core_types.InfoBaseUpdateTaskResult(ib_name, False)
+                    return core_models.InfoBaseUpdateTaskResult(ib_name, False)
     if not update_chain:
         log.info(f"<{ib_name}> No suitable update for [{name_in_metadata} {version_in_metadata}] was found")
-    return core_types.InfoBaseUpdateTaskResult(ib_name, True)
+    return core_models.InfoBaseUpdateTaskResult(ib_name, True)
 
 
-async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseUpdateTaskResult:
+async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_models.InfoBaseUpdateTaskResult:
     async with semaphore:
         try:
-            return await utils.com_func_wrapper(_update_info_base, ib_name)
+            return await cluster_utils.com_func_wrapper(_update_info_base, ib_name)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
-            return core_types.InfoBaseUpdateTaskResult(ib_name, False)
+            return core_models.InfoBaseUpdateTaskResult(ib_name, False)
 
 
 def analyze_results(
     info_bases: List[str],
-    update_result: List[core_types.InfoBaseUpdateTaskResult],
+    update_result: List[core_models.InfoBaseUpdateTaskResult],
     update_datetime_start: datetime,
     update_datetime_finish: datetime,
 ):
@@ -221,7 +222,8 @@ def analyze_results(
 
 async def main():
     try:
-        info_bases = utils.get_info_bases()
+        cci = cluster_utils.get_cluster_controller_class()()
+        info_bases = cci.get_info_bases()
         update_concurrency = settings.UPDATE_CONCURRENCY
         update_semaphore = asyncio.Semaphore(update_concurrency)
         log.info(f"<{log_prefix}> Asyncio semaphore initialized: {update_concurrency} update concurrency")

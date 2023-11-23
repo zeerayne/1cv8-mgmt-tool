@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Callable, List
 
-import core.types as core_types
+import core.models as core_models
 from utils.common import sizeof_fmt
 
 log = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ def _wrap_log_subprefix(log_subprefix):
 
 
 def _log_message(
-    resultset: List[core_types.InfoBaseTaskResultBase],
+    resultset: List[core_models.InfoBaseTaskResultBase],
     succeeded: int,
     failed: int,
     datetime_start: datetime,
@@ -33,12 +33,12 @@ def _log_message(
 
 
 def _analyze_result(
-    resultset: List[core_types.InfoBaseTaskResultBase],
+    resultset: List[core_models.InfoBaseTaskResultBase],
     workload: List[str],
     datetime_start: datetime,
     datetime_finish: datetime,
     custom_log_message_func: Callable[
-        [List[core_types.InfoBaseTaskResultBase], int, int, datetime, datetime], None
+        [List[core_models.InfoBaseTaskResultBase], int, int, datetime, datetime], None
     ] = None,
     log_subprefix: str = None,
 ):
@@ -67,7 +67,7 @@ def _analyze_result(
 
 
 def analyze_result(
-    resultset: List[core_types.InfoBaseTaskResultBase],
+    resultset: List[core_models.InfoBaseTaskResultBase],
     workload: List[str],
     datetime_start: datetime,
     datetime_finish: datetime,
@@ -78,7 +78,7 @@ def analyze_result(
 
 
 def analyze_s3_result(
-    resultset: List[core_types.InfoBaseAWSUploadTaskResult],
+    resultset: List[core_models.InfoBaseAWSUploadTaskResult],
     workload: List[str],
     datetime_start: datetime,
     datetime_finish: datetime,
@@ -86,7 +86,7 @@ def analyze_s3_result(
     log_subprefix = _wrap_log_subprefix("AWS")
 
     def log_message(
-        resultset: List[core_types.InfoBaseTaskResultBase],
+        resultset: List[core_models.InfoBaseTaskResultBase],
         succeeded: int,
         failed: int,
         datetime_start: datetime,
@@ -109,7 +109,7 @@ def analyze_s3_result(
 
 
 def analyze_backup_result(
-    resultset: List[core_types.InfoBaseBackupTaskResult],
+    resultset: List[core_models.InfoBaseBackupTaskResult],
     workload: List[str],
     datetime_start: datetime,
     datetime_finish: datetime,
@@ -119,7 +119,7 @@ def analyze_backup_result(
 
 
 def analyze_maintenance_result(
-    resultset: List[core_types.InfoBaseBackupTaskResult],
+    resultset: List[core_models.InfoBaseBackupTaskResult],
     workload: List[str],
     datetime_start: datetime,
     datetime_finish: datetime,
@@ -129,7 +129,7 @@ def analyze_maintenance_result(
 
 
 def analyze_update_result(
-    resultset: List[core_types.InfoBaseBackupTaskResult],
+    resultset: List[core_models.InfoBaseBackupTaskResult],
     workload: List[str],
     datetime_start: datetime,
     datetime_finish: datetime,

@@ -5,10 +5,11 @@ import sys
 from datetime import datetime, timedelta
 from typing import List
 
-import core.types as core_types
+import core.models as core_models
 from conf import settings
-from core import cluster, utils
+from core import utils
 from core.analyze import analyze_maintenance_result
+from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
@@ -25,10 +26,10 @@ async def rotate_logs(ib_name):
     log.info(f"<{ib_name}> Removing logs older than {logRetentionDays} days")
     path = os.path.join(settings.LOG_PATH, filename_pattern)
     await utils.remove_old_files_by_pattern(path, logRetentionDays)
-    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
+    return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseMaintenanceTaskResult:
+async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
     2. Удаляет старые резервные копии
@@ -42,7 +43,7 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
     v8_command = (
         rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER /S {cluster.get_server_address()}\{ib_name} "
+        rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
         rf'/N"{info_base_user}" /P"{info_base_pwd}" '
         rf"/Out {log_filename} -NoTruncate "
         rf"/ReduceEventLogSize {reduce_date_str}"
@@ -52,19 +53,19 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_types.InfoBaseM
             ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True
         )
     except V8Exception:
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
+        return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
+    return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
 async def _maintenance_vacuumdb(
     ib_name: str, db_server: str, db_name: str, db_user: str, *args, **kwargs
-) -> core_types.InfoBaseMaintenanceTaskResult:
+) -> core_models.InfoBaseMaintenanceTaskResult:
     log.info(f"<{ib_name}> Start vacuumdb")
     try:
         db_host, db_port, db_pwd = postgres.prepare_postgres_connection_vars(db_server, db_user)
     except KeyError as e:
         log.error(f"<{ib_name}> {str(e)}")
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+        return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     pg_vacuumdb_path = os.path.join(settings.PG_BIN_PATH, "vacuumdb.exe")
     vacuumdb_command = (
@@ -76,38 +77,39 @@ async def _maintenance_vacuumdb(
     try:
         await execute_subprocess_command(ib_name, vacuumdb_command, log_filename, env=vacuumdb_env)
     except SubprocessException:
-        return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
-    return core_types.InfoBaseMaintenanceTaskResult(ib_name, True)
+        return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
+    return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-async def maintenance_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_types.InfoBaseMaintenanceTaskResult:
-    with cluster.ClusterControlInterface() as cci:
-        wpc = cci.get_working_process_connection_with_info_base_auth()
-        ib_info = cci.get_info_base(wpc, ib_name)
-        db_server = ib_info.dbServerName
-        dbms = ib_info.DBMS
-        db_name = ib_info.dbName
-        db_user = ib_info.dbUser
+async def maintenance_info_base(
+    ib_name: str, semaphore: asyncio.Semaphore
+) -> core_models.InfoBaseMaintenanceTaskResult:
+    cci = cluster_utils.get_cluster_controller_class()()
+    ib_info = cci.get_info_base(ib_name)
+    db_server = ib_info.dbServerName
+    dbms = ib_info.DBMS
+    db_name = ib_info.dbName
+    db_user = ib_info.dbUser
     async with semaphore:
         try:
             succeeded = True
             if settings.MAINTENANCE_V8:
-                result_v8 = await utils.com_func_wrapper(_maintenance_v8, ib_name)
+                result_v8 = await cluster_utils.com_func_wrapper(_maintenance_v8, ib_name)
                 succeeded &= result_v8.succeeded
             if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(dbms):
                 result_pg = await _maintenance_vacuumdb(ib_name, db_server, db_name, db_user)
                 succeeded &= result_pg.succeeded
             result_logs = await rotate_logs(ib_name)
             succeeded &= result_logs.succeeded
-            return core_types.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
+            return core_models.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
-            return core_types.InfoBaseMaintenanceTaskResult(ib_name, False)
+            return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
 
 
 def analyze_results(
     infobases: List[str],
-    update_result: List[core_types.InfoBaseMaintenanceTaskResult],
+    update_result: List[core_models.InfoBaseMaintenanceTaskResult],
     update_datetime_start: datetime,
     update_datetime_finish: datetime,
 ):
@@ -116,7 +118,8 @@ def analyze_results(
 
 async def main():
     try:
-        info_bases = utils.get_info_bases()
+        cci = cluster_utils.get_cluster_controller_class()()
+        info_bases = cci.get_info_bases()
         maintenance_concurrency = settings.MAINTENANCE_CONCURRENCY
         maintenance_semaphore = asyncio.Semaphore(maintenance_concurrency)
         log.info(f"<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency")
