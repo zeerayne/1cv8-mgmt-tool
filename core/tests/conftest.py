@@ -33,19 +33,12 @@ async def mock_upload_infobase_to_s3_connection_error(mocker: MockerFixture):
 
 @pytest.fixture()
 async def mock_aioboto3_session(mocker: MockerFixture):
-    class AsyncContextManagerStub:
-        async def __aenter__(self, *args, **kwargs):
-            return self
-
-        async def __aexit__(self, *args, **kwargs):
-            pass
-
     aioboto3_session_mock = Mock()
 
-    resource = MagicMock(AsyncContextManagerStub())
+    resource = MagicMock()
     type(aioboto3_session_mock).resource = resource
 
-    client = MagicMock(AsyncContextManagerStub())
+    client = MagicMock()
     type(aioboto3_session_mock).client = client
 
     return mocker.patch("aioboto3.Session", return_value=aioboto3_session_mock)
