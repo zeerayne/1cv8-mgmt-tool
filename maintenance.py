@@ -118,7 +118,8 @@ def analyze_results(
 
 async def main():
     try:
-        info_bases = utils.get_info_bases()
+        cci = cluster_utils.get_cluster_controller_class()()
+        info_bases = cci.get_info_bases()
         maintenance_concurrency = settings.MAINTENANCE_CONCURRENCY
         maintenance_semaphore = asyncio.Semaphore(maintenance_concurrency)
         log.info(f"<{log_prefix}> Asyncio semaphore initialized: {maintenance_concurrency} maintenance concurrency")

@@ -229,7 +229,8 @@ async def main():
     try:
         # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
         # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
-        info_bases = utils.get_info_bases()
+        cci = cluster_utils.get_cluster_controller_class()()
+        info_bases = cci.get_info_bases()
         backup_concurrency = settings.BACKUP_CONCURRENCY
         aws_concurrency = settings.AWS_CONCURRENCY
         backup_results = []
@@ -238,8 +239,7 @@ async def main():
         backup_semaphore = asyncio.Semaphore(backup_concurrency)
         aws_semaphore = asyncio.Semaphore(aws_concurrency)
         log.info(
-            f"<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} \
-                backup concurrency, {aws_concurrency} AWS concurrency"
+            f"<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency"
         )
         backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
         backup_datetime_start = datetime.now()
