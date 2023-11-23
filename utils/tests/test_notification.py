@@ -74,10 +74,12 @@ def test_html_table_mixed_output_is_valid_xml(mixed_base_result):
 
 def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
     """
-    To send email, SMTP should be created with proper SMTP host and port
+    To send email, SMTP should be created with proper SMTP host, port and timeout
     """
     send_notification("", "")
-    mock_smtp.assert_called_with(settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT)
+    mock_smtp.assert_called_with(
+        settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT, timeout=settings.NOTIFY_EMAIL_CONNECT_TIMEOUT
+    )
 
 
 def test_send_notification_calls_smtp_login(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
