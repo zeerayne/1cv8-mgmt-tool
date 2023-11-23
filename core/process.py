@@ -28,6 +28,19 @@ def _check_subprocess_return_code(
         log.info(msg)
 
 
+async def _kill_process_emergency(pid: int):
+    try:
+        log.info(f"Try to kill PID {pid} with taskkill")
+        taskkill_process = await asyncio.create_subprocess_shell(f"taskkill /PID {pid} /F")
+        await asyncio.wait_for(taskkill_process.communicate(), timeout=5)
+        if taskkill_process.returncode != 0:
+            log.error(f"Process with PID {pid} was not killed with taskkill")
+        else:
+            log.info(f"Process with PID {pid} successfully killed with taskkill")
+    except Exception as e:
+        log.exception(f"Error while calling taskkill: {e}")
+
+
 async def execute_v8_command(
     ib_name: str,
     v8_command: str,
@@ -62,12 +75,19 @@ async def execute_v8_command(
     # Принудительно завершает текущие сеансы
     cci.terminate_info_base_sessions(ib_name)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
-    log.debug(f"<{ib_name}> 1cv8 PID is {str(v8_process.pid)}")
+    pid = v8_process.pid
+    log.debug(f"<{ib_name}> 1cv8 PID is {pid}")
     try:
         await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
-        await v8_process.terminate()
-
+        try:
+            await v8_process.terminate()
+        except Exception as e:
+            log.exception(f"Process with PID {pid} can not be terminated: {e}")
+            await _kill_process_emergency(pid)
+    except Exception as e:
+        log.exception(f"Exception while communicating with subprocess: {e}")
+        await _kill_process_emergency(pid)
     if permission_code:
         # Снимает блокировку фоновых заданий и сеансов
         cci.unlock_info_base(ib_name)
