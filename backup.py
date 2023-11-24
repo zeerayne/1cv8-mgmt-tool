@@ -186,17 +186,20 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_m
             log.exception(f"<{ib_name}> Unknown exception occurred in `_backup_info_base` coroutine")
             return core_models.InfoBaseBackupTaskResult(ib_name, False)
         try:
-            # Если включена репликация и результат бэкапа успешен
-            if settings.BACKUP_REPLICATION and result.succeeded:
-                await replicate_backup(result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
-        except Exception:
-            log.exception(f"<{ib_name}> Unknown exception occurred in `replicate_backup` coroutine")
-        try:
             # Ротация бэкапов, удаляет старые
             await rotate_backups(ib_name)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in `rotate_backups` coroutine")
         return result
+
+
+async def replicate_info_base(backup_result: core_models.InfoBaseBackupTaskResult, semaphore: asyncio.Semaphore):
+    async with semaphore:
+        try:
+            if settings.BACKUP_REPLICATION and backup_result.succeeded:
+                await replicate_backup(backup_result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
+        except Exception:
+            log.exception(f"<{backup_result.infobase_name}> Unknown exception occurred in `replicate_backup` coroutine")
 
 
 def analyze_results(
@@ -232,7 +235,19 @@ async def main():
         cci = cluster_utils.get_cluster_controller_class()()
         info_bases = cci.get_info_bases()
         backup_concurrency = settings.BACKUP_CONCURRENCY
-        aws_concurrency = settings.AWS_CONCURRENCY
+        backup_semaphore = asyncio.Semaphore(backup_concurrency)
+        log_message_mixin = f"{backup_concurrency} backup concurrency"
+
+        if settings.AWS_ENABLED:
+            aws_concurrency = settings.AWS_CONCURRENCY
+            aws_semaphore = asyncio.Semaphore(aws_concurrency)
+            log_message_mixin += f", {aws_concurrency} AWS concurrency"
+
+        if settings.BACKUP_REPLICATION:
+            backup_replication_concurrency = settings.BACKUP_REPLICATION_CONCURRENCY
+            backup_replication_semaphore = asyncio.Semaphore(backup_replication_concurrency)
+            log_message_mixin += f", {backup_replication_concurrency} backup replication concurrency"
+
         backup_results = []
         aws_results = []
 
@@ -245,27 +260,39 @@ async def main():
         backup_datetime_start = datetime.now()
         aws_tasks = []
         aws_datetime_start = None
+        backup_replication_tasks = []
         for backup_coro in asyncio.as_completed(backup_coroutines):
             backup_result = await backup_coro
             backup_results.append(backup_result)
             backup_datetime_finish = datetime.now()
             # Только резервные копии, созданные без ошибок нужно загрузить на S3
-            if backup_result.succeeded and settings.AWS_ENABLED:
-                if aws_datetime_start is None:
-                    aws_datetime_start = datetime.now()
-                aws_tasks.append(
-                    asyncio.create_task(
-                        upload_infobase_to_s3(
-                            backup_result.infobase_name, backup_result.backup_filename, aws_semaphore
-                        ),
-                        name=f"Task :: Upload {backup_result.infobase_name} to S3",
+            if backup_result.succeeded:
+                if settings.AWS_ENABLED:
+                    if aws_datetime_start is None:
+                        aws_datetime_start = datetime.now()
+                    aws_tasks.append(
+                        asyncio.create_task(
+                            upload_infobase_to_s3(
+                                backup_result.infobase_name, backup_result.backup_filename, aws_semaphore
+                            ),
+                            name=f"Task :: Upload {backup_result.infobase_name} to S3",
+                        )
                     )
-                )
+                if settings.BACKUP_REPLICATION:
+                    backup_replication_tasks.append(
+                        asyncio.create_task(
+                            replicate_info_base(backup_result, backup_replication_semaphore),
+                            name=f"Task :: Replicate backup {backup_result.infobase_name}",
+                        )
+                    )
 
         if aws_tasks:
             await asyncio.wait(aws_tasks)
             aws_results = [task.result() for task in aws_tasks]
         aws_datetime_finish = datetime.now()
+
+        if backup_replication_tasks:
+            await asyncio.wait(backup_replication_tasks)
 
         analyze_results(
             info_bases,
