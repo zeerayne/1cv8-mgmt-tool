@@ -13,7 +13,10 @@ from backup import (
     _backup_v8,
     analyze_results,
     backup_info_base,
+    create_aws_upload_task,
+    create_backup_replication_task,
     replicate_backup,
+    replicate_info_base,
     rotate_backups,
     send_email_notification,
 )
@@ -401,23 +404,6 @@ async def test_backup_info_calls_rotate_backups(mocker: MockerFixture, infobase)
 
 
 @pytest.mark.asyncio()
-async def test_backup_info_calls_replicate_backup_if_replication_is_enabled_and_backup_was_successfull(
-    mocker: MockerFixture, infobase
-):
-    """
-    `backup_info_base` calls `replicate_backup` if BACKUP_REPLICATION is True and backup was successfull
-    """
-    backup_path = "test/backup.path"
-    value = core_models.InfoBaseBackupTaskResult(infobase, True, backup_path)
-    mocker.patch("backup.rotate_backups")
-    mocker.patch("backup._backup_info_base", return_value=value)
-    mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
-    replicate_backup_mock = mocker.patch("backup.replicate_backup")
-    await backup_info_base(infobase, asyncio.Semaphore(1))
-    replicate_backup_mock.assert_awaited_with(backup_path, settings.BACKUP_REPLICATION_PATHS)
-
-
-@pytest.mark.asyncio()
 async def test_backup_info_dont_calls_replicate_backup_if_replication_is_enabled_and_backup_failed(
     mocker: MockerFixture, infobase
 ):
@@ -469,17 +455,31 @@ async def test_backup_info_returns_value_from_inner_func_if_rotate_backups_fails
 
 
 @pytest.mark.asyncio()
-async def test_backup_info_returns_value_from_inner_func_if_replicate_backup_fails(mocker: MockerFixture, infobase):
+async def test_replicate_info_base_calls_replicate_backup_if_replication_is_enabled_and_backup_was_successfull(
+    mocker: MockerFixture, infobase
+):
     """
-    `backup_info_base` returns value from inner backup function if `replicate_backup` fails
+    `replicate_info_base` calls `replicate_backup` if BACKUP_REPLICATION is True and backup was successfull
+    """
+    backup_path = "test/backup.path"
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, backup_path)
+    replicate_backup_mock = mocker.patch("backup.replicate_backup")
+    mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
+    await replicate_info_base(value, asyncio.Semaphore(1))
+    replicate_backup_mock.assert_awaited_with(value.backup_filename, settings.BACKUP_REPLICATION_PATHS)
+
+
+@pytest.mark.asyncio()
+async def test_replicate_info_base_logs_exception_if_replicate_backup_fails(mocker: MockerFixture, caplog, infobase):
+    """
+    `replicate_info_base` logs exception if `replicate_backup` fails
     """
     value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
-    mocker.patch("backup.rotate_backups")
-    mocker.patch("backup._backup_info_base", return_value=value)
     mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
     mocker.patch("backup.replicate_backup", side_effect=Exception)
-    result = await backup_info_base(infobase, asyncio.Semaphore(1))
-    assert result == value
+    with caplog.at_level(logging.ERROR):
+        await replicate_info_base(value, asyncio.Semaphore(1))
+    assert "exception occurred in `replicate_backup`" in caplog.text
 
 
 def test_analyze_results_calls_backup_analyze(mocker: MockerFixture, infobases, mixed_backup_result):
@@ -617,3 +617,79 @@ def test_send_email_notification_makes_aws_and_backup_tables_when_aws_enabled(
     make_html_table_mock = mocker.patch("backup.make_html_table")
     send_email_notification(mixed_backup_result, mixed_aws_result)
     assert make_html_table_mock.call_count == 2
+
+
+def test_create_aws_upload_task_does_not_create_task_if_aws_not_enabled(mocker: MockerFixture, infobase):
+    """
+    `create_aws_upload_task` does not create task if `AWS_ENABLED` is False
+    """
+    semaphore = asyncio.Semaphore(1)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=False))
+    mock_create_task = mocker.patch("asyncio.create_task")
+    create_aws_upload_task(value, semaphore)
+    mock_create_task.assert_not_called()
+
+
+def test_create_aws_upload_task_creates_task_if_aws_enabled(mocker: MockerFixture, infobase):
+    """
+    `create_aws_upload_task` creates task if `AWS_ENABLED` is True
+    """
+    semaphore = asyncio.Semaphore(1)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
+    mock_create_task = mocker.patch("asyncio.create_task")
+    create_aws_upload_task(value, semaphore)
+    mock_create_task.assert_called_once()
+
+
+def test_create_aws_upload_task_creates_proper_task(mocker: MockerFixture, infobase):
+    """
+    `create_aws_upload_task` creates task with required coro inside
+    """
+    semaphore = asyncio.Semaphore(1)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch("asyncio.create_task")
+    mock_upload_infobase_to_s3 = mocker.patch("core.aws.upload_infobase_to_s3")
+    create_aws_upload_task(value, semaphore)
+    mock_upload_infobase_to_s3.assert_called_once()
+
+
+def test_create_backup_replication_task_does_not_create_task_if_replication_not_enabled(
+    mocker: MockerFixture, infobase
+):
+    """
+    `create_backup_replication_task` does not create task if `BACKUP_REPLICATION` is False
+    """
+    semaphore = asyncio.Semaphore(1)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=False))
+    mock_create_task = mocker.patch("asyncio.create_task")
+    create_backup_replication_task(value, semaphore)
+    mock_create_task.assert_not_called()
+
+
+def test_create_backup_replication_task_creates_task_if_replication_enabled(mocker: MockerFixture, infobase):
+    """
+    `create_backup_replication_task` creates task if `BACKUP_REPLICATION` is True
+    """
+    semaphore = asyncio.Semaphore(1)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
+    mock_create_task = mocker.patch("asyncio.create_task")
+    create_backup_replication_task(value, semaphore)
+    mock_create_task.assert_called_once()
+
+
+def test_create_backup_replication_task_creates_proper_task(mocker: MockerFixture, infobase):
+    """
+    `create_backup_replication_task` creates task with required coro inside
+    """
+    semaphore = asyncio.Semaphore(1)
+    value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
+    mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
+    mocker.patch("asyncio.create_task")
+    mock_replicate_info_base = mocker.patch("backup.replicate_info_base")
+    create_backup_replication_task(value, semaphore)
+    mock_replicate_info_base.assert_called_once()
