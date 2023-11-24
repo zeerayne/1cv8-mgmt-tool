@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 from datetime import datetime
-from typing import Awaitable, List
+from typing import List
 
 import aioshutil
 
