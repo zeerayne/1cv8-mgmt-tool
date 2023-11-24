@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import pathlib
-import sys
 from datetime import datetime
 from typing import List
 
@@ -17,6 +16,7 @@ from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
+from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
 from utils.notification import make_html_table, send_notification
 
@@ -230,23 +230,16 @@ def send_email_notification(
 
 async def main():
     try:
-        # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
-        # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
-        cci = cluster_utils.get_cluster_controller_class()()
-        info_bases = cci.get_info_bases()
-        backup_concurrency = settings.BACKUP_CONCURRENCY
-        backup_semaphore = asyncio.Semaphore(backup_concurrency)
-        log_message_mixin = f"{backup_concurrency} backup concurrency"
-
-        if settings.AWS_ENABLED:
-            aws_concurrency = settings.AWS_CONCURRENCY
-            aws_semaphore = asyncio.Semaphore(aws_concurrency)
-            log_message_mixin += f", {aws_concurrency} AWS concurrency"
-
-        if settings.BACKUP_REPLICATION:
-            backup_replication_concurrency = settings.BACKUP_REPLICATION_CONCURRENCY
-            backup_replication_semaphore = asyncio.Semaphore(backup_replication_concurrency)
-            log_message_mixin += f", {backup_replication_concurrency} backup replication concurrency"
+        info_bases = utils.get_info_bases()
+        backup_semaphore = initialize_semaphore(settings.BACKUP_CONCURRENCY, log_prefix, "backup")
+        aws_semaphore = (
+            initialize_semaphore(settings.AWS_CONCURRENCY, log_prefix, "AWS") if settings.AWS_ENABLED else None
+        )
+        backup_replication_semaphore = (
+            initialize_semaphore(settings.BACKUP_REPLICATION_CONCURRENCY, log_prefix, "backup replication")
+            if settings.BACKUP_REPLICATION
+            else None
+        )
 
         backup_results = []
         aws_results = []
@@ -313,10 +306,4 @@ async def main():
 
 if __name__ == "__main__":
     configure_logging(settings.LOG_LEVEL)
-    if sys.version_info < (3, 10):
-        # Использование asyncio.run() в windows бросает исключение
-        # `RuntimeError: Event loop is closed` при завершении run.
-        # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
-        asyncio.get_event_loop().run_until_complete(main())
-    else:
-        asyncio.run(main())
+    initialize_event_loop(main())
