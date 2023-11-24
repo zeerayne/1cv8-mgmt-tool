@@ -4,7 +4,7 @@ import ntpath
 import os
 import platform
 from datetime import date, datetime, timedelta
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 import aiofiles.os
 
@@ -56,7 +56,7 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
     return ib_and_time_filename
 
 
-def get_info_bases() -> list[str]:
+def get_info_bases() -> List[str]:
     cci = cluster_utils.get_cluster_controller()
     info_bases = cci.get_info_bases()
     return info_bases

@@ -1,6 +1,7 @@
 import asyncio
 import sys
 from unittest.mock import AsyncMock
+
 from pytest_mock import MockerFixture
 
 from utils.asyncio import initialize_event_loop, initialize_semaphore
