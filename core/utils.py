@@ -56,7 +56,7 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
     return ib_and_time_filename
 
 
-def get_info_bases():
+def get_info_bases() -> list[str]:
     cci = cluster_utils.get_cluster_controller()
     info_bases = cci.get_info_bases()
     return info_bases
