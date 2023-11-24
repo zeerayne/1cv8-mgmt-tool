@@ -139,6 +139,7 @@ async def test_execute_v8_command_raises_if_nonzero_return_code(
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
     mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    mocker.patch("core.process._kill_process_emergency")
     with pytest.raises(V8Exception):
         await execute_v8_command(infobase, command, "")
 
@@ -172,6 +173,7 @@ async def test_execute_v8_command_terminates_subprocess_when_timed_out(
     mocker.patch("core.utils.read_file_content", return_value=message)
     mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mocker.patch("core.process._kill_process_emergency")
     await execute_v8_command(infobase, command, "")
     mock_asyncio_subprocess_timeouted.return_value.terminate.assert_awaited()
 
@@ -342,6 +344,7 @@ async def test_execute_subprocess_command_raises_if_nonzero_return_code(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("core.process._kill_process_emergency")
     with pytest.raises(SubprocessException):
         await execute_subprocess_command(infobase, command, "")
 
@@ -357,6 +360,7 @@ async def test_execute_subprocess_command_terminates_subprocess_when_timed_out(
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
     mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mocker.patch("core.process._kill_process_emergency")
     await execute_subprocess_command(infobase, command, "")
     mock_asyncio_subprocess_timeouted.return_value.terminate.assert_awaited()
 
