@@ -2,26 +2,14 @@ import glob
 import logging
 import ntpath
 import os
+import platform
 from datetime import date, datetime, timedelta
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 import aiofiles.os
 
-try:
-    import pywintypes
-except ImportError:
-    from surrogate import surrogate
-
-    surrogate("pywintypes").prepare()
-    import pywintypes
-
-    pywintypes.com_error = Exception
-
-import core.types as core_types
 from conf import settings
 from core import version
-from core.cluster import ClusterControlInterface
-from core.exceptions import V8Exception
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +17,11 @@ log = logging.getLogger(__name__)
 def get_platform_full_path() -> str:
     platformPath = settings.V8_PLATFORM_PATH
     platformVersion = version.find_platform_last_version(platformPath)
-    full_path = os.path.join(platformPath, str(platformVersion), "bin", "1cv8.exe")
+    platformDirectory = os.path.join(platformPath, str(platformVersion))
+    if platform.system() == "Windows":
+        full_path = os.path.join(platformDirectory, "bin", "1cv8.exe")
+    if platform.system() == "Linux":
+        full_path = os.path.join(platformDirectory, "1cv8")
     return full_path
 
 
@@ -63,34 +55,6 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
     return ib_and_time_filename
 
 
-def get_info_bases() -> List[str]:
-    """
-    Получает именя всех ИБ, кроме указанных в списке V8_INFOBASES_EXCLUDE
-    Если список V8_INFOBASES_ONLY не пустой, получает список ИБ, указанных в этом списке и присутствующих в кластере
-    :return: массив с именами ИБ
-    """
-    with ClusterControlInterface() as cci:
-        working_process_connection = cci.get_working_process_connection_with_info_base_auth()
-
-        info_bases_com = cci.get_info_bases(working_process_connection)
-        info_bases_raw = [ib.Name for ib in info_bases_com]
-        if settings.V8_INFOBASES_ONLY:
-            info_bases = list(
-                filter(
-                    lambda ib: ib.lower() in [ib_only.lower() for ib_only in settings.V8_INFOBASES_ONLY], info_bases_raw
-                )
-            )
-        else:
-            info_bases = list(
-                filter(
-                    lambda ib: ib.lower() not in [ib_exclude.lower() for ib_exclude in settings.V8_INFOBASES_EXCLUDE],
-                    info_bases_raw,
-                )
-            )
-        del working_process_connection
-        return info_bases
-
-
 def get_info_base_credentials(ib_name) -> Tuple[str, str]:
     """
     Получает имя пользователя и пароль для инфомационной базы. Поиск производится в настройках.
@@ -113,33 +77,6 @@ def path_leaf(path: str) -> str:
     """
     head, tail = ntpath.split(path)
     return tail or ntpath.basename(head)
-
-
-async def com_func_wrapper(func, ib_name: str, **kwargs) -> core_types.InfoBaseTaskResultBase:
-    """
-    Оборачивает функцию для обработки COM-ошибок
-    :param func: функция, которая будет обёрнута
-    :param ib_name: имя информационной базы
-    :return: Массив ib_name, func_result
-    """
-    try:
-        result = await func(ib_name, **kwargs)
-    except pywintypes.com_error:
-        log.exception(f"<{ib_name}> COM Error occured")
-        # Если произошла ошибка, пытаемся снять блокировку ИБ
-        try:
-            with ClusterControlInterface() as cci:
-                working_process_connection = cci.get_working_process_connection_with_info_base_auth()
-                ib = cci.get_info_base(working_process_connection, ib_name)
-                cci.unlock_info_base(working_process_connection, ib)
-                del working_process_connection
-        except pywintypes.com_error:
-            log.exception(f"<{ib_name}> COM Error occured during handling another COM Error")
-        # После разблокировки возвращаем неуспешный результат
-        return core_types.InfoBaseTaskResultBase(ib_name, False)
-    except V8Exception:
-        return core_types.InfoBaseTaskResultBase(ib_name, False)
-    return result
 
 
 def read_file_content(filename, file_encoding="utf-8"):

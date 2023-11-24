@@ -1,12 +1,11 @@
+from packaging.version import Version
 from pytest_mock import MockerFixture
 
-from packaging.version import Version
-
 from update import (
+    _build_update_chain_string,
     _find_suitable_manifests,
     _get_full_update_version_chain,
     _get_suitable_manifest,
-    _build_update_chain_string,
     get_name_and_version_from_manifest,
     get_updatable_versions,
 )

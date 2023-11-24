@@ -1,5 +1,7 @@
 import logging
-from unittest.mock import Mock
+import random
+from asyncio import TimeoutError
+from unittest.mock import ANY, Mock
 
 import pytest
 from pytest_mock import MockerFixture
@@ -7,6 +9,7 @@ from pytest_mock import MockerFixture
 from core.exceptions import SubprocessException, V8Exception
 from core.process import (
     _check_subprocess_return_code,
+    _kill_process_emergency,
     execute_subprocess_command,
     execute_v8_command,
 )
@@ -66,6 +69,51 @@ def test_check_subprocess_return_code_logs_message_when_subprocess_failed(mocker
 
 
 @pytest.mark.asyncio()
+async def test_kill_process_emergency_creates_subprocess(mock_asyncio_subprocess_succeeded):
+    """
+    `_kill_process_emergency` creates subprocess to try to kill process by pid
+    """
+    pid = random.randint(1000, 3000)
+    await _kill_process_emergency(pid)
+    mock_asyncio_subprocess_succeeded.assert_awaited_once()
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_logs_result_when_succeeded(caplog, mock_asyncio_subprocess_succeeded):
+    """
+    `_kill_process_emergency` logs result when successfully killed process by pid
+    """
+    pid = random.randint(1000, 3000)
+    with caplog.at_level(logging.INFO):
+        await _kill_process_emergency(pid)
+    assert f"{pid} successfully killed" in caplog.text
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_logs_result_when_failed(caplog, mock_asyncio_subprocess_failed):
+    """
+    `_kill_process_emergency` logs result when failed to kill process by pid
+    """
+    pid = random.randint(1000, 3000)
+    with caplog.at_level(logging.ERROR):
+        await _kill_process_emergency(pid)
+    assert f"{pid} was not killed" in caplog.text
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_logs_result_when_communication_error(
+    caplog, mock_asyncio_subprocess_communication_error
+):
+    """
+    `_kill_process_emergency` logs result when exception occurs
+    """
+    pid = random.randint(1000, 3000)
+    with caplog.at_level(logging.ERROR):
+        await _kill_process_emergency(pid)
+    assert "Error while calling taskkill" in caplog.text
+
+
+@pytest.mark.asyncio()
 async def test_execute_v8_command_pass_command_to_subprocess(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
@@ -75,7 +123,7 @@ async def test_execute_v8_command_pass_command_to_subprocess(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "")
     mock_asyncio_subprocess_succeeded.assert_awaited_with(command)
 
@@ -90,12 +138,29 @@ async def test_execute_v8_command_raises_if_nonzero_return_code(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    mocker.patch("core.process._kill_process_emergency")
     with pytest.raises(V8Exception):
         await execute_v8_command(infobase, command, "")
 
 
-@pytest.mark.skip(reason="no clue how to create mock which can be timed out")
+@pytest.mark.asyncio()
+async def test_execute_v8_command_passes_timeout_to_asyncio_wait_for(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` passes timeout value to `asyncio.wait_for`
+    """
+    message = "test_message"
+    command = "test_command"
+    timeout = 0.01
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    mock_asyncio_wait_for = mocker.patch("asyncio.wait_for")
+    await execute_v8_command(infobase, command, "", timeout=timeout)
+    mock_asyncio_wait_for.assert_awaited_with(ANY, timeout=timeout)
+
+
 @pytest.mark.asyncio()
 async def test_execute_v8_command_terminates_subprocess_when_timed_out(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
@@ -106,9 +171,45 @@ async def test_execute_v8_command_terminates_subprocess_when_timed_out(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
-    await execute_v8_command(infobase, command, "", timeout=0.01)
-    mock_asyncio_subprocess_timeouted.terminate.assert_awaited()
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mocker.patch("core.process._kill_process_emergency")
+    await execute_v8_command(infobase, command, "")
+    mock_asyncio_subprocess_timeouted.return_value.terminate.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_calls_emergency_on_termination_error(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_termination_error
+):
+    """
+    `execute_v8_command` calls `_kill_process_emergency` when got expection while terminating subprocess
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
+    await execute_v8_command(infobase, command, "")
+    mock_kill_process_emergency.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_calls_emergency_on_communication_error(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
+):
+    """
+    `execute_v8_command` calls `_kill_process_emergency` when got expection while communicating with subprocess
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    mocker.patch("asyncio.wait_for", side_effect=Exception)
+    mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
+    await execute_v8_command(infobase, command, "")
+    mock_kill_process_emergency.assert_awaited()
 
 
 @pytest.mark.asyncio()
@@ -122,9 +223,9 @@ async def test_execute_v8_command_locks_infobase_if_code_passed(
     command = "test_command"
     permission_code = "test_permission_code"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", permission_code)
-    cci_mock.return_value.__enter__.return_value.lock_info_base.assert_called_once()
+    cci_mock.return_value.lock_info_base.assert_called_once()
 
 
 @pytest.mark.asyncio()
@@ -138,9 +239,54 @@ async def test_execute_v8_command_unlocks_infobase_if_code_passed(
     command = "test_command"
     permission_code = "test_permission_code"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    cci_mock = mocker.patch("core.cluster.ClusterControlInterface", autospec=True)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
     await execute_v8_command(infobase, command, "", permission_code)
-    cci_mock.return_value.__enter__.return_value.unlock_info_base.assert_called_once()
+    cci_mock.return_value.unlock_info_base.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_does_not_lock_infobase_if_code_is_none(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` does not lock infobase if permission code is none
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    await execute_v8_command(infobase, command, "")
+    cci_mock.return_value.lock_info_base.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_does_not_unlock_infobase_if_code_is_none(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` does not unlock infobase if permission code is none
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    await execute_v8_command(infobase, command, "")
+    cci_mock.return_value.unlock_info_base.assert_not_called()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_terminates_infobase_sessions(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` terminates infobase sessions
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    await execute_v8_command(infobase, command, "")
+    cci_mock.return_value.terminate_info_base_sessions.assert_called_once()
 
 
 @pytest.mark.asyncio()
@@ -173,6 +319,22 @@ async def test_execute_subprocess_command_pass_env_to_subprocess(
 
 
 @pytest.mark.asyncio()
+async def test_execute_subprocess_command_passes_timeout_to_asyncio_wait_for(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_subprocess_command` passes timeout value to `asyncio.wait_for`
+    """
+    message = "test_message"
+    command = "test_command"
+    timeout = 0.01
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mock_asyncio_wait_for = mocker.patch("asyncio.wait_for")
+    await execute_subprocess_command(infobase, command, "", timeout=timeout)
+    mock_asyncio_wait_for.assert_awaited_with(ANY, timeout=timeout)
+
+
+@pytest.mark.asyncio()
 async def test_execute_subprocess_command_raises_if_nonzero_return_code(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_failed
 ):
@@ -182,11 +344,11 @@ async def test_execute_subprocess_command_raises_if_nonzero_return_code(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("core.process._kill_process_emergency")
     with pytest.raises(SubprocessException):
         await execute_subprocess_command(infobase, command, "")
 
 
-@pytest.mark.skip(reason="no clue how to create mock which can be timed out")
 @pytest.mark.asyncio()
 async def test_execute_subprocess_command_terminates_subprocess_when_timed_out(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
@@ -197,5 +359,38 @@ async def test_execute_subprocess_command_terminates_subprocess_when_timed_out(
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    await execute_subprocess_command(infobase, command, "", timeout=0.01)
-    mock_asyncio_subprocess_timeouted.terminate.assert_awaited()
+    mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mocker.patch("core.process._kill_process_emergency")
+    await execute_subprocess_command(infobase, command, "")
+    mock_asyncio_subprocess_timeouted.return_value.terminate.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_subprocess_command_calls_emergency_on_termination_error(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_termination_error
+):
+    """
+    `execute_subprocess_command` calls `_kill_process_emergency` when got expection while terminating subprocess
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("asyncio.wait_for", side_effect=TimeoutError)
+    mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
+    await execute_subprocess_command(infobase, command, "")
+    mock_kill_process_emergency.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_subprocess_command_calls_emergency_on_communication_error(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_communication_error
+):
+    """
+    `execute_subprocess_command` calls `_kill_process_emergency` when got expection while communicating with subprocess
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
+    await execute_subprocess_command(infobase, command, "")
+    mock_kill_process_emergency.assert_awaited()
