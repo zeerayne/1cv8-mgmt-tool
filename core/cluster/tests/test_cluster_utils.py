@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock
 
 import pytest
+from pytest_mock import MockerFixture
 
 try:
     import pywintypes
@@ -14,7 +15,11 @@ except ImportError:
 
 from core import models as core_models
 from core.cluster.comcntr import ClusterCOMControler
-from core.cluster.utils import com_func_wrapper, get_cluster_controller_class
+from core.cluster.utils import (
+    com_func_wrapper,
+    get_cluster_controller,
+    get_cluster_controller_class,
+)
 from core.exceptions import V8Exception
 
 
@@ -24,6 +29,15 @@ def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_com():
     """
     controller_class = get_cluster_controller_class()
     assert controller_class == ClusterCOMControler
+
+
+def test_get_cluster_controller_retuns_comcntr_when_mode_is_com(mocker: MockerFixture):
+    """
+    `get_cluster_controller` returns object of `ClusterCOMControler` class
+    """
+    mocker.patch("win32com.client.Dispatch")
+    controller = get_cluster_controller()
+    assert isinstance(controller, ClusterCOMControler)
 
 
 @pytest.mark.asyncio()
