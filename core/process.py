@@ -18,7 +18,7 @@ def _check_subprocess_return_code(
     exception_class: Type[SubprocessException] = SubprocessException,
     log_output_on_success: bool = False,
 ):
-    log.info(f"<{ib_name}> Return code is {str(subprocess.returncode)}")
+    log.info(f"<{ib_name}> Return code is {subprocess.returncode}")
     log_file_content = utils.read_file_content(log_filename, log_encoding)
     msg = f"<{ib_name}> Log message :: {log_file_content}"
     if subprocess.returncode != 0:

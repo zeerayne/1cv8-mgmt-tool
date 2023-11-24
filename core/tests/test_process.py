@@ -1,4 +1,5 @@
 import logging
+import random
 from asyncio import TimeoutError
 from unittest.mock import ANY, Mock
 
@@ -8,6 +9,7 @@ from pytest_mock import MockerFixture
 from core.exceptions import SubprocessException, V8Exception
 from core.process import (
     _check_subprocess_return_code,
+    _kill_process_emergency,
     execute_subprocess_command,
     execute_v8_command,
 )
@@ -64,6 +66,51 @@ def test_check_subprocess_return_code_logs_message_when_subprocess_failed(mocker
     with caplog.at_level(logging.ERROR), pytest.raises(SubprocessException):
         _check_subprocess_return_code(infobase, subprocess_mock, "", "", SubprocessException)
     assert message in caplog.text
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_creates_subprocess(mock_asyncio_subprocess_succeeded):
+    """
+    `_kill_process_emergency` creates subprocess to try to kill process by pid
+    """
+    pid = random.randint(1000, 3000)
+    await _kill_process_emergency(pid)
+    mock_asyncio_subprocess_succeeded.assert_awaited_once()
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_logs_result_when_succeeded(caplog, mock_asyncio_subprocess_succeeded):
+    """
+    `_kill_process_emergency` logs result when successfully killed process by pid
+    """
+    pid = random.randint(1000, 3000)
+    with caplog.at_level(logging.INFO):
+        await _kill_process_emergency(pid)
+    assert f"{pid} successfully killed" in caplog.text
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_logs_result_when_failed(caplog, mock_asyncio_subprocess_failed):
+    """
+    `_kill_process_emergency` logs result when failed to kill process by pid
+    """
+    pid = random.randint(1000, 3000)
+    with caplog.at_level(logging.ERROR):
+        await _kill_process_emergency(pid)
+    assert f"{pid} was not killed" in caplog.text
+
+
+@pytest.mark.asyncio()
+async def test_kill_process_emergency_logs_result_when_communication_error(
+    caplog, mock_asyncio_subprocess_communication_error
+):
+    """
+    `_kill_process_emergency` logs result when exception occurs
+    """
+    pid = random.randint(1000, 3000)
+    with caplog.at_level(logging.ERROR):
+        await _kill_process_emergency(pid)
+    assert "Error while calling taskkill" in caplog.text
 
 
 @pytest.mark.asyncio()
@@ -332,7 +379,7 @@ async def test_execute_subprocess_command_calls_emergency_on_termination_error(
 
 @pytest.mark.asyncio()
 async def test_execute_subprocess_command_calls_emergency_on_communication_error(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_communication_error
 ):
     """
     `execute_subprocess_command` calls `_kill_process_emergency` when got expection while communicating with subprocess
@@ -340,7 +387,6 @@ async def test_execute_subprocess_command_calls_emergency_on_communication_error
     message = "test_message"
     command = "test_command"
     mocker.patch("core.utils.read_file_content", return_value=message)
-    mocker.patch("asyncio.wait_for", side_effect=Exception)
     mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
     await execute_subprocess_command(infobase, command, "")
     mock_kill_process_emergency.assert_awaited()
