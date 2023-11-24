@@ -16,6 +16,7 @@ except ImportError:
     import win32com.client as win32com_client
 
     pywintypes.com_error = Exception
+    win32com_client.Dispatch = lambda i: None
 
 from conf import settings
 
