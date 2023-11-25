@@ -24,6 +24,10 @@ def get_cluster_controller_class():
     return controller_class
 
 
+def get_cluster_controller():
+    return get_cluster_controller_class()()
+
+
 def get_server_agent_address() -> str:
     return settings.V8_SERVER_AGENT["address"]
 

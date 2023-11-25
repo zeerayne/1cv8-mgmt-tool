@@ -5,7 +5,6 @@ import logging
 import os.path
 import random
 import re
-import sys
 from datetime import datetime
 from typing import Iterable, List, Tuple
 
@@ -19,6 +18,7 @@ from core.analyze import analyze_update_result
 from core.cluster import utils as cluster_utils
 from core.process import execute_v8_command
 from core.version import get_version_from_string
+from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
 
 log = logging.getLogger(__name__)
@@ -222,11 +222,9 @@ def analyze_results(
 
 async def main():
     try:
-        cci = cluster_utils.get_cluster_controller_class()()
-        info_bases = cci.get_info_bases()
-        update_concurrency = settings.UPDATE_CONCURRENCY
-        update_semaphore = asyncio.Semaphore(update_concurrency)
-        log.info(f"<{log_prefix}> Asyncio semaphore initialized: {update_concurrency} update concurrency")
+        info_bases = utils.get_info_bases()
+        update_semaphore = initialize_semaphore(settings.UPDATE_CONCURRENCY, log_prefix, "update")
+
         update_datetime_start = datetime.now()
         update_results = await asyncio.gather(*[update_info_base(ib_name, update_semaphore) for ib_name in info_bases])
         update_datetime_finish = datetime.now()
@@ -245,7 +243,4 @@ async def main():
 
 if __name__ == "__main__":
     configure_logging(settings.LOG_LEVEL)
-    if sys.version_info < (3, 10):
-        asyncio.get_event_loop().run_until_complete(main())
-    else:
-        asyncio.run(main())
+    initialize_event_loop(main())

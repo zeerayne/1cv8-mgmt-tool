@@ -130,3 +130,12 @@ def mock_infobases_credentials(mocker: MockerFixture, infobases):
     creds.update(settings.V8_INFOBASES_CREDENTIALS)
     mocker.patch("conf.settings.V8_INFOBASES_CREDENTIALS", new_callable=PropertyMock(return_value=creds))
     return creds
+
+
+@pytest.fixture()
+def mock_cluster_com_infobases(mocker: MockerFixture, infobases):
+    info_base_mock = Mock()
+    info_base_mock.return_value = infobases
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
+    cci_mock.return_value.get_info_bases = info_base_mock
+    return cci_mock
