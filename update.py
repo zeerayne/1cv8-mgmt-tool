@@ -16,7 +16,7 @@ from conf import settings
 from core import utils
 from core.analyze import analyze_update_result
 from core.cluster import utils as cluster_utils
-from core.process import execute_v8_command
+from core import process
 from core.version import get_version_from_string
 from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
@@ -120,6 +120,25 @@ def _build_update_chain_string(versions: Iterable[Version]):
     return " -> ".join([str(version) for version in versions])
 
 
+def assemble_update_v8_command(ib_name: str, permission_code: str, update_filename: str, log_filename: str) -> str:
+    """
+    Формирует команду для выгрузки
+    """
+    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
+    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
+    v8_command = (
+        rf'"{utils.get_platform_full_path()}" '
+        rf"DESIGNER {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
+        rf"/Out {log_filename} -NoTruncate "
+        rf"/DisableStartupDialogs /DisableStartupMessages "
+        rf'/UpdateCfg "{update_filename}" -force /UpdateDBCfg -Dynamic- -Server '
+    )
+    if permission_code:
+        v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
+    log.debug(f"<{ib_name}> Created update command [{v8_command}]")
+
+
 async def _update_info_base(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
@@ -157,21 +176,11 @@ async def _update_info_base(ib_name, dry=False):
     for selected_manifest in update_chain:
         log.info(f"<{ib_name}> Start update for [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}]")
         selected_update_filename = selected_manifest[0].replace("1cv8.mft", "1cv8.cfu")
-        # Код блокировки новых сеансов
-        permission_code = settings.V8_PERMISSION_CODE
         # Формирует команду для обновления
         log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
-        # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
-        v8_command = (
-            rf'"{utils.get_platform_full_path()}" '
-            rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
-            rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-            rf"/Out {log_filename} -NoTruncate "
-            rf'/UC "{permission_code}" '
-            rf"/DisableStartupDialogs /DisableStartupMessages "
-            rf'/UpdateCfg "{selected_update_filename}" -force /UpdateDBCfg -Dynamic- -Server'
-        )
-        log.info(f"Created update command [{v8_command}]")
+        # Код блокировки новых сеансов
+        permission_code = settings.V8_PERMISSION_CODE
+        v8_command = assemble_update_v8_command(ib_name, permission_code, selected_update_filename, log_filename)
         if not dry:
             # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае,
             # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
@@ -181,7 +190,7 @@ async def _update_info_base(ib_name, dry=False):
             log.debug(f"<{ib_name}> Wait for {pause:.2f} seconds")
             await asyncio.sleep(pause)
             # Обновляет информационную базу и конфигурацию БД
-            await execute_v8_command(ib_name, v8_command, log_filename, permission_code)
+            await process.execute_v8_command_wrapper(ib_name, v8_command, log_filename, permission_code)
             if is_multiupdate:
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.
@@ -205,7 +214,10 @@ async def _update_info_base(ib_name, dry=False):
 async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_models.InfoBaseUpdateTaskResult:
     async with semaphore:
         try:
-            return await cluster_utils.com_func_wrapper(_update_info_base, ib_name)
+            if utils.infobase_is_in_cluster(ib_name):
+                return await cluster_utils.com_func_wrapper(_update_info_base, ib_name)
+            else:
+                return await _update_info_base(ib_name)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
             return core_models.InfoBaseUpdateTaskResult(ib_name, False)

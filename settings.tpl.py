@@ -4,7 +4,12 @@ from os.path import expanduser, join
 ## 1CV8 platform ##
 ## ------------- ##
 
+V8_CLUSTER_ENABLED = True
 V8_CLUSTER_ADMIN_CREDENTIALS = ("Администратор", "cluster_admin_password")
+V8_FILE_ENABLED = True
+V8_FILE_INFOBASES = {
+    "accounting": join("C:\\", "infobases", "accounting"),
+}
 V8_INFOBASES_CREDENTIALS = {
     "default": ("Администратор", "infobase_user_password"),
     "accounting": ("БухАдминистратор", "infobase_user_password"),

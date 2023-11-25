@@ -4,7 +4,10 @@ from os.path import expanduser, join
 ## 1CV8 platform ##
 ## ------------- ##
 
+V8_CLUSTER_ENABLED = True
 V8_CLUSTER_ADMIN_CREDENTIALS = ("Администратор", "")
+V8_FILE_ENABLED = True
+V8_FILE_INFOBASES = {}
 V8_INFOBASES_CREDENTIALS = {
     "default": ("Администратор", ""),
 }

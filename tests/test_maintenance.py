@@ -31,7 +31,7 @@ async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, in
     """
     Maintenance with 1cv8 tools calls execute_v8_command to run created command
     """
-    execute_v8_command_mock = mocker.patch("maintenance.execute_v8_command")
+    execute_v8_command_mock = mocker.patch("core.process.execute_v8_command")
     await _maintenance_v8(infobase)
     execute_v8_command_mock.assert_awaited()
 
@@ -43,7 +43,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if no errors
     """
-    mocker.patch("maintenance.execute_v8_command")
+    mocker.patch("core.process.execute_v8_command")
     result = await _maintenance_v8(infobase)
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
@@ -55,7 +55,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
     """
-    mocker.patch("maintenance.execute_v8_command", side_effect=V8Exception)
+    mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
@@ -67,7 +67,7 @@ async def test_maintenance_v8_returns_success_result_for_exact_infobase(
     """
     Maintenance with 1cv8 tools returns success result for exact infobase which was provided if no errors
     """
-    mocker.patch("maintenance.execute_v8_command")
+    mocker.patch("core.process.execute_v8_command")
     result = await _maintenance_v8(infobase)
     assert result.infobase_name == infobase
 
@@ -79,7 +79,7 @@ async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
     """
     Maintenance with 1cv8 tools returns failed result for exact infobase which was provided if an error occured
     """
-    mocker.patch("maintenance.execute_v8_command", side_effect=V8Exception)
+    mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert result.infobase_name == infobase
 
@@ -89,7 +89,7 @@ async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, info
     """
     Maintenance with 1cv8 tools returns success result if no errors
     """
-    mocker.patch("maintenance.execute_v8_command")
+    mocker.patch("core.process.execute_v8_command")
     result = await _maintenance_v8(infobase)
     assert result.succeeded is True
 
@@ -101,7 +101,7 @@ async def test_maintenance_v8_returns_failed_result_if_error(
     """
     Maintenance with 1cv8 tools returns failed result if an error occured
     """
-    mocker.patch("maintenance.execute_v8_command", side_effect=V8Exception)
+    mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     result = await _maintenance_v8(infobase)
     assert result.succeeded is False
 
@@ -113,7 +113,7 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_succeed
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no errors
     """
-    mocker.patch("maintenance.execute_subprocess_command")
+    mocker.patch("core.process.execute_subprocess_command")
     result = await _maintenance_vacuumdb(infobase, "", "", "")
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
@@ -125,7 +125,7 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
     """
-    mocker.patch("maintenance.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _maintenance_vacuumdb(infobase, "", "", "")
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
@@ -146,7 +146,7 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_succe
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no errors
     """
-    mocker.patch("maintenance.execute_subprocess_command")
+    mocker.patch("core.process.execute_subprocess_command")
     result = await _maintenance_vacuumdb(infobase, "", "", "")
     assert result.infobase_name == infobase
 
@@ -158,7 +158,7 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_faile
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if an error occured
     """
-    mocker.patch("maintenance.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _maintenance_vacuumdb(infobase, "", "", "")
     assert result.infobase_name == infobase
 
@@ -179,7 +179,7 @@ async def test_maintenance_vacuumdb_returns_sucess_result_when_succeeded(
     """
     Maintenance with vacuumdb returns success result if no errors
     """
-    mocker.patch("maintenance.execute_subprocess_command")
+    mocker.patch("core.process.execute_subprocess_command")
     result = await _maintenance_vacuumdb(infobase, "", "", "")
     assert result.succeeded is True
 
@@ -191,7 +191,7 @@ async def test_maintenance_vacuumdb_returns_failed_result_when_failed(
     """
     Maintenance with vacuumdb returns failed result if an error occured
     """
-    mocker.patch("maintenance.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _maintenance_vacuumdb(infobase, "", "", "")
     assert result.succeeded is False
 

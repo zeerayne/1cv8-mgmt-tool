@@ -139,3 +139,12 @@ def mock_cluster_com_infobases(mocker: MockerFixture, infobases):
     cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
     cci_mock.return_value.get_info_bases = info_base_mock
     return cci_mock
+
+
+@pytest.fixture()
+def mock_file_infobases(mocker: MockerFixture, file_infobases):
+    file_infobases_dict = {i: f"/path/to/file/infobase/{i}" for i in file_infobases}
+    mock_file_infobases = mocker.patch(
+        "conf.settings.V8_FILE_INFOBASES", new_callable=PropertyMock(return_value=file_infobases_dict)
+    )
+    return mock_file_infobases

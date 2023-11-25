@@ -13,7 +13,7 @@ from core import aws, utils
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
-from core.process import execute_subprocess_command, execute_v8_command
+from core import process
 from utils import postgres
 from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
@@ -48,6 +48,25 @@ async def rotate_backups(ib_name):
         await utils.remove_old_files_by_pattern(path, backup_retention_days)
 
 
+def assemble_backup_v8_command(ib_name: str, permission_code: str, log_filename: str, dt_filename: str) -> str:
+    """
+    Формирует команду для выгрузки
+    """
+    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
+    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
+    v8_command = (
+        rf'"{utils.get_platform_full_path()}" '
+        rf"DESIGNER {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
+        rf"/Out {log_filename} -NoTruncate "
+        rf"/DumpIB {dt_filename} "
+    )
+
+    if permission_code:
+        v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
+    log.debug(f"<{ib_name}> Created dump command [{v8_command}]")
+
+
 async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBackupTaskResult:
     """
     1. Блокирует фоновые задания и новые сеансы
@@ -65,29 +84,18 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBacku
     ?. Посмотреть как будет работать, если база в монопольном режиме.
     """
     log.info(f"<{ib_name}> Start backup")
-    # Код блокировки новых сеансов
-    permission_code = settings.V8_PERMISSION_CODE
-    # Формирует команду для выгрузки
-    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     dt_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "dt"))
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
-    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf'/UC "{permission_code}" '
-        rf"/DumpIB {dt_filename}"
-    )
-    log.debug(f"<{ib_name}> Created dump command [{v8_command}]")
+    # Код блокировки новых сеансов
+    permission_code = settings.V8_PERMISSION_CODE
+    v8_command = assemble_backup_v8_command(ib_name, permission_code, log_filename, dt_filename)
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES_V8
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_v8_command(
+            await process.execute_v8_command_wrapper(
                 ib_name,
                 v8_command,
                 log_filename,
@@ -96,7 +104,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBacku
                 log_output_on_success=True,
             )
             break
-        except V8Exception:
+        except (SubprocessException, V8Exception):
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
                 log.exception(f"<{ib_name}> Backup failed, retries exceeded")
@@ -151,7 +159,7 @@ async def _backup_pgdump(
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
-            await execute_subprocess_command(ib_name, pgdump_command, log_filename, env=pgdump_env)
+            await process.execute_subprocess_command(ib_name, pgdump_command, log_filename, env=pgdump_env)
             break
         except SubprocessException:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
@@ -164,16 +172,19 @@ async def _backup_pgdump(
 
 
 async def _backup_info_base(ib_name: str) -> core_models.InfoBaseBackupTaskResult:
-    cci = cluster_utils.get_cluster_controller_class()()
-    ib_info = cci.get_info_base(ib_name)
-    db_server = ib_info.dbServerName
-    dbms = ib_info.DBMS
-    db_name = ib_info.dbName
-    db_user = ib_info.dbUser
-    if settings.BACKUP_PG and postgres.dbms_is_postgres(dbms):
-        result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
+    if utils.infobase_is_in_cluster(ib_name):
+        cci = cluster_utils.get_cluster_controller_class()()
+        ib_info = cci.get_info_base(ib_name)
+        db_server = ib_info.dbServerName
+        dbms = ib_info.DBMS
+        db_name = ib_info.dbName
+        db_user = ib_info.dbUser
+        if settings.BACKUP_PG and postgres.dbms_is_postgres(dbms):
+            result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
+        else:
+            result = await cluster_utils.com_func_wrapper(_backup_v8, ib_name)
     else:
-        result = await cluster_utils.com_func_wrapper(_backup_v8, ib_name)
+        result = await _backup_v8(ib_name)
     return result
 
 

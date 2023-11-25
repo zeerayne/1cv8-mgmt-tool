@@ -92,7 +92,7 @@ async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobas
     """
     Backup with 1cv8 tools calls `execute_v8_command`
     """
-    execute_v8_mock = mocker.patch("backup.execute_v8_command", return_value=AsyncMock())
+    execute_v8_mock = mocker.patch("core.process.execute_v8_command", return_value=AsyncMock())
     await _backup_v8(infobase)
     execute_v8_mock.assert_awaited()
 
@@ -104,7 +104,7 @@ async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get
     """
     backup_retries = 1
     mocker.patch("conf.settings.BACKUP_RETRIES_V8", new_callable=PropertyMock(return_value=backup_retries))
-    execute_v8_mock = mocker.patch("backup.execute_v8_command", side_effect=V8Exception)
+    execute_v8_mock = mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     await _backup_v8(infobase)
     assert execute_v8_mock.await_count == backup_retries + 1  # plus one for initial call
 
@@ -116,7 +116,7 @@ async def test_backup_v8_return_backup_result_type_object_when_succeeded(
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when succeeded
     """
-    mocker.patch("backup.execute_v8_command", return_value=AsyncMock())
+    mocker.patch("core.process.execute_v8_command", return_value=AsyncMock())
     result = await _backup_v8(infobase)
     assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
@@ -128,7 +128,7 @@ async def test_backup_v8_return_backup_result_type_object_when_failed(
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when failed
     """
-    mocker.patch("backup.execute_v8_command", side_effect=V8Exception)
+    mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     result = await _backup_v8(infobase)
     assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
@@ -140,7 +140,7 @@ async def test_backup_v8_return_result_for_exact_infobase_when_succeeded(
     """
     Backup with 1cv8 tools returns object for exact infobase which was provided when succeeded
     """
-    mocker.patch("backup.execute_v8_command", return_value=AsyncMock())
+    mocker.patch("core.process.execute_v8_command", return_value=AsyncMock())
     result = await _backup_v8(infobase)
     assert result.infobase_name == infobase
 
@@ -152,7 +152,7 @@ async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(
     """
     Backup with 1cv8 tools returns object with succeeded is True when succeeded
     """
-    mocker.patch("backup.execute_v8_command", return_value=AsyncMock())
+    mocker.patch("core.process.execute_v8_command", return_value=AsyncMock())
     result = await _backup_v8(infobase)
     assert result.succeeded is True
 
@@ -164,7 +164,7 @@ async def test_backup_v8_return_result_for_exact_infobase_when_failed(
     """
     Backup with 1cv8 tools returns object for exact infobase which was provided when faild
     """
-    mocker.patch("backup.execute_v8_command", side_effect=V8Exception)
+    mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     result = await _backup_v8(infobase)
     assert result.infobase_name == infobase
 
@@ -176,7 +176,7 @@ async def test_backup_v8_return_backup_result_succeeded_false_when_failed(
     """
     Backup with 1cv8 tools returns object with succeeded is False when failed
     """
-    mocker.patch("backup.execute_v8_command", side_effect=V8Exception)
+    mocker.patch("core.process.execute_v8_command", side_effect=V8Exception)
     result = await _backup_v8(infobase)
     assert result.succeeded is False
 
@@ -188,7 +188,7 @@ async def test_backup_pgdump_calls_execute_subprocess_command(
     """
     Backup with pgdump calls `execute_subprocess_command`
     """
-    execute_subprocess_mock = mocker.patch("backup.execute_subprocess_command", return_value=AsyncMock())
+    execute_subprocess_mock = mocker.patch("core.process.execute_subprocess_command", return_value=AsyncMock())
     await _backup_pgdump(infobase, "", "", "")
     execute_subprocess_mock.assert_awaited()
 
@@ -202,7 +202,7 @@ async def test_backup_pgdump_makes_retries(
     """
     backup_retries = 1
     mocker.patch("conf.settings.BACKUP_RETRIES_PG", new_callable=PropertyMock(return_value=backup_retries))
-    execute_subprocess_mock = mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    execute_subprocess_mock = mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     await _backup_pgdump(infobase, "", "", "")
     assert execute_subprocess_mock.await_count == backup_retries + 1  # plus one for initial call
 
@@ -214,7 +214,7 @@ async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when succeeded
     """
-    mocker.patch("backup.execute_subprocess_command", return_value=AsyncMock())
+    mocker.patch("core.process.execute_subprocess_command", return_value=AsyncMock())
     result = await _backup_pgdump(infobase, "", "", "")
     assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
@@ -226,7 +226,7 @@ async def test_backup_pgdump_return_backup_result_type_object_when_failed(
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when failed
     """
-    mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
     assert isinstance(result, core_models.InfoBaseBackupTaskResult)
 
@@ -238,7 +238,7 @@ async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(
     """
     Backup with pgdump returns object with succeeded is True when succeeded
     """
-    mocker.patch("backup.execute_subprocess_command", return_value=AsyncMock())
+    mocker.patch("core.process.execute_subprocess_command", return_value=AsyncMock())
     result = await _backup_pgdump(infobase, "", "", "")
     assert result.succeeded is True
 
@@ -250,7 +250,7 @@ async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(
     """
     Backup with pgdump returns object with succeeded is False when failed
     """
-    mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
     assert result.succeeded is False
 
@@ -262,7 +262,7 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_succeeded(
     """
     Backup with pgdump returns object for exact infobase which was provided when succeeded
     """
-    mocker.patch("backup.execute_subprocess_command", return_value=AsyncMock())
+    mocker.patch("core.process.execute_subprocess_command", return_value=AsyncMock())
     result = await _backup_pgdump(infobase, "", "", "")
     assert result.infobase_name == infobase
 
@@ -274,7 +274,7 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
     """
     Backup with pgdump returns object for exact infobase which was provided when failed
     """
-    mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
     assert result.infobase_name == infobase
 
@@ -286,7 +286,7 @@ async def test_backup_pgdump_return_negative_result_when_failed(
     """
     Backup with pgdump returns object with `succeeded == False` when failed
     """
-    mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
+    mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
     assert result.succeeded == False
 

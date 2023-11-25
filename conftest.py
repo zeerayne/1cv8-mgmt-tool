@@ -19,6 +19,11 @@ def infobases():
 
 
 @pytest.fixture()
+def file_infobases():
+    return ["file_infobase_test_01", "file_infobase_test_02", "file_infobase_test_03"]
+
+
+@pytest.fixture()
 def infobase(infobases):
     return infobases[0]
 

@@ -10,7 +10,7 @@ from core import utils
 from core.analyze import analyze_maintenance_result
 from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
-from core.process import execute_subprocess_command, execute_v8_command
+from core import process
 from utils import postgres
 from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
@@ -29,6 +29,22 @@ async def rotate_logs(ib_name):
     return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
+def assemble_maintenance_v8_command(ib_name: str, reduce_date: str, log_filename: str) -> str:
+    """
+    Формирует команду для усечения журнала регистрации
+    """
+    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
+    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
+    v8_command = (
+        rf'"{utils.get_platform_full_path()}" '
+        rf"DESIGNER {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
+        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
+        rf"/Out {log_filename} -NoTruncate "
+        rf"/ReduceEventLogSize {reduce_date}"
+    )
+    log.debug(f"<{ib_name}> Created maintenance command [{v8_command}]")
+
+
 async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
@@ -41,15 +57,9 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf"/ReduceEventLogSize {reduce_date_str}"
-    )
+    v8_command = assemble_maintenance_v8_command(ib_name, reduce_date_str, log_filename)
     try:
-        await execute_v8_command(
+        await process.execute_v8_command_wrapper(
             ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True
         )
     except V8Exception:
@@ -75,7 +85,7 @@ async def _maintenance_vacuumdb(
     vacuumdb_env = os.environ.copy()
     vacuumdb_env["PGPASSWORD"] = db_pwd
     try:
-        await execute_subprocess_command(ib_name, vacuumdb_command, log_filename, env=vacuumdb_env)
+        await process.execute_subprocess_command(ib_name, vacuumdb_command, log_filename, env=vacuumdb_env)
     except SubprocessException:
         return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
     return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
@@ -84,24 +94,27 @@ async def _maintenance_vacuumdb(
 async def maintenance_info_base(
     ib_name: str, semaphore: asyncio.Semaphore
 ) -> core_models.InfoBaseMaintenanceTaskResult:
-    cci = cluster_utils.get_cluster_controller_class()()
-    ib_info = cci.get_info_base(ib_name)
-    db_server = ib_info.dbServerName
-    dbms = ib_info.DBMS
-    db_name = ib_info.dbName
-    db_user = ib_info.dbUser
     async with semaphore:
         try:
-            succeeded = True
-            if settings.MAINTENANCE_V8:
-                result_v8 = await cluster_utils.com_func_wrapper(_maintenance_v8, ib_name)
-                succeeded &= result_v8.succeeded
-            if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(dbms):
-                result_pg = await _maintenance_vacuumdb(ib_name, db_server, db_name, db_user)
-                succeeded &= result_pg.succeeded
-            result_logs = await rotate_logs(ib_name)
-            succeeded &= result_logs.succeeded
-            return core_models.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
+            if utils.infobase_is_in_cluster(ib_name):
+                cci = cluster_utils.get_cluster_controller_class()()
+                ib_info = cci.get_info_base(ib_name)
+                db_server = ib_info.dbServerName
+                dbms = ib_info.DBMS
+                db_name = ib_info.dbName
+                db_user = ib_info.dbUser
+                succeeded = True
+                if settings.MAINTENANCE_V8:
+                    result_v8 = await cluster_utils.com_func_wrapper(_maintenance_v8, ib_name)
+                    succeeded &= result_v8.succeeded
+                if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(dbms):
+                    result_pg = await _maintenance_vacuumdb(ib_name, db_server, db_name, db_user)
+                    succeeded &= result_pg.succeeded
+                result_logs = await rotate_logs(ib_name)
+                succeeded &= result_logs.succeeded
+                return core_models.InfoBaseMaintenanceTaskResult(ib_name, succeeded)
+            else:
+                return await _maintenance_v8(ib_name)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
             return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)

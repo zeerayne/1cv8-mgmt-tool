@@ -26,6 +26,17 @@ def get_platform_full_path() -> str:
     return full_path
 
 
+def append_permission_code_to_v8_command(v8_command: str, permission_code: str) -> str:
+    return v8_command + rf'/UC "{permission_code}" '
+
+
+def get_infobase_connection_string_for_v8_command(ib_name: str) -> str:
+    if infobase_is_in_cluster(ib_name):
+        return rf"/S {cluster_utils.get_server_agent_address()}\{ib_name}"
+    else:
+        return rf"/F {settings.V8_FILE_INFOBASES[ib_name]}"
+
+
 def get_formatted_current_datetime() -> str:
     return datetime.now().strftime(settings.DATETIME_FORMAT)
 
@@ -57,12 +68,24 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
 
 
 def get_info_bases() -> List[str]:
-    cci = cluster_utils.get_cluster_controller()
-    info_bases = cci.get_info_bases()
+    info_bases = []
+    if settings.V8_CLUSTER_ENABLED:
+        cci = cluster_utils.get_cluster_controller()
+        info_bases += cci.get_info_bases()
+    if settings.V8_FILE_ENABLED:
+        info_bases += settings.V8_FILE_INFOBASES.keys()
     return info_bases
 
 
-def get_info_base_credentials(ib_name) -> Tuple[str, str]:
+def infobase_is_in_file(ib_name: str) -> bool:
+    return ib_name in settings.V8_FILE_INFOBASES
+
+
+def infobase_is_in_cluster(ib_name: str) -> bool:
+    return not infobase_is_in_file(ib_name)
+
+
+def get_info_base_credentials(ib_name: str) -> Tuple[str, str]:
     """
     Получает имя пользователя и пароль для инфомационной базы. Поиск производится в настройках.
     Если пара логин/пароль не найдена, возвращает пару по умолчанию

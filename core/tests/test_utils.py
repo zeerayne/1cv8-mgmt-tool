@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, mock_open
+from unittest.mock import AsyncMock, PropertyMock, mock_open
 
 import pytest
 from pytest_mock import MockerFixture
@@ -17,6 +17,7 @@ except ImportError:
 from conf import settings
 from core.utils import (
     append_file_extension_to_string,
+    append_permission_code_to_v8_command,
     get_formatted_current_datetime,
     get_formatted_date_for_1cv8,
     get_ib_and_time_filename,
@@ -26,6 +27,8 @@ from core.utils import (
     get_info_bases,
     get_infobase_glob_pattern,
     get_platform_full_path,
+    infobase_is_in_cluster,
+    infobase_is_in_file,
     path_leaf,
     read_file_content,
     remove_old_files_by_pattern,
@@ -304,9 +307,73 @@ def test_get_infobase_glob_pattern_uses_infobase_filename_separator(infobase):
     assert get_ib_name_with_separator(infobase) in result
 
 
-def test_get_info_bases_returns_infobases_from_cluster(mock_cluster_com_infobases, infobases):
+def test_get_info_bases_returns_infobases_from_cluster(mocker: MockerFixture, mock_cluster_com_infobases, infobases):
     """
     `get_info_bases` returns infobases list from cluster
     """
+    mocker.patch("conf.settings.V8_CLUSTER_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch("conf.settings.V8_FILE_ENABLED", new_callable=PropertyMock(return_value=False))
     result = get_info_bases()
     assert result == infobases
+
+
+def test_get_info_bases_returns_infobases_from_file(mocker: MockerFixture, mock_file_infobases, file_infobases):
+    """
+    `get_info_bases` returns infobases list from file
+    """
+    mocker.patch("conf.settings.V8_CLUSTER_ENABLED", new_callable=PropertyMock(return_value=False))
+    mocker.patch("conf.settings.V8_FILE_ENABLED", new_callable=PropertyMock(return_value=True))
+    result = get_info_bases()
+    assert result == file_infobases
+
+
+def test_get_info_bases_returns_infobases_from_both_sources(
+    mocker: MockerFixture, mock_cluster_com_infobases, mock_file_infobases, infobases, file_infobases
+):
+    """
+    `get_info_bases` returns infobases list from both clustere and file
+    """
+    mocker.patch("conf.settings.V8_CLUSTER_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch("conf.settings.V8_FILE_ENABLED", new_callable=PropertyMock(return_value=True))
+    result = get_info_bases()
+    assert result == (infobases + file_infobases)
+
+
+def test_infobase_is_in_file_detects_file_infobase_correctly(mock_file_infobases, file_infobases):
+    """
+    `infobase_is_in_file` detects file infobase_correctly
+    """
+    result = infobase_is_in_file(file_infobases[0])
+    assert result == True
+
+
+def test_infobase_is_in_file_detects_cluster_infobase_correctly(mock_file_infobases, infobases):
+    """
+    `infobase_is_in_file` detects file infobase_correctly
+    """
+    result = infobase_is_in_file(infobases[0])
+    assert result == False
+
+
+def test_infobase_is_in_cluster_detects_file_infobase_correctly(mock_file_infobases, file_infobases):
+    """
+    `infobase_is_in_cluster` detects file infobase_correctly
+    """
+    result = infobase_is_in_cluster(file_infobases[0])
+    assert result == False
+
+
+def test_infobase_is_in_cluster_detects_cluster_infobase_correctly(mock_file_infobases, infobases):
+    """
+    `infobase_is_in_cluster` detects file infobase_correctly
+    """
+    result = infobase_is_in_cluster(infobases[0])
+    assert result == True
+
+
+def test_append_permission_code_to_v8_command_appends_code():
+    """
+    `append_permission_code_to_v8_command` appends permission code correctly
+    """
+    result = append_permission_code_to_v8_command("", "test_code")
+    assert '/UC "test_code"' in result
