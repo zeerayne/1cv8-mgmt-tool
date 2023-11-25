@@ -25,6 +25,7 @@ from core.utils import (
     get_ib_name_with_separator,
     get_info_base_credentials,
     get_info_bases,
+    get_infobase_connection_string_for_v8_command,
     get_infobase_glob_pattern,
     get_platform_full_path,
     infobase_is_in_cluster,
@@ -339,35 +340,35 @@ def test_get_info_bases_returns_infobases_from_both_sources(
     assert result == (infobases + file_infobases)
 
 
-def test_infobase_is_in_file_detects_file_infobase_correctly(mock_file_infobases, file_infobases):
+def test_infobase_is_in_file_detects_file_infobase_correctly(mock_file_infobases, file_infobase):
     """
     `infobase_is_in_file` detects file infobase_correctly
     """
-    result = infobase_is_in_file(file_infobases[0])
+    result = infobase_is_in_file(file_infobase)
     assert result == True
 
 
-def test_infobase_is_in_file_detects_cluster_infobase_correctly(mock_file_infobases, infobases):
+def test_infobase_is_in_file_detects_cluster_infobase_correctly(mock_file_infobases, infobase):
     """
     `infobase_is_in_file` detects file infobase_correctly
     """
-    result = infobase_is_in_file(infobases[0])
+    result = infobase_is_in_file(infobase)
     assert result == False
 
 
-def test_infobase_is_in_cluster_detects_file_infobase_correctly(mock_file_infobases, file_infobases):
+def test_infobase_is_in_cluster_detects_file_infobase_correctly(mock_file_infobases, file_infobase):
     """
     `infobase_is_in_cluster` detects file infobase_correctly
     """
-    result = infobase_is_in_cluster(file_infobases[0])
+    result = infobase_is_in_cluster(file_infobase)
     assert result == False
 
 
-def test_infobase_is_in_cluster_detects_cluster_infobase_correctly(mock_file_infobases, infobases):
+def test_infobase_is_in_cluster_detects_cluster_infobase_correctly(mock_file_infobases, infobase):
     """
     `infobase_is_in_cluster` detects file infobase_correctly
     """
-    result = infobase_is_in_cluster(infobases[0])
+    result = infobase_is_in_cluster(infobase)
     assert result == True
 
 
@@ -375,5 +376,31 @@ def test_append_permission_code_to_v8_command_appends_code():
     """
     `append_permission_code_to_v8_command` appends permission code correctly
     """
-    result = append_permission_code_to_v8_command("", "test_code")
+    result = append_permission_code_to_v8_command("test_command", "test_code")
     assert '/UC "test_code"' in result
+
+
+def test_append_permission_code_to_v8_command_does_not_append_code_if_empty():
+    """
+    `append_permission_code_to_v8_command` does not append code if empty
+    """
+    result = append_permission_code_to_v8_command("test_command", "")
+    assert "/UC" not in result
+
+
+def test_get_infobase_connection_string_for_v8_command_returns_correct_string_prefix_for_cluster_infobase(infobase):
+    """
+    `get_infobase_connection_string_for_v8_command` returns correct connection string prefix for cluster infobase
+    """
+    result = get_infobase_connection_string_for_v8_command(infobase)
+    assert rf"/S" in result
+
+
+def test_get_infobase_connection_string_for_v8_command_returns_correct_string_prefix_for_file_infobase(
+    mock_file_infobases, file_infobase
+):
+    """
+    `get_infobase_connection_string_for_v8_command` returns correct connection string prefix for file infobase
+    """
+    result = get_infobase_connection_string_for_v8_command(file_infobase)
+    assert rf"/F" in result

@@ -134,8 +134,7 @@ def assemble_update_v8_command(ib_name: str, permission_code: str, update_filena
         rf"/DisableStartupDialogs /DisableStartupMessages "
         rf'/UpdateCfg "{update_filename}" -force /UpdateDBCfg -Dynamic- -Server '
     )
-    if permission_code:
-        v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
+    v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
     log.debug(f"<{ib_name}> Created update command [{v8_command}]")
 
 

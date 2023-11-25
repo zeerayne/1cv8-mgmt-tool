@@ -27,7 +27,10 @@ def get_platform_full_path() -> str:
 
 
 def append_permission_code_to_v8_command(v8_command: str, permission_code: str) -> str:
-    return v8_command + rf'/UC "{permission_code}" '
+    if permission_code:
+        return v8_command + rf'/UC "{permission_code}" '
+    else:
+        return v8_command
 
 
 def get_infobase_connection_string_for_v8_command(ib_name: str) -> str:

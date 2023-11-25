@@ -61,9 +61,7 @@ def assemble_backup_v8_command(ib_name: str, permission_code: str, log_filename:
         rf"/Out {log_filename} -NoTruncate "
         rf"/DumpIB {dt_filename} "
     )
-
-    if permission_code:
-        v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
+    v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
     log.debug(f"<{ib_name}> Created dump command [{v8_command}]")
 
 

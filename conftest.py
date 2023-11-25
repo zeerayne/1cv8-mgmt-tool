@@ -29,6 +29,11 @@ def infobase(infobases):
 
 
 @pytest.fixture()
+def file_infobase(file_infobases):
+    return file_infobases[0]
+
+
+@pytest.fixture()
 def success_base_result(infobases):
     return [
         core_models.InfoBaseTaskResultBase(

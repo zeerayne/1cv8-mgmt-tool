@@ -140,9 +140,8 @@ async def execute_v8_file_command(
         rf"/DisableStartupMessages "
         rf"/C РазрешитьРаботуПользователей "
     )
-    if permission_code:
-        v8_pre_command = utils.append_permission_code_to_v8_command(v8_pre_command, permission_code)
-        v8_post_command = utils.append_permission_code_to_v8_command(v8_post_command, permission_code)
+    v8_pre_command = utils.append_permission_code_to_v8_command(v8_pre_command, permission_code)
+    v8_post_command = utils.append_permission_code_to_v8_command(v8_post_command, permission_code)
     # Устанавливает блокировку и завершает текущие сеансы
     await execute_subprocess_command(ib_name, v8_pre_command, log_filename)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
