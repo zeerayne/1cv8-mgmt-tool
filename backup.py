@@ -48,23 +48,6 @@ async def rotate_backups(ib_name):
         await utils.remove_old_files_by_pattern(path, backup_retention_days)
 
 
-def assemble_backup_v8_command(ib_name: str, permission_code: str, log_filename: str, dt_filename: str) -> str:
-    """
-    Формирует команду для выгрузки
-    """
-    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf"/DumpIB {dt_filename} "
-    )
-    v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
-    log.debug(f"<{ib_name}> Created dump command [{v8_command}]")
-
-
 async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBackupTaskResult:
     """
     1. Блокирует фоновые задания и новые сеансы
@@ -87,7 +70,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBacku
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     # Код блокировки новых сеансов
     permission_code = settings.V8_PERMISSION_CODE
-    v8_command = assemble_backup_v8_command(ib_name, permission_code, log_filename, dt_filename)
+    v8_command = utils.assemble_backup_v8_command(ib_name, permission_code, log_filename, dt_filename)
     # Выгружает информационную базу в *.dt файл
     backup_retries = settings.BACKUP_RETRIES_V8
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать

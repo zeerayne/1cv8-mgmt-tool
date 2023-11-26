@@ -29,22 +29,6 @@ async def rotate_logs(ib_name):
     return core_models.InfoBaseMaintenanceTaskResult(ib_name, True)
 
 
-def assemble_maintenance_v8_command(ib_name: str, reduce_date: str, log_filename: str) -> str:
-    """
-    Формирует команду для усечения журнала регистрации
-    """
-    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf"/ReduceEventLogSize {reduce_date}"
-    )
-    log.debug(f"<{ib_name}> Created maintenance command [{v8_command}]")
-
-
 async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseMaintenanceTaskResult:
     """
     1. Урезает журнал регистрации ИБ, оставляет данные только за последнюю неделю
@@ -52,12 +36,10 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     3. Удаляет старые log-файлы
     """
     log.info(f"<{ib_name}> Start 1cv8 maintenance")
-    # Формирует команду для урезания журнала регистрации
-    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
-    v8_command = assemble_maintenance_v8_command(ib_name, reduce_date_str, log_filename)
+    v8_command = utils.assemble_maintenance_v8_command(ib_name, reduce_date_str, log_filename)
     try:
         await process.execute_v8_command_wrapper(
             ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True

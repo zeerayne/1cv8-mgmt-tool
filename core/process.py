@@ -60,6 +60,12 @@ async def _wait_for_subprocess(subprocess, timeout: int):
         await _kill_process_emergency(pid)
 
 
+async def wait_for_lock_aquire(ib_name):
+    pause = settings.V8_LOCK_INFO_BASE_PAUSE
+    log.debug(f"<{ib_name}> Wait for {pause} seconds")
+    await asyncio.sleep(pause)
+
+
 async def execute_v8_command(
     ib_name: str,
     v8_command: str,
@@ -88,9 +94,7 @@ async def execute_v8_command(
         # Перед завершением сеансов следует взять паузу,
         # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
         # после включения блокировки регламентных заданий
-        pause = settings.V8_LOCK_INFO_BASE_PAUSE
-        log.debug(f"<{ib_name}> Wait for {pause} seconds")
-        await asyncio.sleep(pause)
+        await wait_for_lock_aquire(ib_name)
     # Принудительно завершает текущие сеансы
     cci.terminate_info_base_sessions(ib_name)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
@@ -120,35 +124,18 @@ async def execute_v8_file_command(
     :param log_filename: Полный путь к файлу, куда 1С пишет результат свооей работы, для дублирования в python.log
     :param permission_code: Код, для блокировки новых сеансов, если параметр отсутвует, блокировка не будет установлена
     """
-    # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
-    # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
-    # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
-    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    v8_pre_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"ENTERPRISE {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} "
-        rf"/DisableStartupMessages "
-        rf"/C ЗавершитьРаботуПользователей "
-    )
-    v8_post_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"ENTERPRISE {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} "
-        rf"/DisableStartupMessages "
-        rf"/C РазрешитьРаботуПользователей "
-    )
-    v8_pre_command = utils.append_permission_code_to_v8_command(v8_pre_command, permission_code)
-    v8_post_command = utils.append_permission_code_to_v8_command(v8_post_command, permission_code)
     # Устанавливает блокировку и завершает текущие сеансы
-    await execute_subprocess_command(ib_name, v8_pre_command, log_filename)
+    await execute_subprocess_command(
+        ib_name, utils.assemble_lock_v8_command(ib_name, permission_code, log_filename), log_filename
+    )
+    await wait_for_lock_aquire(ib_name)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
     log.debug(f"<{ib_name}> 1cv8 PID is {v8_process.pid}")
     await _wait_for_subprocess(v8_process, timeout)
     # Снимает блокировку
-    await execute_subprocess_command(ib_name, v8_post_command, log_filename)
+    await execute_subprocess_command(
+        ib_name, utils.assemble_unlock_v8_command(ib_name, permission_code, log_filename), log_filename
+    )
     _check_subprocess_return_code(ib_name, v8_process, log_filename, "utf-8-sig", V8Exception, log_output_on_success)
 
 

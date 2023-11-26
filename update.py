@@ -120,24 +120,6 @@ def _build_update_chain_string(versions: Iterable[Version]):
     return " -> ".join([str(version) for version in versions])
 
 
-def assemble_update_v8_command(ib_name: str, permission_code: str, update_filename: str, log_filename: str) -> str:
-    """
-    Формирует команду для выгрузки
-    """
-    info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
-    v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
-        rf"DESIGNER {utils.get_infobase_connection_string_for_v8_command(ib_name)} "
-        rf'/N"{info_base_user}" /P"{info_base_pwd}" '
-        rf"/Out {log_filename} -NoTruncate "
-        rf"/DisableStartupDialogs /DisableStartupMessages "
-        rf'/UpdateCfg "{update_filename}" -force /UpdateDBCfg -Dynamic- -Server '
-    )
-    v8_command = utils.append_permission_code_to_v8_command(v8_command, permission_code)
-    log.debug(f"<{ib_name}> Created update command [{v8_command}]")
-
-
 async def _update_info_base(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
@@ -179,7 +161,7 @@ async def _update_info_base(ib_name, dry=False):
         log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
         # Код блокировки новых сеансов
         permission_code = settings.V8_PERMISSION_CODE
-        v8_command = assemble_update_v8_command(ib_name, permission_code, selected_update_filename, log_filename)
+        v8_command = utils.assemble_update_v8_command(ib_name, permission_code, selected_update_filename, log_filename)
         if not dry:
             # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае,
             # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
