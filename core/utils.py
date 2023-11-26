@@ -134,7 +134,12 @@ async def remove_old_files_by_pattern(pattern: str, retention_days: int):
 
 
 def get_v8_command_commons(
-    ib_name: str, log_filename: str, log_truncate: bool = False, mode: str = "DESIGNER", permission_code: str = None
+    ib_name: str,
+    log_filename: str,
+    log_truncate: bool = False,
+    mode: str = "DESIGNER",
+    permission_code: str = None,
+    disable_diaglos: bool = False,
 ) -> str:
     info_base_user, info_base_pwd = get_info_base_credentials(ib_name)
     v8_command_commons = (
@@ -142,6 +147,7 @@ def get_v8_command_commons(
         rf"{mode} {get_infobase_connection_string_for_v8_command(ib_name)} "
         rf'/N"{info_base_user}" /P"{info_base_pwd}" '
         rf"/Out {log_filename}{'' if log_truncate else ' -NoTruncate'} "
+        rf"{'/DisableStartupDialogs /DisableStartupMessages ' if disable_diaglos else ''}"
     )
     v8_command_commons = append_permission_code_to_v8_command(v8_command_commons, permission_code)
     return v8_command_commons
@@ -163,13 +169,8 @@ def assemble_update_v8_command(ib_name: str, permission_code: str, update_filena
     Формирует команду для обновления ИБ
     """
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
-    commons = get_v8_command_commons(ib_name, log_filename, permission_code=permission_code)
-    v8_command = (
-        rf"{commons} "
-        rf"/DisableStartupDialogs "
-        rf"/DisableStartupMessages "
-        rf'/UpdateCfg "{update_filename}" -force /UpdateDBCfg -Dynamic- -Server '
-    )
+    commons = get_v8_command_commons(ib_name, log_filename, permission_code=permission_code, disable_diaglos=True)
+    v8_command = rf'{commons} /UpdateCfg "{update_filename}" -force /UpdateDBCfg -Dynamic- -Server '
     v8_command = append_permission_code_to_v8_command(v8_command, permission_code)
     log.debug(f"<{ib_name}> Created update command [{v8_command}]")
     return v8_command
@@ -181,7 +182,7 @@ def assemble_maintenance_v8_command(ib_name: str, reduce_date: str, log_filename
     """
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     commons = get_v8_command_commons(ib_name, log_filename)
-    v8_command = rf"{commons} /ReduceEventLogSize {reduce_date}"
+    v8_command = rf"{commons} /ReduceEventLogSize {reduce_date} "
     log.debug(f"<{ib_name}> Created maintenance command [{v8_command}]")
     return v8_command
 
@@ -191,9 +192,14 @@ def assemble_lock_v8_command(ib_name: str, permission_code: str, log_filename: s
     Формирует команду для запрещения начала сеансов
     """
     commons = get_v8_command_commons(
-        ib_name, log_filename, log_truncate=True, mode="ENTERPRISE", permission_code=permission_code
+        ib_name,
+        log_filename,
+        log_truncate=True,
+        mode="ENTERPRISE",
+        permission_code=permission_code,
+        disable_diaglos=True,
     )
-    v8_command = rf"{commons} /DisableStartupDialogs /DisableStartupMessages /C ЗавершитьРаботуПользователей "
+    v8_command = rf"{commons} /C ЗавершитьРаботуПользователей "
     log.debug(f"<{ib_name}> Created lock command [{v8_command}]")
     return v8_command
 
@@ -203,8 +209,13 @@ def assemble_unlock_v8_command(ib_name: str, permission_code: str, log_filename:
     Формирует команду для снятия блокировки начала сеансов
     """
     commons = get_v8_command_commons(
-        ib_name, log_filename, log_truncate=True, mode="ENTERPRISE", permission_code=permission_code
+        ib_name,
+        log_filename,
+        log_truncate=True,
+        mode="ENTERPRISE",
+        permission_code=permission_code,
+        disable_diaglos=True,
     )
-    v8_command = rf"{commons} /DisableStartupDialogs /DisableStartupMessages /C РазрешитьРаботуПользователей "
+    v8_command = rf"{commons} /C РазрешитьРаботуПользователей "
     log.debug(f"<{ib_name}> Created unlock command [{v8_command}]")
     return v8_command
