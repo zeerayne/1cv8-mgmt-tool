@@ -13,10 +13,9 @@ from packaging.version import Version
 
 import core.models as core_models
 from conf import settings
-from core import utils
+from core import process, utils
 from core.analyze import analyze_update_result
 from core.cluster import utils as cluster_utils
-from core import process
 from core.version import get_version_from_string
 from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging

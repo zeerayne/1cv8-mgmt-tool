@@ -9,11 +9,10 @@ import aioshutil
 
 import core.models as core_models
 from conf import settings
-from core import aws, utils
+from core import aws, process, utils
 from core.analyze import analyze_backup_result, analyze_s3_result
 from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
-from core import process
 from utils import postgres
 from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging

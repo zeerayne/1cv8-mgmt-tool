@@ -45,7 +45,7 @@ async def test_replicate_backup_replicate_log_exception_when_failed(mocker: Mock
     backup_file_path = "test/backup.filename"
     replication_paths = ["test/replication/path/01", "test/replication/path/02"]
     mocker.patch("pathlib.Path")
-    aiocopyfile_mock = mocker.patch("aioshutil.copyfile", side_effect=Exception)
+    mocker.patch("aioshutil.copyfile", side_effect=Exception)
     with caplog.at_level(logging.ERROR):
         await replicate_backup(backup_file_path, replication_paths)
     assert "Problems while replicating" in caplog.text
@@ -288,7 +288,7 @@ async def test_backup_pgdump_return_negative_result_when_failed(
     """
     mocker.patch("core.process.execute_subprocess_command", side_effect=SubprocessException)
     result = await _backup_pgdump(infobase, "", "", "")
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
 @pytest.mark.asyncio()
@@ -314,7 +314,7 @@ async def test_backup_pgdump_return_negative_result_when_failed_to_find_creds(
     """
     mocker.patch("utils.postgres.prepare_postgres_connection_vars", side_effect=KeyError)
     result = await _backup_pgdump(infobase, "", "", "")
-    assert result.succeeded == False
+    assert result.succeeded is False
 
 
 @pytest.mark.asyncio()

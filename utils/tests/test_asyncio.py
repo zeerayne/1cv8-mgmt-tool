@@ -28,7 +28,7 @@ def test_initialize_semaphore_returns_semaphore(mocker: MockerFixture):
     """
     concurrency = 1
     log_prefix = "test_prefix"
-    mock_asyncio = mocker.patch("asyncio.run")
+    mocker.patch("asyncio.run")
     result = initialize_semaphore(concurrency, log_prefix)
     assert isinstance(result, asyncio.Semaphore)
 

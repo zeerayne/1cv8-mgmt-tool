@@ -351,7 +351,7 @@ def test_infobase_is_in_file_detects_file_infobase_correctly(mock_file_infobases
     `infobase_is_in_file` detects file infobase_correctly
     """
     result = infobase_is_in_file(file_infobase)
-    assert result == True
+    assert result is True
 
 
 def test_infobase_is_in_file_detects_cluster_infobase_correctly(mock_file_infobases, infobase):
@@ -359,7 +359,7 @@ def test_infobase_is_in_file_detects_cluster_infobase_correctly(mock_file_infoba
     `infobase_is_in_file` detects file infobase_correctly
     """
     result = infobase_is_in_file(infobase)
-    assert result == False
+    assert result is False
 
 
 def test_infobase_is_in_cluster_detects_file_infobase_correctly(mock_file_infobases, file_infobase):
@@ -367,7 +367,7 @@ def test_infobase_is_in_cluster_detects_file_infobase_correctly(mock_file_infoba
     `infobase_is_in_cluster` detects file infobase_correctly
     """
     result = infobase_is_in_cluster(file_infobase)
-    assert result == False
+    assert result is False
 
 
 def test_infobase_is_in_cluster_detects_cluster_infobase_correctly(mock_file_infobases, infobase):
@@ -375,7 +375,7 @@ def test_infobase_is_in_cluster_detects_cluster_infobase_correctly(mock_file_inf
     `infobase_is_in_cluster` detects file infobase_correctly
     """
     result = infobase_is_in_cluster(infobase)
-    assert result == True
+    assert result is True
 
 
 def test_append_permission_code_to_v8_command_appends_code():
@@ -399,7 +399,7 @@ def test_get_infobase_connection_string_for_v8_command_returns_correct_string_pr
     `get_infobase_connection_string_for_v8_command` returns correct connection string prefix for cluster infobase
     """
     result = get_infobase_connection_string_for_v8_command(infobase)
-    assert rf"/S" in result
+    assert "/S" in result
 
 
 def test_get_infobase_connection_string_for_v8_command_returns_correct_string_prefix_for_file_infobase(
@@ -409,7 +409,7 @@ def test_get_infobase_connection_string_for_v8_command_returns_correct_string_pr
     `get_infobase_connection_string_for_v8_command` returns correct connection string prefix for file infobase
     """
     result = get_infobase_connection_string_for_v8_command(file_infobase)
-    assert rf"/F" in result
+    assert "/F" in result
 
 
 def test_get_v8_command_commons_add_auth_params_with_correct_prefixes(
@@ -419,7 +419,8 @@ def test_get_v8_command_commons_add_auth_params_with_correct_prefixes(
     `get_v8_command_commons` append auth params to command with correct prefixes
     """
     result = get_v8_command_commons(infobase, "")
-    assert r"/N" in result and r"/P" in result
+    assert "/N" in result
+    assert "/P" in result
 
 
 def test_get_v8_command_commons_add_auth_params(infobase, mock_infobases_credentials, mock_os_platform_path):
@@ -429,7 +430,8 @@ def test_get_v8_command_commons_add_auth_params(infobase, mock_infobases_credent
     result = get_v8_command_commons(infobase, "")
     login = settings.V8_INFOBASES_CREDENTIALS[infobase][0]
     password = settings.V8_INFOBASES_CREDENTIALS[infobase][1]
-    assert login in result and password in result
+    assert login in result
+    assert password in result
 
 
 def test_get_v8_command_commons_add_log_file_with_correct_prefixes(
@@ -440,7 +442,7 @@ def test_get_v8_command_commons_add_log_file_with_correct_prefixes(
     """
     log_file_path = "/test/log/file.path"
     result = get_v8_command_commons(infobase, log_file_path)
-    assert r"/Out" in result
+    assert "/Out" in result
 
 
 def test_get_v8_command_commons_add_log_file_with_no_truncate_option_by_default(
@@ -451,7 +453,7 @@ def test_get_v8_command_commons_add_log_file_with_no_truncate_option_by_default(
     """
     log_file_path = "/test/log/file.path"
     result = get_v8_command_commons(infobase, log_file_path)
-    assert r"-NoTruncate" in result
+    assert "-NoTruncate" in result
 
 
 def test_get_v8_command_commons_add_log_file_without_no_truncate_option(
@@ -462,7 +464,7 @@ def test_get_v8_command_commons_add_log_file_without_no_truncate_option(
     """
     log_file_path = "/test/log/file.path"
     result = get_v8_command_commons(infobase, log_file_path, log_truncate=True)
-    assert r"-NoTruncate" not in result
+    assert "-NoTruncate" not in result
 
 
 def test_get_v8_command_commons_add_log_file_param(infobase, mock_infobases_credentials, mock_os_platform_path):
@@ -490,7 +492,8 @@ def test_get_v8_command_commons_append_disable_startup_msgs(
     `get_v8_command_commons` append `/DisableStartup*` params to command
     """
     result = get_v8_command_commons(infobase, "", disable_diaglos=True)
-    assert r"/DisableStartupDialogs" in result and r"/DisableStartupMessages" in result
+    assert "/DisableStartupDialogs" in result
+    assert "/DisableStartupMessages" in result
 
 
 def test_assemble_backup_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
@@ -501,7 +504,7 @@ def test_assemble_backup_v8_command_add_correct_params(infobase, mock_infobases_
     log_file_path = "/test/log/file.path"
     dt_file_path = "/test/dt/file.path"
     result = assemble_backup_v8_command(infobase, code, log_file_path, dt_file_path)
-    assert r"/DumpIB" in result
+    assert "/DumpIB" in result
 
 
 def test_assemble_update_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
@@ -512,7 +515,7 @@ def test_assemble_update_v8_command_add_correct_params(infobase, mock_infobases_
     log_file_path = "/test/log/file.path"
     update_file_path = "/test/update/file.path"
     result = assemble_update_v8_command(infobase, code, log_file_path, update_file_path)
-    assert r"/UpdateCfg" in result
+    assert "/UpdateCfg" in result
 
 
 def test_assemble_maintenance_v8_command_add_correct_params(
@@ -524,7 +527,7 @@ def test_assemble_maintenance_v8_command_add_correct_params(
     reduce_date = datetime.now()
     log_file_path = "/test/log/file.path"
     result = assemble_maintenance_v8_command(infobase, reduce_date, log_file_path)
-    assert r"/ReduceEventLogSize" in result
+    assert "/ReduceEventLogSize" in result
 
 
 def test_assemble_lock_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
@@ -534,7 +537,7 @@ def test_assemble_lock_v8_command_add_correct_params(infobase, mock_infobases_cr
     code = "test_code"
     log_file_path = "/test/log/file.path"
     result = assemble_lock_v8_command(infobase, code, log_file_path)
-    assert r"/C ЗавершитьРаботуПользователей" in result
+    assert "/C ЗавершитьРаботуПользователей" in result
 
 
 def test_assemble_unlock_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
@@ -544,4 +547,4 @@ def test_assemble_unlock_v8_command_add_correct_params(infobase, mock_infobases_
     code = "test_code"
     log_file_path = "/test/log/file.path"
     result = assemble_unlock_v8_command(infobase, code, log_file_path)
-    assert r"/C РазрешитьРаботуПользователей" in result
+    assert "/C РазрешитьРаботуПользователей" in result
