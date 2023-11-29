@@ -164,7 +164,7 @@ def assemble_backup_v8_command(ib_name: str, permission_code: str, log_filename:
     return v8_command
 
 
-def assemble_update_v8_command(ib_name: str, permission_code: str, update_filename: str, log_filename: str) -> str:
+def assemble_update_v8_command(ib_name: str, permission_code: str, log_filename: str, update_filename: str) -> str:
     """
     Формирует команду для обновления ИБ
     """
@@ -176,13 +176,14 @@ def assemble_update_v8_command(ib_name: str, permission_code: str, update_filena
     return v8_command
 
 
-def assemble_maintenance_v8_command(ib_name: str, reduce_date: str, log_filename: str) -> str:
+def assemble_maintenance_v8_command(ib_name: str, reduce_date: Union[datetime, date], log_filename: str) -> str:
     """
     Формирует команду для усечения журнала регистрации
     """
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
+    reduce_date_str = get_formatted_date_for_1cv8(reduce_date)
     commons = get_v8_command_commons(ib_name, log_filename)
-    v8_command = rf"{commons} /ReduceEventLogSize {reduce_date} "
+    v8_command = rf"{commons} /ReduceEventLogSize {reduce_date_str} "
     log.debug(f"<{ib_name}> Created maintenance command [{v8_command}]")
     return v8_command
 

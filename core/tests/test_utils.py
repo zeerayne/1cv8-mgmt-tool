@@ -18,6 +18,11 @@ from conf import settings
 from core.utils import (
     append_file_extension_to_string,
     append_permission_code_to_v8_command,
+    assemble_backup_v8_command,
+    assemble_lock_v8_command,
+    assemble_maintenance_v8_command,
+    assemble_unlock_v8_command,
+    assemble_update_v8_command,
     get_formatted_current_datetime,
     get_formatted_date_for_1cv8,
     get_ib_and_time_filename,
@@ -28,6 +33,7 @@ from core.utils import (
     get_infobase_connection_string_for_v8_command,
     get_infobase_glob_pattern,
     get_platform_full_path,
+    get_v8_command_commons,
     infobase_is_in_cluster,
     infobase_is_in_file,
     path_leaf,
@@ -404,3 +410,138 @@ def test_get_infobase_connection_string_for_v8_command_returns_correct_string_pr
     """
     result = get_infobase_connection_string_for_v8_command(file_infobase)
     assert rf"/F" in result
+
+
+def test_get_v8_command_commons_add_auth_params_with_correct_prefixes(
+    infobase, mock_infobases_credentials, mock_os_platform_path
+):
+    """
+    `get_v8_command_commons` append auth params to command with correct prefixes
+    """
+    result = get_v8_command_commons(infobase, "")
+    assert r"/N" in result and r"/P" in result
+
+
+def test_get_v8_command_commons_add_auth_params(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `get_v8_command_commons` append auth params to command
+    """
+    result = get_v8_command_commons(infobase, "")
+    login = settings.V8_INFOBASES_CREDENTIALS[infobase][0]
+    password = settings.V8_INFOBASES_CREDENTIALS[infobase][1]
+    assert login in result and password in result
+
+
+def test_get_v8_command_commons_add_log_file_with_correct_prefixes(
+    infobase, mock_infobases_credentials, mock_os_platform_path
+):
+    """
+    `get_v8_command_commons` append log file param to command with correct prefixes
+    """
+    log_file_path = "/test/log/file.path"
+    result = get_v8_command_commons(infobase, log_file_path)
+    assert r"/Out" in result
+
+
+def test_get_v8_command_commons_add_log_file_with_no_truncate_option_by_default(
+    infobase, mock_infobases_credentials, mock_os_platform_path
+):
+    """
+    `get_v8_command_commons` append log file param to command with `-NoTruncate` option by default
+    """
+    log_file_path = "/test/log/file.path"
+    result = get_v8_command_commons(infobase, log_file_path)
+    assert r"-NoTruncate" in result
+
+
+def test_get_v8_command_commons_add_log_file_without_no_truncate_option(
+    infobase, mock_infobases_credentials, mock_os_platform_path
+):
+    """
+    `get_v8_command_commons` append log file param to command without `-NoTruncate` option
+    """
+    log_file_path = "/test/log/file.path"
+    result = get_v8_command_commons(infobase, log_file_path, log_truncate=True)
+    assert r"-NoTruncate" not in result
+
+
+def test_get_v8_command_commons_add_log_file_param(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `get_v8_command_commons` append log file param to command
+    """
+    log_file_path = "/test/log/file.path"
+    result = get_v8_command_commons(infobase, log_file_path)
+    assert log_file_path in result
+
+
+def test_get_v8_command_commons_append_permission_code(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `get_v8_command_commons` append permission code to command if passed
+    """
+    code = "test_code"
+    result = get_v8_command_commons(infobase, "", permission_code=code)
+    assert code in result
+
+
+def test_get_v8_command_commons_append_disable_startup_msgs(
+    infobase, mock_infobases_credentials, mock_os_platform_path
+):
+    """
+    `get_v8_command_commons` append `/DisableStartup*` params to command
+    """
+    result = get_v8_command_commons(infobase, "", disable_diaglos=True)
+    assert r"/DisableStartupDialogs" in result and r"/DisableStartupMessages" in result
+
+
+def test_assemble_backup_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `assemble_backup_v8_command` add correct params to command
+    """
+    code = "test_code"
+    log_file_path = "/test/log/file.path"
+    dt_file_path = "/test/dt/file.path"
+    result = assemble_backup_v8_command(infobase, code, log_file_path, dt_file_path)
+    assert r"/DumpIB" in result
+
+
+def test_assemble_update_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `assemble_update_v8_command` add correct params to command
+    """
+    code = "test_code"
+    log_file_path = "/test/log/file.path"
+    update_file_path = "/test/update/file.path"
+    result = assemble_update_v8_command(infobase, code, log_file_path, update_file_path)
+    assert r"/UpdateCfg" in result
+
+
+def test_assemble_maintenance_v8_command_add_correct_params(
+    infobase, mock_infobases_credentials, mock_os_platform_path
+):
+    """
+    `assemble_maintenance_v8_command` add correct params to command
+    """
+    reduce_date = datetime.now()
+    log_file_path = "/test/log/file.path"
+    result = assemble_maintenance_v8_command(infobase, reduce_date, log_file_path)
+    assert r"/ReduceEventLogSize" in result
+
+
+def test_assemble_lock_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `assemble_lock_v8_command` add correct params to command
+    """
+    code = "test_code"
+    log_file_path = "/test/log/file.path"
+    result = assemble_lock_v8_command(infobase, code, log_file_path)
+    assert r"/C ЗавершитьРаботуПользователей" in result
+
+
+def test_assemble_unlock_v8_command_add_correct_params(infobase, mock_infobases_credentials, mock_os_platform_path):
+    """
+    `assemble_unlock_v8_command` add correct params to command
+    """
+    code = "test_code"
+    log_file_path = "/test/log/file.path"
+    result = assemble_unlock_v8_command(infobase, code, log_file_path)
+    assert r"/C РазрешитьРаботуПользователей" in result

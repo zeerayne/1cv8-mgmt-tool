@@ -38,8 +38,7 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     log.info(f"<{ib_name}> Start 1cv8 maintenance")
     log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
-    reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
-    v8_command = utils.assemble_maintenance_v8_command(ib_name, reduce_date_str, log_filename)
+    v8_command = utils.assemble_maintenance_v8_command(ib_name, reduce_date, log_filename)
     try:
         await process.execute_v8_command_wrapper(
             ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True

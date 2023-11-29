@@ -161,7 +161,7 @@ async def _update_info_base(ib_name, dry=False):
         log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
         # Код блокировки новых сеансов
         permission_code = settings.V8_PERMISSION_CODE
-        v8_command = utils.assemble_update_v8_command(ib_name, permission_code, selected_update_filename, log_filename)
+        v8_command = utils.assemble_update_v8_command(ib_name, permission_code, log_filename, selected_update_filename)
         if not dry:
             # Случайная пауза чтобы исключить проблемы с конкурентным доступом к файлу обновления в случае,
             # если одновременно обновляются несколько ИБ с одинаковой конфигурацией и версией.
