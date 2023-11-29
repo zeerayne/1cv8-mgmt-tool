@@ -10,6 +10,7 @@ from typing import Iterable, List, Tuple
 
 import pywintypes
 from packaging.version import Version
+from core.file import comcntr as file_comcntr
 
 import core.models as core_models
 from conf import settings
@@ -119,6 +120,15 @@ def _build_update_chain_string(versions: Iterable[Version]):
     return " -> ".join([str(version) for version in versions])
 
 
+def get_info_base_metadata(ib_name: str, info_base_user: str, info_base_pwd: str):
+    if utils.infobase_is_in_cluster(ib_name):
+        cci = cluster_utils.get_cluster_controller()
+        return cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+    else:
+        fci = file_comcntr.FileCOMControler()
+        return fci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+
+
 async def _update_info_base_v8(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
@@ -134,7 +144,7 @@ async def _update_info_base_v8(ib_name, dry=False):
     try:
         # Получает тип конфигурации и её версию
         # TODO: подумать, как сделать получение метаданных асинхронным
-        metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
+        metadata = get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
     except pywintypes.com_error as e:
         # Если начало сеанса с информационной базой запрещено, то можно снять блокировку и попробывать ещё раз
         if e.excepinfo[5] == -2147467259:
