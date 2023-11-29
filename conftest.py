@@ -1,7 +1,7 @@
 import asyncio
 import random
 from textwrap import dedent
-from unittest.mock import AsyncMock, Mock, mock_open
+from unittest.mock import AsyncMock, Mock, PropertyMock, mock_open
 
 import pytest
 from packaging.version import Version
@@ -21,6 +21,15 @@ def infobases():
 @pytest.fixture()
 def file_infobases():
     return ["file_infobase_test_01", "file_infobase_test_02", "file_infobase_test_03"]
+
+
+@pytest.fixture()
+def mock_file_infobases(mocker: MockerFixture, file_infobases):
+    file_infobases_dict = {i: f"/path/to/file/infobase/{i}" for i in file_infobases}
+    mock_file_infobases = mocker.patch(
+        "conf.settings.V8_FILE_INFOBASES", new_callable=PropertyMock(return_value=file_infobases_dict)
+    )
+    return mock_file_infobases
 
 
 @pytest.fixture()

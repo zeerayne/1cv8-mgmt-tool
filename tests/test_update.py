@@ -1,3 +1,4 @@
+import pytest
 from packaging.version import Version
 from pytest_mock import MockerFixture
 
@@ -6,6 +7,8 @@ from update import (
     _find_suitable_manifests,
     _get_full_update_version_chain,
     _get_suitable_manifest,
+    _update_info_base,
+    _update_info_base_v8,
     get_name_and_version_from_manifest,
     get_updatable_versions,
 )
@@ -128,3 +131,26 @@ def test_build_update_chain_string_returns_proper_string():
     versions = ["1.0", "1.5", "2.0"]
     result = _build_update_chain_string([Version(v) for v in versions])
     assert result == " -> ".join(versions)
+
+
+@pytest.mark.asyncio()
+async def test_update_info_base_calls_update_info_base_v8(mocker: MockerFixture, infobase):
+    """
+    `_update_info_base` calls `_update_info_base` for cluster infobase
+    """
+    mocker.patch("core.cluster.comcntr.ClusterCOMControler")
+    mock_com_func_wrapper = mocker.patch("core.cluster.utils.com_func_wrapper")
+    await _update_info_base(infobase)
+    mock_com_func_wrapper.assert_awaited_with(_update_info_base_v8, infobase)
+
+
+@pytest.mark.asyncio()
+async def test_update_info_base_calls_update_info_base_v8_for_file_infobase(
+    mocker: MockerFixture, file_infobase, mock_file_infobases
+):
+    """
+    `_update_info_base` calls `_update_info_base` for file infobase
+    """
+    mock_update_info_base = mocker.patch("update._update_info_base_v8")
+    await _update_info_base(file_infobase)
+    mock_update_info_base.assert_awaited_with(file_infobase)

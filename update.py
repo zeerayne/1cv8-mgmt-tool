@@ -119,7 +119,7 @@ def _build_update_chain_string(versions: Iterable[Version]):
     return " -> ".join([str(version) for version in versions])
 
 
-async def _update_info_base(ib_name, dry=False):
+async def _update_info_base_v8(ib_name, dry=False):
     """
     1. Получает тип конфигурации и её версию, выбирает подходящее обновление
     2. Блокирует фоновые задания и новые сеансы
@@ -191,13 +191,17 @@ async def _update_info_base(ib_name, dry=False):
     return core_models.InfoBaseUpdateTaskResult(ib_name, True)
 
 
+async def _update_info_base(ib_name: str) -> core_models.InfoBaseUpdateTaskResult:
+    if utils.infobase_is_in_cluster(ib_name):
+        return await cluster_utils.com_func_wrapper(_update_info_base_v8, ib_name)
+    else:
+        return await _update_info_base_v8(ib_name)
+
+
 async def update_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_models.InfoBaseUpdateTaskResult:
     async with semaphore:
         try:
-            if utils.infobase_is_in_cluster(ib_name):
-                return await cluster_utils.com_func_wrapper(_update_info_base, ib_name)
-            else:
-                return await _update_info_base(ib_name)
+            return await _update_info_base(ib_name)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in coroutine")
             return core_models.InfoBaseUpdateTaskResult(ib_name, False)

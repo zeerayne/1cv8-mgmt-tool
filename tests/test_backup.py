@@ -329,6 +329,18 @@ async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, infobase):
 
 
 @pytest.mark.asyncio()
+async def test_backup_info_base_run_v8_backup_for_file_infobase(
+    mocker: MockerFixture, file_infobase, mock_file_infobases
+):
+    """
+    `_backup_info_base` calls `_backup_v8` for file infobase
+    """
+    mock_backup_v8 = mocker.patch("backup._backup_v8")
+    await _backup_info_base(file_infobase)
+    mock_backup_v8.assert_awaited_with(file_infobase)
+
+
+@pytest.mark.asyncio()
 async def test_backup_info_base_run_v8_backup_when_pgbackup_is_enabled_and_dbms_is_not_postgres(
     mocker: MockerFixture, infobase, mock_cluster_mssql_infobase
 ):

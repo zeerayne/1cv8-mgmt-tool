@@ -29,9 +29,9 @@ async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
 @pytest.mark.asyncio()
 async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
-    Maintenance with 1cv8 tools calls execute_v8_command to run created command
+    Maintenance with 1cv8 tools calls `execute_v8_command_wrapper` to run created command
     """
-    execute_v8_command_mock = mocker.patch("core.process.execute_v8_command")
+    execute_v8_command_mock = mocker.patch("core.process.execute_v8_command_wrapper")
     await _maintenance_v8(infobase)
     execute_v8_command_mock.assert_awaited()
 

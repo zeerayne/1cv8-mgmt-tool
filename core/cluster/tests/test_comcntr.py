@@ -154,17 +154,6 @@ def test_cluster_control_interface_get_info_base_metadata(infobase, mock_externa
     mock_external_connection.assert_called()
 
 
-def test_cluster_control_interface_get_info_base_metadata_connects_to_correct_infobase(
-    infobase, mock_external_connection
-):
-    """
-    `get_info_base_metadata` connects to correct infobase
-    """
-    cci = ClusterCOMControler()
-    metadata = cci.get_info_base_metadata(infobase, "", "")
-    assert metadata[0] == infobase
-
-
 def test_cluster_control_interface_lock_info_base(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `lock_info_base` calls `IWorkingProcessConnection.UpdateInfoBase`

@@ -1,18 +1,10 @@
 import random
-import re
 from unittest.mock import Mock, PropertyMock
 
 import pytest
 from pytest_mock import MockerFixture
 
 from surrogate import surrogate
-
-random.seed(0)
-
-
-@pytest.fixture()
-def mock_infobase_version():
-    return f"{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}"
 
 
 @pytest.fixture()
@@ -80,12 +72,11 @@ def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_c
 
 
 @pytest.fixture()
-def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_version):
+def mock_external_connection(mock_win32com_client_dispatch, mock_configuration_metadata):
     def external_connection_mock_side_effect(connection_string):
-        infobase_name = re.search(r'Ref="(?P<ref>[\w\d\-_]+)"', connection_string).group("ref")
         side_effect_mock = Mock()
-        side_effect_mock.Metadata.Version = mock_infobase_version
-        side_effect_mock.Metadata.Name = infobase_name
+        side_effect_mock.Metadata.Name = mock_configuration_metadata[0]
+        side_effect_mock.Metadata.Version = mock_configuration_metadata[1]
         return side_effect_mock
 
     external_connection_mock = Mock(side_effect=external_connection_mock_side_effect)

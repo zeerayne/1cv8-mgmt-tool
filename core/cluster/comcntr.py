@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Tuple
 
 from core.cluster.abc import ClusterControler
 from core.cluster.utils import get_server_agent_address, get_server_agent_port
@@ -129,7 +129,7 @@ class ClusterCOMControler(ClusterControler):
         info_bases_short = self.get_cluster_info_bases_short(agent_connection, cluster)
         return self._filter_infobase(info_bases_short, name)
 
-    def get_info_base_metadata(self, infobase: str, infobase_user: str, infobase_pwd: str):
+    def get_info_base_metadata(self, infobase: str, infobase_user: str, infobase_pwd: str) -> Tuple[str, str]:
         """
         Получает наименование и версию конфигурации
         :param infobase: Имя информационной базы
