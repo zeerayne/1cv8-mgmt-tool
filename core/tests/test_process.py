@@ -12,6 +12,7 @@ from core.process import (
     _kill_process_emergency,
     execute_subprocess_command,
     execute_v8_command,
+    execute_v8_command_wrapper,
 )
 
 
@@ -394,3 +395,37 @@ async def test_execute_subprocess_command_calls_emergency_on_communication_error
     mock_kill_process_emergency = mocker.patch("core.process._kill_process_emergency")
     await execute_subprocess_command(infobase, command, "")
     mock_kill_process_emergency.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_wrapper_calls_correct_handler_for_cluster_infobase(mocker: MockerFixture, infobase):
+    """
+    `execute_v8_command_wrapper` calls `execute_v8_command` for cluster infobase
+    """
+    command = "test_command"
+    log_file_path = "/test/log/file.path"
+    mock_execute_v8_command = mocker.patch("core.process.execute_v8_command")
+    await execute_v8_command_wrapper(
+        infobase,
+        command,
+        log_file_path,
+    )
+    mock_execute_v8_command.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_command_wrapper_calls_correct_handler_for_file_infobase(
+    mocker: MockerFixture, file_infobase, mock_file_infobases
+):
+    """
+    `execute_v8_command_wrapper` calls `execute_v8_command` for cluster infobase
+    """
+    command = "test_command"
+    log_file_path = "/test/log/file.path"
+    mock_execute_v8_command = mocker.patch("core.process.execute_v8_file_command")
+    await execute_v8_command_wrapper(
+        file_infobase,
+        command,
+        log_file_path,
+    )
+    mock_execute_v8_command.assert_awaited()
