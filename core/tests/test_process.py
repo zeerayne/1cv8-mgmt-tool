@@ -13,6 +13,7 @@ from core.process import (
     execute_subprocess_command,
     execute_v8_command,
     execute_v8_command_wrapper,
+    execute_v8_file_command,
 )
 
 
@@ -429,3 +430,18 @@ async def test_execute_v8_command_wrapper_calls_correct_handler_for_file_infobas
         log_file_path,
     )
     mock_execute_v8_command.assert_awaited()
+
+
+@pytest.mark.asyncio()
+async def test_execute_v8_file_command_pass_command_to_subprocess(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_os_platform_path
+):
+    """
+    `execute_v8_file_command` pass command to create subprocess correctly
+    """
+    message = "test_message"
+    command = "test_command"
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    mocker.patch("core.process.execute_subprocess_command")
+    await execute_v8_file_command(infobase, command, "")
+    mock_asyncio_subprocess_succeeded.assert_awaited_with(command)
