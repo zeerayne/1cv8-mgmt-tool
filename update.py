@@ -140,7 +140,6 @@ async def _update_info_base_v8(ib_name, dry=False):
     """
     log.info(f"<{ib_name}> Initiate update")
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
-    cci = cluster_utils.get_cluster_controller_class()()
     try:
         # Получает тип конфигурации и её версию
         # TODO: подумать, как сделать получение метаданных асинхронным
@@ -185,15 +184,11 @@ async def _update_info_base_v8(ib_name, dry=False):
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.
                 previous_version = current_version
-                try:
-                    metadata = cci.get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
-                except pywintypes.com_error as e:
-                    raise e
+                metadata = get_info_base_metadata(ib_name, info_base_user, info_base_pwd)
                 current_version = get_version_from_string(metadata[1])
                 if current_version == previous_version:
                     log.error(
-                        f"<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] "
-                        f"was not applied, next chain updates will not be applied"
+                        f"<{ib_name}> Update [{name_in_metadata} {current_version}] -> [{selected_manifest[1]}] was not applied, next chain updates will not be applied"
                     )
                     return core_models.InfoBaseUpdateTaskResult(ib_name, False)
     if not update_chain:
