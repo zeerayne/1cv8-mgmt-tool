@@ -86,7 +86,7 @@ def test_get_aws_region_parameter_returns_dict_with_value_if_set(mocker: MockerF
     assert result["region_name"] == region_name
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_upload_infobase_to_s3_return_success_result_for_exact_infobase(
     infobase, success_backup_result, mock_upload_infobase_to_s3
 ):
@@ -98,7 +98,7 @@ async def test_upload_infobase_to_s3_return_success_result_for_exact_infobase(
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_upload_infobase_to_s3_return_success_result(infobase, success_backup_result, mock_upload_infobase_to_s3):
     """
     AWS uploader should return InfoBaseAWSUploadTaskResult with `success=True` if no errors
@@ -108,7 +108,7 @@ async def test_upload_infobase_to_s3_return_success_result(infobase, success_bac
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_upload_infobase_to_s3_return_failed_result_for_exact_infobase(
     infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error
 ):
@@ -120,7 +120,7 @@ async def test_upload_infobase_to_s3_return_failed_result_for_exact_infobase(
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_upload_infobase_to_s3_return_failed_result(
     infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error
 ):
@@ -132,7 +132,7 @@ async def test_upload_infobase_to_s3_return_failed_result(
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_upload_infobase_to_s3_make_retries(
     infobase, success_backup_result, mock_upload_infobase_to_s3_connection_error
 ):
@@ -145,7 +145,7 @@ async def test_upload_infobase_to_s3_make_retries(
     assert mock_upload_infobase_to_s3_connection_error.call_count == settings.AWS_RETRIES + 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_internal_upload_infobase_to_s3_call(
     mocker: MockerFixture, infobase, success_backup_result, mock_aioboto3_session, mock_os_stat
 ):
@@ -157,7 +157,7 @@ async def test_internal_upload_infobase_to_s3_call(
     mock_aioboto3_session.return_value.client.return_value.__aenter__.return_value.upload_file.assert_awaited_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_old_infobase_backups_from_s3_are_removed(mock_aioboto3_session, mock_aioboto3_bucket_objects_old):
     """
     Backups older than `settings.AWS_RETENTION_DAYS` are removed from S3
@@ -166,7 +166,7 @@ async def test_old_infobase_backups_from_s3_are_removed(mock_aioboto3_session, m
     mock_aioboto3_bucket_objects_old.delete.assert_awaited()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_new_infobase_backups_from_s3_are_not_removed(mock_aioboto3_session, mock_aioboto3_bucket_objects_new):
     """
     Backups newer than `settings.AWS_RETENTION_DAYS` are not removed from S3
@@ -175,7 +175,7 @@ async def test_new_infobase_backups_from_s3_are_not_removed(mock_aioboto3_sessio
     mock_aioboto3_bucket_objects_new.delete.assert_not_awaited()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_upload_to_s3(mocker: MockerFixture, mock_upload_infobase_to_s3, mixed_backup_result):
     """
     When uploading infobases backups to s3 `upload_infobase_to_s3` should be called for every successful backup result

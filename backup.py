@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import pathlib
-import sys
 from datetime import datetime
 from typing import List
 
@@ -10,13 +9,13 @@ import aioshutil
 
 import core.models as core_models
 from conf import settings
-from core import utils
+from core import aws, utils
 from core.analyze import analyze_backup_result, analyze_s3_result
-from core.aws import upload_infobase_to_s3
 from core.cluster import utils as cluster_utils
 from core.exceptions import SubprocessException, V8Exception
 from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
+from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
 from utils.notification import make_html_table, send_notification
 
@@ -114,7 +113,8 @@ async def _backup_pgdump(
     Выполняет резервное копирование ИБ средствами СУБД PostgreSQL при помощи утилиты pg_dump
     1. Проверяет, использует ли ИБ СУБД PostgreSQL
     2. Проверяет, есть ли подходящие учетные данные для подключения к базе данных
-    3. Создаёт резервную копию средствами pg_dump
+    3. Подключается к СУБД, чтобы узнать версию
+    4. Создаёт резервную копию средствами pg_dump
     :param ib_name:
     :return:
     """
@@ -124,24 +124,24 @@ async def _backup_pgdump(
     except (ValueError, KeyError) as e:
         log.error(f"<{ib_name}> {str(e)}")
         return core_models.InfoBaseBackupTaskResult(ib_name, False)
+
+    try:
+        pg_major_version = (await postgres.get_postgres_version(db_host, db_port, db_name, db_user, db_pwd)).major
+        blobs = "large-objects" if pg_major_version >= 16 else "blobs"
+    except ConnectionRefusedError as e:
+        log.error(f"<{ib_name}> {str(e)}")
+        return core_models.InfoBaseBackupTaskResult(ib_name, False)
+
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(
         settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "pgdump")
     )
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     pg_dump_path = os.path.join(settings.PG_BIN_PATH, "pg_dump.exe")
-    # --blobs
-    # Include large objects in the dump.
-    # This is the default behavior except when --schema, --table, or --schema-only is specified.
-    #
-    # --format=custom
-    # Output a custom-format archive suitable for input into pg_restore.
-    # Together with the directory output format, this is the most flexible output format in that it allows
-    # manual selection and reordering of archived items during restore. This format is also compressed by default.
     pgdump_command = (
         rf'"{pg_dump_path}" '
         rf"--host={db_host} --port={db_port} --username={db_user} "
-        rf"--format=custom --blobs --verbose "
+        rf"--format=custom --{blobs} --verbose "
         rf"--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1"
     )
     pgdump_env = os.environ.copy()
@@ -186,17 +186,42 @@ async def backup_info_base(ib_name: str, semaphore: asyncio.Semaphore) -> core_m
             log.exception(f"<{ib_name}> Unknown exception occurred in `_backup_info_base` coroutine")
             return core_models.InfoBaseBackupTaskResult(ib_name, False)
         try:
-            # Если включена репликация и результат бэкапа успешен
-            if settings.BACKUP_REPLICATION and result.succeeded:
-                await replicate_backup(result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
-        except Exception:
-            log.exception(f"<{ib_name}> Unknown exception occurred in `replicate_backup` coroutine")
-        try:
             # Ротация бэкапов, удаляет старые
             await rotate_backups(ib_name)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in `rotate_backups` coroutine")
         return result
+
+
+async def replicate_info_base(backup_result: core_models.InfoBaseBackupTaskResult, semaphore: asyncio.Semaphore):
+    async with semaphore:
+        try:
+            if settings.BACKUP_REPLICATION and backup_result.succeeded:
+                await replicate_backup(backup_result.backup_filename, settings.BACKUP_REPLICATION_PATHS)
+        except Exception:
+            log.exception(f"<{backup_result.infobase_name}> Unknown exception occurred in `replicate_backup` coroutine")
+
+
+def create_aws_upload_task(
+    backup_result: core_models.InfoBaseBackupTaskResult,
+    aws_semaphore: asyncio.Semaphore,
+):
+    if settings.AWS_ENABLED and backup_result.succeeded:
+        return asyncio.create_task(
+            aws.upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore),
+            name=f"Task :: Upload {backup_result.infobase_name} to S3",
+        )
+
+
+def create_backup_replication_task(
+    backup_result: core_models.InfoBaseBackupTaskResult,
+    backup_replication_semaphore: asyncio.Semaphore,
+):
+    if settings.BACKUP_REPLICATION and backup_result.succeeded:
+        return asyncio.create_task(
+            replicate_info_base(backup_result, backup_replication_semaphore),
+            name=f"Task :: Replicate backup {backup_result.infobase_name}",
+        )
 
 
 def analyze_results(
@@ -227,45 +252,45 @@ def send_email_notification(
 
 async def main():
     try:
-        # Если скрипт используется через планировщик задач windows, лучше всего логгировать консольный вывод в файл
-        # Например: backup.py >> D:\backup\log\1cv8-mgmt-backup-system.log 2>&1
-        cci = cluster_utils.get_cluster_controller_class()()
-        info_bases = cci.get_info_bases()
-        backup_concurrency = settings.BACKUP_CONCURRENCY
-        aws_concurrency = settings.AWS_CONCURRENCY
+        info_bases = utils.get_info_bases()
+        backup_semaphore = initialize_semaphore(settings.BACKUP_CONCURRENCY, log_prefix, "backup")
+        aws_semaphore = (
+            initialize_semaphore(settings.AWS_CONCURRENCY, log_prefix, "AWS") if settings.AWS_ENABLED else None
+        )
+        backup_replication_semaphore = (
+            initialize_semaphore(settings.BACKUP_REPLICATION_CONCURRENCY, log_prefix, "backup replication")
+            if settings.BACKUP_REPLICATION
+            else None
+        )
+
         backup_results = []
         aws_results = []
 
-        backup_semaphore = asyncio.Semaphore(backup_concurrency)
-        aws_semaphore = asyncio.Semaphore(aws_concurrency)
-        log.info(
-            f"<{log_prefix}> Asyncio semaphores initialized: {backup_concurrency} backup concurrency, {aws_concurrency} AWS concurrency"
-        )
         backup_coroutines = [backup_info_base(ib_name, backup_semaphore) for ib_name in info_bases]
         backup_datetime_start = datetime.now()
         aws_tasks = []
         aws_datetime_start = None
+        backup_replication_tasks = []
         for backup_coro in asyncio.as_completed(backup_coroutines):
             backup_result = await backup_coro
             backup_results.append(backup_result)
-            backup_datetime_finish = datetime.now()
-            # Только резервные копии, созданные без ошибок нужно загрузить на S3
-            if backup_result.succeeded and settings.AWS_ENABLED:
-                if aws_datetime_start is None:
-                    aws_datetime_start = datetime.now()
-                aws_tasks.append(
-                    asyncio.create_task(
-                        upload_infobase_to_s3(
-                            backup_result.infobase_name, backup_result.backup_filename, aws_semaphore
-                        ),
-                        name=f"Task :: Upload {backup_result.infobase_name} to S3",
-                    )
-                )
+            if aws_datetime_start is None:
+                aws_datetime_start = datetime.now()
+            aws_upload_task = create_aws_upload_task(backup_result, aws_semaphore)
+            if aws_upload_task:
+                aws_tasks.append(aws_upload_task)
+            backup_replication_task = create_backup_replication_task(backup_result, backup_replication_semaphore)
+            if backup_replication_task:
+                backup_replication_tasks.append(backup_replication_task)
+        backup_datetime_finish = datetime.now()
 
         if aws_tasks:
             await asyncio.wait(aws_tasks)
             aws_results = [task.result() for task in aws_tasks]
         aws_datetime_finish = datetime.now()
+
+        if backup_replication_tasks:
+            await asyncio.wait(backup_replication_tasks)
 
         analyze_results(
             info_bases,
@@ -286,10 +311,4 @@ async def main():
 
 if __name__ == "__main__":
     configure_logging(settings.LOG_LEVEL)
-    if sys.version_info < (3, 10):
-        # Использование asyncio.run() в windows бросает исключение
-        # `RuntimeError: Event loop is closed` при завершении run.
-        # WindowsSelectorEventLoopPolicy не работает с подпроцессами полноценно в python 3.8
-        asyncio.get_event_loop().run_until_complete(main())
-    else:
-        asyncio.run(main())
+    initialize_event_loop(main())

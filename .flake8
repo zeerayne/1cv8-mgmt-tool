@@ -18,4 +18,7 @@ per-file-ignores =
     settings.tpl.py: E266
     # module imported but unused
     surrogate/tests/test_surrogate.py: F401
+    # local variable 'succeeded' is assigned to but never used
+    conftest.py: F841
 inline-quotes = "
+pytest-fixture-no-parentheses = True

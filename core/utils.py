@@ -4,12 +4,13 @@ import ntpath
 import os
 import platform
 from datetime import date, datetime, timedelta
-from typing import Tuple, Union
+from typing import List, Tuple, Union
 
 import aiofiles.os
 
 from conf import settings
 from core import version
+from core.cluster import utils as cluster_utils
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +54,12 @@ def get_ib_and_time_filename(ib_name: str, file_ext: str) -> str:
     ib_and_time_str = get_ib_and_time_string(ib_name)
     ib_and_time_filename = append_file_extension_to_string(ib_and_time_str, file_ext)
     return ib_and_time_filename
+
+
+def get_info_bases() -> List[str]:
+    cci = cluster_utils.get_cluster_controller()
+    info_bases = cci.get_info_bases()
+    return info_bases
 
 
 def get_info_base_credentials(ib_name) -> Tuple[str, str]:

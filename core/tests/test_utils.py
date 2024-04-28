@@ -23,6 +23,7 @@ from core.utils import (
     get_ib_and_time_string,
     get_ib_name_with_separator,
     get_info_base_credentials,
+    get_info_bases,
     get_infobase_glob_pattern,
     get_platform_full_path,
     path_leaf,
@@ -250,7 +251,7 @@ def test_read_file_gets_correct_encoding(mocker: MockerFixture):
     builtin_open_mock.assert_called_with("", "r", encoding=encoding)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixture):
     """
     Old files are removed according to retention policy
@@ -264,7 +265,7 @@ async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixtu
     assert aioremove_mock.await_count == len(files)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_remove_old_files_by_pattern_not_removes_new_files(mocker: MockerFixture):
     """
     New files are not removed according to retention policy
@@ -301,3 +302,11 @@ def test_get_infobase_glob_pattern_uses_infobase_filename_separator(infobase):
     """
     result = get_infobase_glob_pattern(infobase)
     assert get_ib_name_with_separator(infobase) in result
+
+
+def test_get_info_bases_returns_infobases_from_cluster(mock_cluster_com_infobases, infobases):
+    """
+    `get_info_bases` returns infobases list from cluster
+    """
+    result = get_info_bases()
+    assert result == infobases

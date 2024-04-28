@@ -10,19 +10,19 @@ from surrogate import surrogate
 random.seed(0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_infobase_version():
-    return f"{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}"
+    return f"{random.randint(1, 12)}.{random.randint(0, 5)}.{random.randint(10, 200)}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_excluded_infobases(mocker: MockerFixture, infobases):
     excluded_infobases = [infobases[-1]]
     mocker.patch("conf.settings.V8_INFOBASES_EXCLUDE", new_callable=PropertyMock(return_value=excluded_infobases))
     return excluded_infobases
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_only_infobases(mocker: MockerFixture, infobases):
     only_infobases = infobases[:-1]
     mocker.patch("conf.settings.V8_INFOBASES_ONLY", new_callable=PropertyMock(return_value=only_infobases))
@@ -30,14 +30,16 @@ def mock_only_infobases(mocker: MockerFixture, infobases):
 
 
 @surrogate("win32com.client")
-@pytest.fixture()
+@pytest.fixture
 def mock_win32com_client_dispatch(mocker: MockerFixture):
     import win32com.client as win32com_client
 
-    return mocker.patch.object(win32com_client, "Dispatch", create=True, return_value=Mock())
+    v8COMConnectorMock = mocker.patch.object(win32com_client, "Dispatch", create=True, return_value=Mock())
+    type(v8COMConnectorMock.return_value).ConnectWorkingProcess = Mock()
+    return v8COMConnectorMock
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_infobases_com_obj(infobases):
     infobases_com_obj = []
     for ib in infobases:
@@ -47,7 +49,7 @@ def mock_infobases_com_obj(infobases):
     return Mock(return_value=infobases_com_obj)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
     agent_connection_mock = Mock()
 
@@ -67,7 +69,7 @@ def mock_connect_agent(mock_win32com_client_dispatch, mock_infobases_com_obj):
     return agent_connection_mock
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_com_obj):
     working_process_connection_mock = Mock()
     type(working_process_connection_mock.return_value).AuthenticateAdmin = Mock()
@@ -79,7 +81,7 @@ def mock_connect_working_process(mock_win32com_client_dispatch, mock_infobases_c
     return working_process_connection_mock
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_external_connection(mock_win32com_client_dispatch, mock_infobase_version):
     def external_connection_mock_side_effect(connection_string):
         infobase_name = re.search(r'Ref="(?P<ref>[\w\d\-_]+)"', connection_string).group("ref")
