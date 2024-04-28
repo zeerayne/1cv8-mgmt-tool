@@ -53,7 +53,7 @@ def test_html_table_all_succeeded_output_is_valid_xml(success_base_result):
     HTML table for all succeeded results should generate valid XML tree
     """
     result = make_html_table("", success_base_result)
-    assert ElementTree.fromstring(result)
+    assert ElementTree.fromstring(result) is not None
 
 
 def test_html_table_all_failed_output_is_valid_xml(failed_base_result):
@@ -61,7 +61,7 @@ def test_html_table_all_failed_output_is_valid_xml(failed_base_result):
     HTML table for all failed results should generate valid XML tree
     """
     result = make_html_table("", failed_base_result)
-    assert ElementTree.fromstring(result)
+    assert ElementTree.fromstring(result) is not None
 
 
 def test_html_table_mixed_output_is_valid_xml(mixed_base_result):
@@ -69,7 +69,7 @@ def test_html_table_mixed_output_is_valid_xml(mixed_base_result):
     HTML table for mixed results should generate valid XML tree
     """
     result = make_html_table("", mixed_base_result)
-    assert ElementTree.fromstring(result)
+    assert ElementTree.fromstring(result) is not None
 
 
 def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
