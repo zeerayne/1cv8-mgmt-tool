@@ -12,12 +12,12 @@ from core import models as core_models
 random.seed(0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_analyze_result(mocker: MockerFixture):
     return mocker.patch("core.analyze.analyze_result", return_value=None)
 
 
-@pytest.fixture()
+@pytest.fixture
 async def mock_upload_infobase_to_s3(mocker: MockerFixture):
     async_mock = AsyncMock(
         side_effect=lambda ib_name, full_backup_path: core_models.InfoBaseAWSUploadTaskResult(ib_name, True, 1000)
@@ -25,13 +25,13 @@ async def mock_upload_infobase_to_s3(mocker: MockerFixture):
     return mocker.patch("core.aws._upload_infobase_to_s3", side_effect=async_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 async def mock_upload_infobase_to_s3_connection_error(mocker: MockerFixture):
     async_mock = AsyncMock(side_effect=EndpointConnectionError(endpoint_url="http://test.endpoint.url"))
     return mocker.patch("core.aws._upload_infobase_to_s3", side_effect=async_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 async def mock_aioboto3_session(mocker: MockerFixture):
     aioboto3_session_mock = Mock()
 
@@ -75,7 +75,7 @@ def create_bucket_object(mock_aioboto3_session, last_modified: datetime):
     return bucket_obj
 
 
-@pytest.fixture()
+@pytest.fixture
 async def mock_aioboto3_bucket_objects_old(mock_aioboto3_session):
     from conf import settings
 
@@ -84,19 +84,19 @@ async def mock_aioboto3_bucket_objects_old(mock_aioboto3_session):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 async def mock_aioboto3_bucket_objects_new(mock_aioboto3_session):
     return create_bucket_object(mock_aioboto3_session, datetime.now(tz=timezone.utc))
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_os_stat(mocker: MockerFixture):
     os_stat_mock = Mock()
     os_stat_mock.st_size = 1000
     return mocker.patch("os.stat", return_value=os_stat_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
     mocker.patch("os.path.isdir", return_value=True)
     return mocker.patch(
@@ -104,27 +104,27 @@ def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_platform_version():
-    return f"8.3.{random.randint(15,25)}.{random.randint(1000,3000)}"
+    return f"8.3.{random.randint(15, 25)}.{random.randint(1000, 3000)}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_platform_last_version():
-    return f"8.3.99.{random.randint(1000,3000)}"
+    return f"8.3.99.{random.randint(1000, 3000)}"
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_platform_versions(mock_platform_version, mock_platform_last_version):
     return [mock_platform_version, mock_platform_last_version]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_datetime():
     return datetime(2022, 1, 1, 12, 1, 1)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_infobases_credentials(mocker: MockerFixture, infobases):
     creds = {infobase: (f"test_{infobase}_login", f"test_{infobase}_password") for infobase in infobases}
     creds.update(settings.V8_INFOBASES_CREDENTIALS)
@@ -132,7 +132,7 @@ def mock_infobases_credentials(mocker: MockerFixture, infobases):
     return creds
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_cluster_com_infobases(mocker: MockerFixture, infobases):
     info_base_mock = Mock()
     info_base_mock.return_value = infobases

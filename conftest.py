@@ -14,17 +14,17 @@ from utils.postgres import POSTGRES_NAME
 random.seed(0)
 
 
-@pytest.fixture()
+@pytest.fixture
 def infobases():
     return ["infobase_test_01", "infobase_test_02", "infobase_test_03"]
 
 
-@pytest.fixture()
+@pytest.fixture
 def infobase(infobases):
     return infobases[0]
 
 
-@pytest.fixture()
+@pytest.fixture
 def success_base_result(infobases):
     return [
         core_models.InfoBaseTaskResultBase(
@@ -35,7 +35,7 @@ def success_base_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def failed_base_result(infobases):
     return [
         core_models.InfoBaseTaskResultBase(
@@ -46,7 +46,7 @@ def failed_base_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mixed_base_result(infobases):
     succeeded = True
     return [
@@ -58,7 +58,7 @@ def mixed_base_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def success_backup_result(infobases):
     return [
         core_models.InfoBaseBackupTaskResult(infobase_name=ib, succeeded=True, backup_filename=f"./{ib}.testbackup")
@@ -66,7 +66,7 @@ def success_backup_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def failed_backup_result(infobases):
     return [
         core_models.InfoBaseBackupTaskResult(
@@ -77,7 +77,7 @@ def failed_backup_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mixed_backup_result(infobases):
     succeeded = True
     return [
@@ -90,12 +90,12 @@ def mixed_backup_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def success_maintenance_result(infobases):
     return [core_models.InfoBaseMaintenanceTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
 
 
-@pytest.fixture()
+@pytest.fixture
 def failed_maintenance_result(infobases):
     return [
         core_models.InfoBaseMaintenanceTaskResult(
@@ -106,7 +106,7 @@ def failed_maintenance_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mixed_maintenance_result(infobases):
     succeeded = True
     return [
@@ -115,12 +115,12 @@ def mixed_maintenance_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def success_update_result(infobases):
     return [core_models.InfoBaseUpdateTaskResult(infobase_name=ib, succeeded=True) for ib in infobases]
 
 
-@pytest.fixture()
+@pytest.fixture
 def failed_update_result(infobases):
     return [
         core_models.InfoBaseUpdateTaskResult(
@@ -131,7 +131,7 @@ def failed_update_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mixed_update_result(infobases):
     succeeded = True
     return [
@@ -140,7 +140,7 @@ def mixed_update_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def success_aws_result(infobases):
     return [
         core_models.InfoBaseAWSUploadTaskResult(
@@ -150,12 +150,12 @@ def success_aws_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def failed_aws_result(infobases):
     return [core_models.InfoBaseAWSUploadTaskResult(infobase_name=ib, succeeded=False) for ib in infobases]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mixed_aws_result(infobases):
     succeeded = True
     return [
@@ -168,7 +168,7 @@ def mixed_aws_result(infobases):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_asyncio_subprocess_succeeded(mocker: MockerFixture):
     subprocess_mock = AsyncMock()
     subprocess_mock.returncode = 0
@@ -176,7 +176,7 @@ def mock_asyncio_subprocess_succeeded(mocker: MockerFixture):
     return mocker.patch("asyncio.create_subprocess_shell", return_value=subprocess_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_asyncio_subprocess_failed(mocker: MockerFixture):
     subprocess_mock = AsyncMock()
     subprocess_mock.returncode = -1
@@ -184,7 +184,7 @@ def mock_asyncio_subprocess_failed(mocker: MockerFixture):
     return mocker.patch("asyncio.create_subprocess_shell", return_value=subprocess_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
     subprocess_mock = AsyncMock()
     subprocess_mock.returncode = 0
@@ -198,7 +198,7 @@ def mock_asyncio_subprocess_timeouted(mocker: MockerFixture):
     return mocker.patch("asyncio.create_subprocess_shell", return_value=subprocess_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_asyncio_subprocess_communication_error(mocker: MockerFixture):
     subprocess_mock = AsyncMock()
     subprocess_mock.returncode = 0
@@ -209,7 +209,7 @@ def mock_asyncio_subprocess_communication_error(mocker: MockerFixture):
     return mocker.patch("asyncio.create_subprocess_shell", return_value=subprocess_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_asyncio_subprocess_termination_error(mocker: MockerFixture):
     subprocess_mock = AsyncMock()
     subprocess_mock.returncode = 0
@@ -220,12 +220,12 @@ def mock_asyncio_subprocess_termination_error(mocker: MockerFixture):
     return mocker.patch("asyncio.create_subprocess_shell", return_value=subprocess_mock)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_get_platform_full_path(mocker: MockerFixture):
     return mocker.patch("core.utils.get_platform_full_path", return_value="")
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_cluster_postgres_infobase(mocker: MockerFixture):
     db_server = "test_postgres_db_server"
     db_name = "test_postgres_db_name"
@@ -240,7 +240,7 @@ def mock_cluster_postgres_infobase(mocker: MockerFixture):
     return db_server, db_name, db_user
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_cluster_mssql_infobase(mocker: MockerFixture):
     db_server = "test_mssql_db_server"
     db_name = "test_mssql_db_name"
@@ -255,33 +255,33 @@ def mock_cluster_mssql_infobase(mocker: MockerFixture):
     return db_server, db_name, db_user
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_prepare_postgres_connection_vars(mocker: MockerFixture):
     return_value = ("test_db_host", "5432", "test_db_pwd")
     mocker.patch("utils.postgres.prepare_postgres_connection_vars", return_value=return_value)
     return return_value
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_get_postgres_version_16(mocker: MockerFixture):
     return_value = asyncpg.types.ServerVersion(major=16, minor=0, micro=5, releaselevel="final", serial=0)
     mocker.patch("utils.postgres.get_postgres_version", return_value=return_value)
     return return_value
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_get_postgres_version_9(mocker: MockerFixture):
     return_value = asyncpg.types.ServerVersion(major=9, minor=6, micro=1, releaselevel="final", serial=0)
     mocker.patch("utils.postgres.get_postgres_version", return_value=return_value)
     return return_value
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_configuration_metadata():
     return "БухгалтерияПредприятия", Version("3.0.108.206")
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_configuration_manifest(mocker: MockerFixture):
     content = dedent(
         """Vendor=Фирма "1С"
@@ -302,7 +302,7 @@ def mock_configuration_manifest(mocker: MockerFixture):
     return "БухгалтерияПредприятия", Version("3.0.111.25")
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_configuration_manifest_new(mocker: MockerFixture):
     content = dedent(
         """Vendor=Фирма "1С"
@@ -323,7 +323,7 @@ def mock_configuration_manifest_new(mocker: MockerFixture):
     return "БухгалтерияПредприятия", Version("3.0.113.17")
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_configuration_manifest_updinfo(mocker: MockerFixture):
     versions = "3.0.108.206;3.0.109.61;3.0.110.20;3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.20"
     content = dedent(
@@ -336,7 +336,7 @@ def mock_configuration_manifest_updinfo(mocker: MockerFixture):
     return [Version(v) for v in versions.split(";")]
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_configuration_manifest_updinfo_new(mocker: MockerFixture):
     versions = "3.0.110.24;3.0.110.29;3.0.111.16;3.0.111.25;3.0.112.31;3.0.112.34;3.0.113.16"
     content = dedent(

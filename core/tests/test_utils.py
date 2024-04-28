@@ -251,7 +251,7 @@ def test_read_file_gets_correct_encoding(mocker: MockerFixture):
     builtin_open_mock.assert_called_with("", "r", encoding=encoding)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixture):
     """
     Old files are removed according to retention policy
@@ -265,7 +265,7 @@ async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixtu
     assert aioremove_mock.await_count == len(files)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_remove_old_files_by_pattern_not_removes_new_files(mocker: MockerFixture):
     """
     New files are not removed according to retention policy

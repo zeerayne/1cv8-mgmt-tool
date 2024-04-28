@@ -16,7 +16,7 @@ from maintenance import (
 )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
     """
     `rotate_logs` calls `remove_old_files_by_pattern` for rotating logs
@@ -26,7 +26,7 @@ async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
     remove_old_files_mock.assert_awaited()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Maintenance with 1cv8 tools calls execute_v8_command to run created command
@@ -36,7 +36,7 @@ async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, in
     execute_v8_command_mock.assert_awaited()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
@@ -48,7 +48,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
@@ -60,7 +60,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_returns_success_result_for_exact_infobase(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
@@ -72,7 +72,7 @@ async def test_maintenance_v8_returns_success_result_for_exact_infobase(
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
@@ -84,7 +84,7 @@ async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, infobase, mock_get_platform_full_path):
     """
     Maintenance with 1cv8 tools returns success result if no errors
@@ -94,7 +94,7 @@ async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, info
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_v8_returns_failed_result_if_error(
     mocker: MockerFixture, infobase, mock_get_platform_full_path
 ):
@@ -106,7 +106,7 @@ async def test_maintenance_v8_returns_failed_result_if_error(
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_succeeded(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
@@ -118,7 +118,7 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_succeed
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
@@ -130,7 +130,7 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_credentials(infobase):
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no credentials found for db
@@ -139,7 +139,7 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_cred
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_succeeded(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
@@ -151,7 +151,7 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_succe
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_failed(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
@@ -163,7 +163,7 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_faile
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_credentials(infobase):
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no credentials found for db
@@ -172,7 +172,7 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_cr
     assert result.infobase_name == infobase
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_sucess_result_when_succeeded(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
@@ -184,7 +184,7 @@ async def test_maintenance_vacuumdb_returns_sucess_result_when_succeeded(
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_failed_result_when_failed(
     mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
 ):
@@ -196,7 +196,7 @@ async def test_maintenance_vacuumdb_returns_failed_result_when_failed(
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_vacuumdb_returns_failed_result_when_no_credentials(infobase):
     """
     Maintenance with vacuumdb returns failed result if no credentials found for db
@@ -205,7 +205,7 @@ async def test_maintenance_vacuumdb_returns_failed_result_when_no_credentials(in
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -218,7 +218,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -234,7 +234,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -250,7 +250,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_succeeded_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -268,7 +268,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_succee
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -281,7 +281,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -296,7 +296,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -311,7 +311,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_failed_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -329,7 +329,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_failed
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -342,7 +342,7 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -357,7 +357,7 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -372,7 +372,7 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_succeeded_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -390,7 +390,7 @@ async def test_maintenance_info_base_returns_maintenance_result_succeeded_when_s
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -403,7 +403,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed_with_v8(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -418,7 +418,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed_with_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -433,7 +433,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_failed_with_v8_and_pg(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -451,7 +451,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_fail
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_rotate_logs_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -464,7 +464,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_rotate
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_v8_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -478,7 +478,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_v8_rai
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_type_when_pg_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -492,7 +492,7 @@ async def test_maintenance_info_base_returns_maintenance_result_type_when_pg_rai
     assert isinstance(result, core_models.InfoBaseMaintenanceTaskResult)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_rotate_logs_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -504,7 +504,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_rota
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_v8_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -518,7 +518,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_v8_r
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_returns_maintenance_result_failed_when_pg_raises_error(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -532,7 +532,7 @@ async def test_maintenance_info_base_returns_maintenance_result_failed_when_pg_r
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_calls_rotate_logs_by_default(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -544,7 +544,7 @@ async def test_maintenance_info_base_calls_rotate_logs_by_default(
     rotate_logs_mock.assert_awaited_with(infobase)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_calls_maintenance_v8_with_v8_enabled(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):
@@ -559,7 +559,7 @@ async def test_maintenance_info_base_calls_maintenance_v8_with_v8_enabled(
     com_func_wrapper_mock.assert_awaited_with(_maintenance_v8, infobase)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_maintenance_info_base_calls_maintenance_pg_with_pg_enabled(
     mocker: MockerFixture, infobase, mock_cluster_postgres_infobase
 ):

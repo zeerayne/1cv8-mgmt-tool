@@ -28,7 +28,7 @@ def test_get_server_agent_port_is_str():
     Server port is string type
     """
     result = get_server_agent_port()
-    assert type(result) == str
+    assert type(result) is str
 
 
 def test_cluster_control_interface_initialization(mock_win32com_client_dispatch):

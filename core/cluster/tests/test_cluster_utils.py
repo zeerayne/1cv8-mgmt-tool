@@ -40,7 +40,7 @@ def test_get_cluster_controller_retuns_comcntr_when_mode_is_com(mocker: MockerFi
     assert isinstance(controller, ClusterCOMControler)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_com_func_wrapper_awaits_inner_func(infobase):
     """
     `com_func_wrapper` awaits inner coroutine
@@ -50,7 +50,7 @@ async def test_com_func_wrapper_awaits_inner_func(infobase):
     coroutine_mock.assert_awaited()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_com_func_wrapper_returns_value_of_inner_func(infobase):
     """
     `com_func_wrapper` returns value from inner coroutine
@@ -61,7 +61,7 @@ async def test_com_func_wrapper_returns_value_of_inner_func(infobase):
     assert result.succeeded is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_com_func_wrapper_handle_com_error(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `com_func_wrapper` returns value when com error raised
@@ -76,7 +76,7 @@ async def test_com_func_wrapper_handle_com_error(infobase, mock_connect_agent, m
     assert result.succeeded is False
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_com_func_wrapper_handle_v8_exception(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `com_func_wrapper` returns value when V8Exception raised
