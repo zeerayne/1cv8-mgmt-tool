@@ -34,7 +34,9 @@ def mock_only_infobases(mocker: MockerFixture, infobases):
 def mock_win32com_client_dispatch(mocker: MockerFixture):
     import win32com.client as win32com_client
 
-    return mocker.patch.object(win32com_client, "Dispatch", create=True, return_value=Mock())
+    v8COMConnectorMock = mocker.patch.object(win32com_client, "Dispatch", create=True, return_value=Mock())
+    type(v8COMConnectorMock.return_value).ConnectWorkingProcess = Mock()
+    return v8COMConnectorMock
 
 
 @pytest.fixture()
