@@ -78,7 +78,7 @@ git clone https://github.com/zeerayne/1cv8-mgmt-tool.git
 
 ```powershell
 cd 1cv8-mgmt-tool
-poetry install --no-root --no-dev
+poetry install --no-root --only main
 ```
 
 # Настройка
