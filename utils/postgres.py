@@ -1,5 +1,7 @@
 from typing import Tuple
 
+import asyncpg
+
 from conf import settings
 
 POSTGRES_DEFAULT_PORT = "5432"
@@ -27,3 +29,12 @@ def prepare_postgres_connection_vars(db_server: str, db_user: str) -> Tuple[str,
     except KeyError:
         raise KeyError(f"{POSTGRES_NAME} password not found for user {db_user_string}")
     return db_host, db_port, db_pwd
+
+
+async def get_postgres_version(
+    db_host: str, db_port: str, db_name: str, db_user: str, db_pwd: str
+) -> asyncpg.types.ServerVersion:
+    pg_con = await asyncpg.connect(host=db_host, port=db_port, database=db_name, user=db_user, password=db_pwd)
+    pg_version = pg_con.get_server_version()
+    await pg_con.close()
+    return pg_version

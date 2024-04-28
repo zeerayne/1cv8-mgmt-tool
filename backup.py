@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import List
 
 import aioshutil
+import asyncpg
 
 import core.models as core_models
 from conf import settings
@@ -114,7 +115,8 @@ async def _backup_pgdump(
     Выполняет резервное копирование ИБ средствами СУБД PostgreSQL при помощи утилиты pg_dump
     1. Проверяет, использует ли ИБ СУБД PostgreSQL
     2. Проверяет, есть ли подходящие учетные данные для подключения к базе данных
-    3. Создаёт резервную копию средствами pg_dump
+    3. Подключается к СУБД, чтобы узнать версию
+    4. Создаёт резервную копию средствами pg_dump
     :param ib_name:
     :return:
     """
@@ -124,24 +126,24 @@ async def _backup_pgdump(
     except (ValueError, KeyError) as e:
         log.error(f"<{ib_name}> {str(e)}")
         return core_models.InfoBaseBackupTaskResult(ib_name, False)
+
+    try:
+        pg_major_version = (await postgres.get_postgres_version(db_host, db_port, db_name, db_user, db_pwd)).major
+        blobs = "large-objects" if pg_major_version >= 16 else "blobs"
+    except ConnectionRefusedError as e:
+        log.error(f"<{ib_name}> {str(e)}")
+        return core_models.InfoBaseBackupTaskResult(ib_name, False)
+
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(
         settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "pgdump")
     )
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     pg_dump_path = os.path.join(settings.PG_BIN_PATH, "pg_dump.exe")
-    # --blobs
-    # Include large objects in the dump.
-    # This is the default behavior except when --schema, --table, or --schema-only is specified.
-    #
-    # --format=custom
-    # Output a custom-format archive suitable for input into pg_restore.
-    # Together with the directory output format, this is the most flexible output format in that it allows
-    # manual selection and reordering of archived items during restore. This format is also compressed by default.
     pgdump_command = (
         rf'"{pg_dump_path}" '
         rf"--host={db_host} --port={db_port} --username={db_user} "
-        rf"--format=custom --blobs --verbose "
+        rf"--format=custom --{blobs} --verbose "
         rf"--file={backup_filename} --dbname={db_name} > {log_filename} 2>&1"
     )
     pgdump_env = os.environ.copy()
