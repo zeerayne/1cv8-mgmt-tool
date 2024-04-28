@@ -183,7 +183,7 @@ async def test_backup_v8_return_backup_result_succeeded_false_when_failed(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_calls_execute_subprocess_command(
-    mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars, mock_get_postgres_version_16
 ):
     """
     Backup with pgdump calls `execute_subprocess_command`
@@ -195,7 +195,11 @@ async def test_backup_pgdump_calls_execute_subprocess_command(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_makes_retries(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump makes retries according to retry policy
@@ -209,7 +213,11 @@ async def test_backup_pgdump_makes_retries(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when succeeded
@@ -221,7 +229,11 @@ async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_backup_result_type_object_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object of type `InfoBaseBackupTaskResult` when failed
@@ -233,7 +245,11 @@ async def test_backup_pgdump_return_backup_result_type_object_when_failed(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object with succeeded is True when succeeded
@@ -245,7 +261,11 @@ async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object with succeeded is False when failed
@@ -257,7 +277,11 @@ async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_result_for_exact_infobase_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object for exact infobase which was provided when succeeded
@@ -269,7 +293,11 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_succeeded(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object for exact infobase which was provided when failed
@@ -281,7 +309,11 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
 
 @pytest.mark.asyncio()
 async def test_backup_pgdump_return_negative_result_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path, mock_prepare_postgres_connection_vars
+    mocker: MockerFixture,
+    infobase,
+    mock_get_platform_full_path,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump returns object with `succeeded == False` when failed

@@ -3,6 +3,7 @@ import random
 from textwrap import dedent
 from unittest.mock import AsyncMock, Mock, mock_open
 
+import asyncpg
 import pytest
 from packaging.version import Version
 from pytest_mock import MockerFixture
@@ -258,6 +259,20 @@ def mock_cluster_mssql_infobase(mocker: MockerFixture):
 def mock_prepare_postgres_connection_vars(mocker: MockerFixture):
     return_value = ("test_db_host", "5432", "test_db_pwd")
     mocker.patch("utils.postgres.prepare_postgres_connection_vars", return_value=return_value)
+    return return_value
+
+
+@pytest.fixture()
+def mock_get_postgres_version_16(mocker: MockerFixture):
+    return_value = asyncpg.types.ServerVersion(major=16, minor=0, micro=5, releaselevel="final", serial=0)
+    mocker.patch("utils.postgres.get_postgres_version", return_value=return_value)
+    return return_value
+
+
+@pytest.fixture()
+def mock_get_postgres_version_9(mocker: MockerFixture):
+    return_value = asyncpg.types.ServerVersion(major=9, minor=6, micro=1, releaselevel="final", serial=0)
+    mocker.patch("utils.postgres.get_postgres_version", return_value=return_value)
     return return_value
 
 
