@@ -12,7 +12,7 @@ random.seed(0)
 
 @pytest.fixture()
 def mock_infobase_version():
-    return f"{random.randint(1,12)}.{random.randint(0,5)}.{random.randint(10,200)}"
+    return f"{random.randint(1, 12)}.{random.randint(0, 5)}.{random.randint(10, 200)}"
 
 
 @pytest.fixture()

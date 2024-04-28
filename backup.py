@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import List
 
 import aioshutil
-import asyncpg
 
 import core.models as core_models
 from conf import settings
