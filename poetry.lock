@@ -675,53 +675,53 @@ typing = ["typing-extensions (>=4.8)"]
 
 [[package]]
 name = "flake8"
-version = "4.0.1"
+version = "7.0.0"
 description = "the modular source code checker: pep8 pyflakes and co"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8.1"
 files = [
-    {file = "flake8-4.0.1-py2.py3-none-any.whl", hash = "sha256:479b1304f72536a55948cb40a32dce8bb0ffe3501e26eaf292c7e60eb5e0428d"},
-    {file = "flake8-4.0.1.tar.gz", hash = "sha256:806e034dda44114815e23c16ef92f95c91e4c71100ff52813adf7132a6ad870d"},
+    {file = "flake8-7.0.0-py2.py3-none-any.whl", hash = "sha256:a6dfbb75e03252917f2473ea9653f7cd799c3064e54d4c8140044c5c065f53c3"},
+    {file = "flake8-7.0.0.tar.gz", hash = "sha256:33f96621059e65eec474169085dc92bf26e7b2d47366b70be2f67ab80dc25132"},
 ]
 
 [package.dependencies]
-mccabe = ">=0.6.0,<0.7.0"
-pycodestyle = ">=2.8.0,<2.9.0"
-pyflakes = ">=2.4.0,<2.5.0"
+mccabe = ">=0.7.0,<0.8.0"
+pycodestyle = ">=2.11.0,<2.12.0"
+pyflakes = ">=3.2.0,<3.3.0"
 
 [[package]]
 name = "flake8-bugbear"
-version = "22.12.6"
+version = "24.4.26"
 description = "A plugin for flake8 finding likely bugs and design problems in your program. Contains warnings that don't belong in pyflakes and pycodestyle."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8.1"
 files = [
-    {file = "flake8-bugbear-22.12.6.tar.gz", hash = "sha256:4cdb2c06e229971104443ae293e75e64c6107798229202fbe4f4091427a30ac0"},
-    {file = "flake8_bugbear-22.12.6-py3-none-any.whl", hash = "sha256:b69a510634f8a9c298dfda2b18a8036455e6b19ecac4fe582e4d7a0abfa50a30"},
+    {file = "flake8_bugbear-24.4.26-py3-none-any.whl", hash = "sha256:cb430dd86bc821d79ccc0b030789a9c87a47a369667f12ba06e80f11305e8258"},
+    {file = "flake8_bugbear-24.4.26.tar.gz", hash = "sha256:ff8d4ba5719019ebf98e754624c30c05cef0dadcf18a65d91c7567300e52a130"},
 ]
 
 [package.dependencies]
 attrs = ">=19.2.0"
-flake8 = ">=3.0.0"
+flake8 = ">=6.0.0"
 
 [package.extras]
-dev = ["coverage", "hypothesis", "hypothesmith (>=0.2)", "pre-commit", "tox"]
+dev = ["coverage", "hypothesis", "hypothesmith (>=0.2)", "pre-commit", "pytest", "tox"]
 
 [[package]]
 name = "flake8-eradicate"
-version = "1.4.0"
+version = "1.5.0"
 description = "Flake8 plugin to find commented out code"
 optional = false
-python-versions = ">=3.7,<4.0"
+python-versions = ">=3.8,<4.0"
 files = [
-    {file = "flake8-eradicate-1.4.0.tar.gz", hash = "sha256:3088cfd6717d1c9c6c3ac45ef2e5f5b6c7267f7504d5a74b781500e95cb9c7e1"},
-    {file = "flake8_eradicate-1.4.0-py3-none-any.whl", hash = "sha256:e3bbd0871be358e908053c1ab728903c114f062ba596b4d40c852fd18f473d56"},
+    {file = "flake8_eradicate-1.5.0-py3-none-any.whl", hash = "sha256:18acc922ad7de623f5247c7d5595da068525ec5437dd53b22ec2259b96ce9d22"},
+    {file = "flake8_eradicate-1.5.0.tar.gz", hash = "sha256:aee636cb9ecb5594a7cd92d67ad73eb69909e5cc7bd81710cf9d00970f3983a6"},
 ]
 
 [package.dependencies]
 attrs = "*"
 eradicate = ">=2.0,<3.0"
-flake8 = ">=3.5,<6"
+flake8 = ">5"
 
 [[package]]
 name = "flake8-multiline-containers"
@@ -740,20 +740,20 @@ flake8 = ">=3.7.9"
 
 [[package]]
 name = "flake8-pep3101"
-version = "1.3.0"
-description = "Checks for old string formatting."
+version = "2.1.0"
+description = "Checks for old string formatting"
 optional = false
-python-versions = "*"
+python-versions = ">=3.8"
 files = [
-    {file = "flake8-pep3101-1.3.0.tar.gz", hash = "sha256:86e3eb4e42de8326dcd98ebdeaf9a3c6854203a48f34aeb3e7e8ed948107f512"},
-    {file = "flake8_pep3101-1.3.0-py2.py3-none-any.whl", hash = "sha256:a5dae1caca1243b2b40108dce926d97cf5a9f52515c4a4cbb1ffe1ca0c54e343"},
+    {file = "flake8_pep3101-2.1.0-py3-none-any.whl", hash = "sha256:2d2b8b997ccf0bf0df91532e861465dcfa32a6a306d1dc98f93889cae49f4231"},
+    {file = "flake8_pep3101-2.1.0.tar.gz", hash = "sha256:1b84b61685f1e631f2f710e5d5ed3ca68b5fc45fb9402fa8ae1b8a9a058a3387"},
 ]
 
 [package.dependencies]
-flake8 = ">=3.0"
+flake8 = "*"
 
 [package.extras]
-test = ["pytest", "testfixtures"]
+test = ["pytest"]
 
 [[package]]
 name = "flake8-plugin-utils"
@@ -783,13 +783,13 @@ pycodestyle = "*"
 
 [[package]]
 name = "flake8-pytest-style"
-version = "1.7.2"
+version = "2.0.0"
 description = "A flake8 plugin checking common style issues or inconsistencies with pytest-based tests."
 optional = false
-python-versions = ">=3.7.2,<4.0.0"
+python-versions = "<4.0.0,>=3.8.1"
 files = [
-    {file = "flake8_pytest_style-1.7.2-py3-none-any.whl", hash = "sha256:f5d2aa3219163a052dd92226589d45fab8ea027a3269922f0c4029f548ea5cd1"},
-    {file = "flake8_pytest_style-1.7.2.tar.gz", hash = "sha256:b924197c99b951315949920b0e5547f34900b1844348432e67a44ab191582109"},
+    {file = "flake8_pytest_style-2.0.0-py3-none-any.whl", hash = "sha256:abcb9f56f277954014b749e5a0937fae215be01a21852e9d05e7600c3de6aae5"},
+    {file = "flake8_pytest_style-2.0.0.tar.gz", hash = "sha256:919c328cacd4bc4f873ea61ab4db0d8f2c32e0db09a3c73ab46b1de497556464"},
 ]
 
 [package.dependencies]
@@ -811,13 +811,13 @@ setuptools = "*"
 
 [[package]]
 name = "flake8-simplify"
-version = "0.19.3"
+version = "0.21.0"
 description = "flake8 plugin which checks for code that can be simplified"
 optional = false
 python-versions = ">=3.6.1"
 files = [
-    {file = "flake8_simplify-0.19.3-py3-none-any.whl", hash = "sha256:1057320e9312d75849541fee822900d27bcad05b2405edc84713affee635629e"},
-    {file = "flake8_simplify-0.19.3.tar.gz", hash = "sha256:2fb083bf5142a98d9c9554755cf2f56f8926eb4a33eae30c0809041b1546879e"},
+    {file = "flake8_simplify-0.21.0-py3-none-any.whl", hash = "sha256:439391e762a9370b371208add0b5c5c40c3d25a98e1f5421d263215d08194183"},
+    {file = "flake8_simplify-0.21.0.tar.gz", hash = "sha256:c95ff1dcc1de5949af47e0087cbf1164445881131b15bcd7a71252670f492f4d"},
 ]
 
 [package.dependencies]
@@ -987,13 +987,13 @@ files = [
 
 [[package]]
 name = "mccabe"
-version = "0.6.1"
+version = "0.7.0"
 description = "McCabe checker, plugin for flake8"
 optional = false
-python-versions = "*"
+python-versions = ">=3.6"
 files = [
-    {file = "mccabe-0.6.1-py2.py3-none-any.whl", hash = "sha256:ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42"},
-    {file = "mccabe-0.6.1.tar.gz", hash = "sha256:dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"},
+    {file = "mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e"},
+    {file = "mccabe-0.7.0.tar.gz", hash = "sha256:348e0240c33b60bbdf4e523192ef919f28cb2c3d7d5c7794f74009290f236325"},
 ]
 
 [[package]]
@@ -1193,24 +1193,24 @@ virtualenv = ">=20.10.0"
 
 [[package]]
 name = "pycodestyle"
-version = "2.8.0"
+version = "2.11.1"
 description = "Python style guide checker"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+python-versions = ">=3.8"
 files = [
-    {file = "pycodestyle-2.8.0-py2.py3-none-any.whl", hash = "sha256:720f8b39dde8b293825e7ff02c475f3077124006db4f440dcbc9a20b76548a20"},
-    {file = "pycodestyle-2.8.0.tar.gz", hash = "sha256:eddd5847ef438ea1c7870ca7eb78a9d47ce0cdb4851a5523949f2601d0cbbe7f"},
+    {file = "pycodestyle-2.11.1-py2.py3-none-any.whl", hash = "sha256:44fe31000b2d866f2e41841b18528a505fbd7fef9017b04eff4e2648a0fadc67"},
+    {file = "pycodestyle-2.11.1.tar.gz", hash = "sha256:41ba0e7afc9752dfb53ced5489e89f8186be00e599e712660695b7a75ff2663f"},
 ]
 
 [[package]]
 name = "pyflakes"
-version = "2.4.0"
+version = "3.2.0"
 description = "passive checker of Python programs"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
+python-versions = ">=3.8"
 files = [
-    {file = "pyflakes-2.4.0-py2.py3-none-any.whl", hash = "sha256:3bb3a3f256f4b7968c9c788781e4ff07dce46bdf12339dcda61053375426ee2e"},
-    {file = "pyflakes-2.4.0.tar.gz", hash = "sha256:05a85c2872edf37a4ed30b0cce2f6093e1d0581f8c19d7393122da7e25b2b24c"},
+    {file = "pyflakes-3.2.0-py2.py3-none-any.whl", hash = "sha256:84b5be138a2dfbb40689ca07e2152deb896a65c3a3e24c251c5c62489568074a"},
+    {file = "pyflakes-3.2.0.tar.gz", hash = "sha256:1c61603ff154621fb2a9172037d84dca3500def8c8b630657d1701f026f8af3f"},
 ]
 
 [[package]]
@@ -1733,5 +1733,5 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.8"
-content-hash = "c7d74d156d8d52463784495d446cb75d8f66b78f37943c7027f98d8ae9f7cb26"
+python-versions = "^3.8.1"
+content-hash = "8a942919173f1856cbdde6f66fd4cb2dbb06a6d7823b224a488ac7a97a9d6714"
