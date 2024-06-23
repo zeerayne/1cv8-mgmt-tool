@@ -290,6 +290,23 @@ async def test_execute_v8_command_terminates_infobase_sessions(
 
 
 @pytest.mark.asyncio
+async def test_execute_v8_sleeps_before_create_subprocess_if_parameter_passed(
+    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
+):
+    """
+    `execute_v8_command` locks infobase if permission code passed
+    """
+    message = "test_message"
+    command = "test_command"
+    pause = 5.5
+    mocker.patch("core.utils.read_file_content", return_value=message)
+    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler", autospec=True)
+    aiosleep_mock = mocker.patch("asyncio.sleep", autospec=True)
+    await execute_v8_command(infobase, command, "", create_subprocess_pause=pause)
+    aiosleep_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
 async def test_execute_subprocess_command_pass_command_to_subprocess(
     mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded
 ):
