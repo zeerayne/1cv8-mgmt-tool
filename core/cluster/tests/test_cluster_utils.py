@@ -15,12 +15,12 @@ except ImportError:
 
 from core import models as core_models
 from core.cluster.comcntr import ClusterCOMControler
+from core.cluster.rac import ClusterRACControler
 from core.cluster.utils import (
     com_func_wrapper,
     get_cluster_controller,
     get_cluster_controller_class,
 )
-from core.cluster.rac import ClusterRACControler
 from core.exceptions import V8Exception
 
 

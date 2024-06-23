@@ -210,7 +210,7 @@ auth    : pwd
 os-user :
 descr   :
 
-./rac cluster info --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545       
+./rac cluster info --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
 cluster                       : b930e651-0160-47c6-aeae-68b8ed937120
 host                          : ragent
 port                          : 1541
