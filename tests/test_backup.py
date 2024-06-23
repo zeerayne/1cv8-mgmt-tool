@@ -387,7 +387,9 @@ async def test_backup_info_base_run_pgdump_backup_when_pgbackup_is_enabled_and_d
 
 
 @pytest.mark.asyncio
-async def test_backup_info_base_returns_value_from_v8_backup(mocker: MockerFixture, mock_cluster_com_controller, infobase):
+async def test_backup_info_base_returns_value_from_v8_backup(
+    mocker: MockerFixture, mock_cluster_com_controller, infobase
+):
     """
     `_backup_info_base` returns value from underlying `com_func_wrapper` function
     """
