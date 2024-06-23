@@ -350,11 +350,10 @@ async def test_backup_pgdump_return_negative_result_when_failed_to_find_creds(
 
 
 @pytest.mark.asyncio
-async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, infobase):
+async def test_backup_info_base_run_v8_backup(mocker: MockerFixture, mock_cluster_com_controller, infobase):
     """
     `_backup_info_base` calls `_backup_v8` by default
     """
-    mocker.patch("core.cluster.comcntr.ClusterCOMControler")
     com_func_wrapper_mock = mocker.patch("core.cluster.utils.com_func_wrapper")
     await _backup_info_base(infobase)
     com_func_wrapper_mock.assert_awaited_with(_backup_v8, infobase)
@@ -388,12 +387,13 @@ async def test_backup_info_base_run_pgdump_backup_when_pgbackup_is_enabled_and_d
 
 
 @pytest.mark.asyncio
-async def test_backup_info_base_returns_value_from_v8_backup(mocker: MockerFixture, infobase):
+async def test_backup_info_base_returns_value_from_v8_backup(
+    mocker: MockerFixture, mock_cluster_com_controller, infobase
+):
     """
     `_backup_info_base` returns value from underlying `com_func_wrapper` function
     """
     value = core_models.InfoBaseBackupTaskResult(infobase, True, "")
-    mocker.patch("core.cluster.comcntr.ClusterCOMControler")
     mocker.patch("core.cluster.utils.com_func_wrapper", return_value=value)
     result = await _backup_info_base(infobase)
     assert result == value

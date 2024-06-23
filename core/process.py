@@ -48,6 +48,7 @@ async def execute_v8_command(
     permission_code: str = None,
     timeout: int = None,
     log_output_on_success: bool = False,
+    create_subprocess_pause: float = 0.0,
 ):
     """
     Блокирует новые сеансы информационной базы, блокирует регламентные задания, выгоняет всех пользователей.
@@ -58,11 +59,14 @@ async def execute_v8_command(
     :param v8_command: Команда запуска 1С в командном режиме. В тексте команды должен быть указан код доступа и лог-файл
     :param log_filename: Полный путь к файлу, куда 1С пишет результат свооей работы, для дублирования в python.log
     :param permission_code: Код, для блокировки новых сеансов, если параметр отсутвует, блокировка не будет установлена
+    :param timeout: Максимальное время работы внешнего процесса, по истечению которого он будет принудительно завершен
+    :param log_output_on_success: Выводить в консоль лог внешнего процесса в случае его успешного завершения
+    :param create_subprocess_pause: Пауза перед запуском внешнего процесса
     """
     # Теоретически можно пользоваться одним объектом на целый поток т.к. все функции отрабатывают последовательно.
     # Но проблема в том, что через некоторые промежутки времени кластер может закрыть соединение, что приведет к
     # исключению. Накладные расходы на создание новых объектов малы, поэтому этот вариант оптимален
-    cci = cluster_utils.get_cluster_controller_class()()
+    cci = cluster_utils.get_cluster_controller()
     if permission_code:
         # Блокирует фоновые задания и новые сеансы
         cci.lock_info_base(ib_name, permission_code)
@@ -70,10 +74,13 @@ async def execute_v8_command(
         # потому что фоновые задания всё ещё могут быть запущены спустя несколько секунд
         # после включения блокировки регламентных заданий
         pause = settings.V8_LOCK_INFO_BASE_PAUSE
-        log.debug(f"<{ib_name}> Wait for {pause} seconds")
+        log.debug(f"<{ib_name}> Infobase locked. Wait for {pause} seconds")
         await asyncio.sleep(pause)
     # Принудительно завершает текущие сеансы
     cci.terminate_info_base_sessions(ib_name)
+    if create_subprocess_pause:
+        log.debug(f"<{ib_name}> Pause before creating process. Wait for {create_subprocess_pause:.2f} seconds")
+        await asyncio.sleep(create_subprocess_pause)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
     pid = v8_process.pid
     log.debug(f"<{ib_name}> 1cv8 PID is {pid}")

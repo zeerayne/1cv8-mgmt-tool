@@ -226,7 +226,12 @@ def mock_get_platform_full_path(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_cluster_postgres_infobase(mocker: MockerFixture):
+def mock_cluster_com_controller(mocker: MockerFixture):
+    return mocker.patch("core.cluster.comcntr.ClusterCOMControler")
+
+
+@pytest.fixture
+def mock_cluster_postgres_infobase(mocker: MockerFixture, mock_cluster_com_controller):
     db_server = "test_postgres_db_server"
     db_name = "test_postgres_db_name"
     db_user = "test_postgres_db_user"
@@ -235,13 +240,12 @@ def mock_cluster_postgres_infobase(mocker: MockerFixture):
     info_base_mock.return_value.dbServerName = db_server
     info_base_mock.return_value.dbName = db_name
     info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
-    cci_mock.return_value.get_info_base = info_base_mock
+    mock_cluster_com_controller.return_value.get_info_base = info_base_mock
     return db_server, db_name, db_user
 
 
 @pytest.fixture
-def mock_cluster_mssql_infobase(mocker: MockerFixture):
+def mock_cluster_mssql_infobase(mocker: MockerFixture, mock_cluster_com_controller):
     db_server = "test_mssql_db_server"
     db_name = "test_mssql_db_name"
     db_user = "test_mssql_db_user"
@@ -250,8 +254,7 @@ def mock_cluster_mssql_infobase(mocker: MockerFixture):
     info_base_mock.return_value.dbServerName = db_server
     info_base_mock.return_value.dbName = db_name
     info_base_mock.return_value.dbUser = db_user
-    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
-    cci_mock.return_value.get_info_base = info_base_mock
+    mock_cluster_com_controller.return_value.get_info_base = info_base_mock
     return db_server, db_name, db_user
 
 

@@ -133,9 +133,8 @@ def mock_infobases_credentials(mocker: MockerFixture, infobases):
 
 
 @pytest.fixture
-def mock_cluster_com_infobases(mocker: MockerFixture, infobases):
+def mock_cluster_com_infobases(mocker: MockerFixture, mock_cluster_com_controller, infobases):
     info_base_mock = Mock()
     info_base_mock.return_value = infobases
-    cci_mock = mocker.patch("core.cluster.comcntr.ClusterCOMControler")
-    cci_mock.return_value.get_info_bases = info_base_mock
-    return cci_mock
+    mock_cluster_com_controller.return_value.get_info_bases = info_base_mock
+    return mock_cluster_com_controller

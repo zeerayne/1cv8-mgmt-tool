@@ -178,10 +178,8 @@ async def _update_info_base(ib_name, dry=False):
             # Ошибка совместного доступа к файлу '1cv8.cfu'. 32(0x00000020):
             # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
             pause = (random.randint(0, 100_000)) / 10_000
-            log.debug(f"<{ib_name}> Wait for {pause:.2f} seconds")
-            await asyncio.sleep(pause)
             # Обновляет информационную базу и конфигурацию БД
-            await execute_v8_command(ib_name, v8_command, log_filename, permission_code)
+            await execute_v8_command(ib_name, v8_command, log_filename, permission_code, external_pause=pause)
             if is_multiupdate:
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.
