@@ -41,6 +41,23 @@ async def _kill_process_emergency(pid: int):
         log.exception(f"Error while calling taskkill: {e}")
 
 
+async def _wait_for_subprocess(subprocess: asyncio.subprocess.Process, timeout: int = None):
+    pid = subprocess.pid
+    try:
+        await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
+    except asyncio.TimeoutError:
+        try:
+            coro = subprocess.terminate()
+            if coro:
+                await coro
+        except Exception as e:
+            log.exception(f"Process with PID {pid} can not be terminated: {e}")
+            await _kill_process_emergency(pid)
+    except Exception as e:
+        log.exception(f"Exception while communicating with subprocess: {e}")
+        await _kill_process_emergency(pid)
+
+
 async def execute_v8_command(
     ib_name: str,
     v8_command: str,
@@ -82,19 +99,8 @@ async def execute_v8_command(
         log.debug(f"<{ib_name}> Pause before creating process. Wait for {create_subprocess_pause:.2f} seconds")
         await asyncio.sleep(create_subprocess_pause)
     v8_process = await asyncio.create_subprocess_shell(v8_command)
-    pid = v8_process.pid
-    log.debug(f"<{ib_name}> 1cv8 PID is {pid}")
-    try:
-        await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        try:
-            await v8_process.terminate()
-        except Exception as e:
-            log.exception(f"Process with PID {pid} can not be terminated: {e}")
-            await _kill_process_emergency(pid)
-    except Exception as e:
-        log.exception(f"Exception while communicating with subprocess: {e}")
-        await _kill_process_emergency(pid)
+    log.debug(f"<{ib_name}> 1cv8 PID is {v8_process.pid}")
+    await _wait_for_subprocess(v8_process, timeout)
     if permission_code:
         # Снимает блокировку фоновых заданий и сеансов
         cci.unlock_info_base(ib_name)
@@ -115,19 +121,8 @@ async def execute_subprocess_command(
         else asyncio.create_subprocess_shell(subprocess_command)
     )
     subprocess = await subprc_coro
-    pid = subprocess.pid
-    log.debug(f"<{ib_name}> Subprocess PID is {pid}")
-    try:
-        await asyncio.wait_for(subprocess.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        try:
-            await subprocess.terminate()
-        except Exception as e:
-            log.exception(f"Process with PID {pid} can not be terminated: {e}")
-            await _kill_process_emergency(pid)
-    except Exception as e:
-        log.exception(f"Exception while communicating with subprocess: {e}")
-        await _kill_process_emergency(pid)
+    log.debug(f"<{ib_name}> Subprocess PID is {subprocess.pid}")
+    await _wait_for_subprocess(subprocess, timeout)
     _check_subprocess_return_code(
         ib_name, subprocess, log_filename, "utf-8", SubprocessException, log_output_on_success
     )

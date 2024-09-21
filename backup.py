@@ -99,10 +99,10 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBacku
         except V8Exception:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
-                log.exception(f"<{ib_name}> Backup failed, retries exceeded")
+                log.error(f"<{ib_name}> Backup failed, retries exceeded")
                 return core_models.InfoBaseBackupTaskResult(ib_name, False)
             else:
-                log.exception(f"<{ib_name}> Backup failed, retrying")
+                log.error(f"<{ib_name}> Backup failed, retrying")
     return core_models.InfoBaseBackupTaskResult(ib_name, True, dt_filename)
 
 
@@ -157,10 +157,10 @@ async def _backup_pgdump(
         except SubprocessException:
             # Если количество попыток исчерпано, но ошибка по прежнему присутствует
             if i == backup_retries:
-                log.exception(f"<{ib_name}> Backup failed, retries exceeded")
+                log.error(f"<{ib_name}> Backup failed, retries exceeded")
                 return core_models.InfoBaseBackupTaskResult(ib_name, False)
             else:
-                log.exception(f"<{ib_name}> Backup failed, retrying")
+                log.error(f"<{ib_name}> Backup failed, retrying")
     return core_models.InfoBaseBackupTaskResult(ib_name, True, backup_filename)
 
 
