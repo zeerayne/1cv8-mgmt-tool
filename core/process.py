@@ -88,7 +88,9 @@ async def execute_v8_command(
         await asyncio.wait_for(v8_process.communicate(), timeout=timeout)
     except asyncio.TimeoutError:
         try:
-            await v8_process.terminate()
+            coro = v8_process.terminate()
+            if coro:
+                await coro
         except Exception as e:
             log.exception(f"Process with PID {pid} can not be terminated: {e}")
             await _kill_process_emergency(pid)
