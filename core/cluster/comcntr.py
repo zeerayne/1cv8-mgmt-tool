@@ -160,7 +160,9 @@ class ClusterCOMControler(ClusterControler):
         infobase_com_obj.PermissionCode = permission_code
         infobase_com_obj.DeniedMessage = message
         # TODO: необходима проверка, есть ли у рабочего процесса необходимые авторизационные данные для этой ИБ
-        log.debug(f"<{infobase_com_obj.Name}> If process crashes after this message it means there is no correct credentials for infobase")
+        log.debug(
+            f"<{infobase_com_obj.Name}> If process crashes after this message it means there is no correct credentials for infobase"
+        )
         working_process_connection = self.get_working_process_connection_with_info_base_auth()
         working_process_connection.UpdateInfoBase(infobase_com_obj)
         log.debug(f"<{infobase_com_obj.Name}> Lock info base successfully")
