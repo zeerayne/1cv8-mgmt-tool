@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import pathlib
+from asyncio.exceptions import CancelledError, TimeoutError
 from datetime import datetime
 from typing import List
 
@@ -128,7 +129,7 @@ async def _backup_pgdump(
     try:
         pg_major_version = (await postgres.get_postgres_version(db_host, db_port, db_name, db_user, db_pwd)).major
         blobs = "large-objects" if pg_major_version >= 16 else "blobs"
-    except ConnectionRefusedError as e:
+    except (ConnectionRefusedError, CancelledError, TimeoutError) as e:
         log.error(f"<{ib_name}> {str(e)}")
         return core_models.InfoBaseBackupTaskResult(ib_name, False)
 
