@@ -69,7 +69,9 @@ def test_check_subprocess_return_code_logs_message_when_subprocess_failed(mocker
 
 
 @pytest.mark.asyncio
-async def test_kill_process_emergency_creates_subprocess(mock_asyncio_subprocess_succeeded):
+async def test_kill_process_emergency_creates_subprocess(
+    mock_asyncio_subprocess_succeeded,
+):
     """
     `_kill_process_emergency` creates subprocess to try to kill process by pid
     """
@@ -115,7 +117,10 @@ async def test_kill_process_emergency_logs_result_when_communication_error(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_pass_command_to_subprocess(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` pass command to create subprocess correctly
@@ -129,7 +134,10 @@ async def test_execute_v8_command_pass_command_to_subprocess(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_raises_if_nonzero_return_code(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_failed, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_failed,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` raises exception if subprocess returns non-zero return code
@@ -144,7 +152,10 @@ async def test_execute_v8_command_raises_if_nonzero_return_code(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_passes_timeout_to_asyncio_wait_for(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` passes timeout value to `asyncio.wait_for`
@@ -160,7 +171,10 @@ async def test_execute_v8_command_passes_timeout_to_asyncio_wait_for(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_terminates_subprocess_when_timed_out(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_timeouted,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` terminates subprocess when timed out
@@ -176,7 +190,10 @@ async def test_execute_v8_command_terminates_subprocess_when_timed_out(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_calls_emergency_on_termination_error(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_termination_error, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_termination_error,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` calls `_kill_process_emergency` when got expection while terminating subprocess
@@ -192,7 +209,10 @@ async def test_execute_v8_command_calls_emergency_on_termination_error(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_calls_emergency_on_communication_error(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_timeouted, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_timeouted,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` calls `_kill_process_emergency` when got expection while communicating with subprocess
@@ -208,7 +228,10 @@ async def test_execute_v8_command_calls_emergency_on_communication_error(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_locks_infobase_if_code_passed(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` locks infobase if permission code passed
@@ -223,7 +246,10 @@ async def test_execute_v8_command_locks_infobase_if_code_passed(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_unlocks_infobase_if_code_passed(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` unlocks infobase if permission code passed
@@ -238,7 +264,10 @@ async def test_execute_v8_command_unlocks_infobase_if_code_passed(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_does_not_lock_infobase_if_code_is_none(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` does not lock infobase if permission code is none
@@ -252,7 +281,10 @@ async def test_execute_v8_command_does_not_lock_infobase_if_code_is_none(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_does_not_unlock_infobase_if_code_is_none(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` does not unlock infobase if permission code is none
@@ -266,7 +298,10 @@ async def test_execute_v8_command_does_not_unlock_infobase_if_code_is_none(
 
 @pytest.mark.asyncio
 async def test_execute_v8_command_terminates_infobase_sessions(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` terminates infobase sessions
@@ -280,7 +315,10 @@ async def test_execute_v8_command_terminates_infobase_sessions(
 
 @pytest.mark.asyncio
 async def test_execute_v8_sleeps_before_create_subprocess_if_parameter_passed(
-    mocker: MockerFixture, infobase, mock_asyncio_subprocess_succeeded, mock_cluster_com_controller
+    mocker: MockerFixture,
+    infobase,
+    mock_asyncio_subprocess_succeeded,
+    mock_cluster_com_controller,
 ):
     """
     `execute_v8_command` locks infobase if permission code passed

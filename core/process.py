@@ -104,7 +104,14 @@ async def execute_v8_command(
     if permission_code:
         # Снимает блокировку фоновых заданий и сеансов
         cci.unlock_info_base(ib_name)
-    _check_subprocess_return_code(ib_name, v8_process, log_filename, "utf-8-sig", V8Exception, log_output_on_success)
+    _check_subprocess_return_code(
+        ib_name,
+        v8_process,
+        log_filename,
+        "utf-8-sig",
+        V8Exception,
+        log_output_on_success,
+    )
 
 
 async def execute_subprocess_command(
@@ -124,5 +131,10 @@ async def execute_subprocess_command(
     log.debug(f"<{ib_name}> Subprocess PID is {subprocess.pid}")
     await _wait_for_subprocess(subprocess, timeout)
     _check_subprocess_return_code(
-        ib_name, subprocess, log_filename, "utf-8", SubprocessException, log_output_on_success
+        ib_name,
+        subprocess,
+        log_filename,
+        "utf-8",
+        SubprocessException,
+        log_output_on_success,
     )

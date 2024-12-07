@@ -1,29 +1,29 @@
-# This workflow will check modified files with flake8
+# This workflow will check modified files with ruff
 
-name: flake8
+name: ruff
 on:   
   pull_request:
     types: [opened, reopened, synchronize]
 jobs:
-  flake8:
+  ruff:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install Poetry
-        uses: abatilo/actions-poetry@v2.3.0
+        uses: abatilo/actions-poetry@v3
       - name: Install dependencies
         run: make install-dev
       - name: Get changed python source files
         id: changed-files
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v45
         with:
           files: |
             *.py
-      - name: Check code with flake8
+      - name: Check code with ruff
         if: steps.changed-files.outputs.any_changed == 'true'
-        run: poetry run flake8 ${{ steps.changed-files.outputs.all_changed_files }}
+        run: poetry run ruff check ${{ steps.changed-files.outputs.all_changed_files }}

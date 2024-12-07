@@ -57,7 +57,8 @@ class ClusterControler(ABC):
         if settings.V8_INFOBASES_ONLY:
             info_bases = list(
                 filter(
-                    lambda ib: ib.lower() in [ib_only.lower() for ib_only in settings.V8_INFOBASES_ONLY], info_bases_raw
+                    lambda ib: ib.lower() in [ib_only.lower() for ib_only in settings.V8_INFOBASES_ONLY],
+                    info_bases_raw,
                 )
             )
         else:

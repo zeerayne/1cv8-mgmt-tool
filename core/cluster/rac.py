@@ -6,13 +6,11 @@ log = logging.getLogger(__name__)
 
 
 class ClusterRACControler(ClusterControler):
-
     def get_cluster_info_bases(self):
         """
         Получает список всех ИБ из кластера
         """
         ...
-
 
     def lock_info_base(self, infobase: str, permission_code: str, message: str):
         """
@@ -23,7 +21,6 @@ class ClusterRACControler(ClusterControler):
         """
         ...
 
-
     def unlock_info_base(self, infobase: str):
         """
         Снимает блокировку фоновых заданий и сеансов информационной базы
@@ -31,14 +28,12 @@ class ClusterRACControler(ClusterControler):
         """
         ...
 
-
     def terminate_info_base_sessions(self, infobase: str):
         """
         Принудительно завершает текущие сеансы информационной базы
         :param infobase: имя информационной базы
         """
         ...
-
 
     def get_info_base(self, infobase: str):
         """

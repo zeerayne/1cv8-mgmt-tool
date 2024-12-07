@@ -25,4 +25,7 @@ def mock_smtp_sendmail(mock_smtp):
 
 @pytest.fixture
 def mock_email_message(mocker: MockerFixture):
-    return mocker.patch("email.mime.multipart.MIMEMultipart.as_string", return_value="test_email_message_string")
+    return mocker.patch(
+        "email.mime.multipart.MIMEMultipart.as_string",
+        return_value="test_email_message_string",
+    )

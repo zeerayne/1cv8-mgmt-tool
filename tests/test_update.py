@@ -11,7 +11,9 @@ from update import (
 )
 
 
-def test_get_name_and_version_from_manifest_returns_name_from_manifest(mock_configuration_manifest):
+def test_get_name_and_version_from_manifest_returns_name_from_manifest(
+    mock_configuration_manifest,
+):
     """
     Configuration name is extracted from manifest
     """
@@ -19,7 +21,9 @@ def test_get_name_and_version_from_manifest_returns_name_from_manifest(mock_conf
     assert result[0] == mock_configuration_manifest[0]
 
 
-def test_get_name_and_version_from_manifest_returns_version_from_manifest(mock_configuration_manifest):
+def test_get_name_and_version_from_manifest_returns_version_from_manifest(
+    mock_configuration_manifest,
+):
     """
     Configuration version is extracted from manifest
     """
@@ -27,7 +31,9 @@ def test_get_name_and_version_from_manifest_returns_version_from_manifest(mock_c
     assert result[1] == mock_configuration_manifest[1]
 
 
-def test_get_updatable_versions_returns_versions_from_updinfo(mock_configuration_manifest_updinfo):
+def test_get_updatable_versions_returns_versions_from_updinfo(
+    mock_configuration_manifest_updinfo,
+):
     """
     Updatable versions are extracted from updinfo
     """
@@ -36,45 +42,78 @@ def test_get_updatable_versions_returns_versions_from_updinfo(mock_configuration
 
 
 def test_find_suitable_manifests_returns_updated_when_exists(
-    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest, mock_configuration_manifest_updinfo
+    mocker: MockerFixture,
+    mock_configuration_metadata,
+    mock_configuration_manifest,
+    mock_configuration_manifest_updinfo,
 ):
     """
     Applicable update manifest is found
     """
-    mocker.patch("update.get_name_and_version_from_manifest", return_value=mock_configuration_manifest)
-    mocker.patch("update.get_updatable_versions", return_value=mock_configuration_manifest_updinfo)
+    mocker.patch(
+        "update.get_name_and_version_from_manifest",
+        return_value=mock_configuration_manifest,
+    )
+    mocker.patch(
+        "update.get_updatable_versions",
+        return_value=mock_configuration_manifest_updinfo,
+    )
     result = _find_suitable_manifests(
-        ["manifest_test_path/1/1cv8.mft"], mock_configuration_metadata[0], mock_configuration_metadata[1]
+        ["manifest_test_path/1/1cv8.mft"],
+        mock_configuration_metadata[0],
+        mock_configuration_metadata[1],
     )
     assert len(result) == 1
 
 
 def test_find_suitable_manifests_returns_correct_manifest_filename(
-    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest, mock_configuration_manifest_updinfo
+    mocker: MockerFixture,
+    mock_configuration_metadata,
+    mock_configuration_manifest,
+    mock_configuration_manifest_updinfo,
 ):
     """
     Applicable update manifest filename is correct
     """
     manifest_filename = "manifest_test_path/1/1cv8.mft"
-    mocker.patch("update.get_name_and_version_from_manifest", return_value=mock_configuration_manifest)
-    mocker.patch("update.get_updatable_versions", return_value=mock_configuration_manifest_updinfo)
+    mocker.patch(
+        "update.get_name_and_version_from_manifest",
+        return_value=mock_configuration_manifest,
+    )
+    mocker.patch(
+        "update.get_updatable_versions",
+        return_value=mock_configuration_manifest_updinfo,
+    )
     result = _find_suitable_manifests(
-        [manifest_filename], mock_configuration_metadata[0], mock_configuration_metadata[1]
+        [manifest_filename],
+        mock_configuration_metadata[0],
+        mock_configuration_metadata[1],
     )
     assert result[0][0] == manifest_filename
 
 
 def test_find_suitable_manifests_returns_correct_manifest_version(
-    mocker: MockerFixture, mock_configuration_metadata, mock_configuration_manifest, mock_configuration_manifest_updinfo
+    mocker: MockerFixture,
+    mock_configuration_metadata,
+    mock_configuration_manifest,
+    mock_configuration_manifest_updinfo,
 ):
     """
     Applicable update manifest version is correct
     """
     manifest_filename = "manifest_test_path/1/1cv8.mft"
-    mocker.patch("update.get_name_and_version_from_manifest", return_value=mock_configuration_manifest)
-    mocker.patch("update.get_updatable_versions", return_value=mock_configuration_manifest_updinfo)
+    mocker.patch(
+        "update.get_name_and_version_from_manifest",
+        return_value=mock_configuration_manifest,
+    )
+    mocker.patch(
+        "update.get_updatable_versions",
+        return_value=mock_configuration_manifest_updinfo,
+    )
     result = _find_suitable_manifests(
-        [manifest_filename], mock_configuration_metadata[0], mock_configuration_metadata[1]
+        [manifest_filename],
+        mock_configuration_metadata[0],
+        mock_configuration_metadata[1],
     )
     assert result[0][1] == mock_configuration_manifest[1]
 
@@ -89,10 +128,18 @@ def test_find_suitable_manifests_returns_empty_list_when_no_manifests_are_applic
     `_find_suitable_manifests` returns empty list when no manifests are applicable
     """
     manifest_filename = "manifest_test_path/1/1cv8.mft"
-    mocker.patch("update.get_name_and_version_from_manifest", return_value=mock_configuration_manifest_new)
-    mocker.patch("update.get_updatable_versions", return_value=mock_configuration_manifest_updinfo_new)
+    mocker.patch(
+        "update.get_name_and_version_from_manifest",
+        return_value=mock_configuration_manifest_new,
+    )
+    mocker.patch(
+        "update.get_updatable_versions",
+        return_value=mock_configuration_manifest_updinfo_new,
+    )
     result = _find_suitable_manifests(
-        [manifest_filename], mock_configuration_metadata[0], mock_configuration_metadata[1]
+        [manifest_filename],
+        mock_configuration_metadata[0],
+        mock_configuration_metadata[1],
     )
     assert len(result) == 0
 

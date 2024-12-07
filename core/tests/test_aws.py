@@ -28,7 +28,10 @@ def test_get_aws_endpoint_url_parameter_returns_dict_if_set(mocker: MockerFixtur
     """
     Custom AWS endpoint url parameter is dict
     """
-    mocker.patch("conf.settings.AWS_ENDPOINT_URL", new_callable=PropertyMock(return_value="test.aws.endpoint"))
+    mocker.patch(
+        "conf.settings.AWS_ENDPOINT_URL",
+        new_callable=PropertyMock(return_value="test.aws.endpoint"),
+    )
     result = _get_aws_endpoint_url_parameter()
     assert isinstance(result, dict)
 
@@ -41,12 +44,17 @@ def test_get_aws_endpoint_url_parameter_returns_empty_dict_if_not_set():
     assert not result
 
 
-def test_get_aws_endpoint_url_parameter_returns_dict_with_value_if_set(mocker: MockerFixture):
+def test_get_aws_endpoint_url_parameter_returns_dict_with_value_if_set(
+    mocker: MockerFixture,
+):
     """
     Custom AWS endpoint url parameter contatins parameter name and value
     """
     endpoint_url = "test.aws.endpoint"
-    mocker.patch("conf.settings.AWS_ENDPOINT_URL", new_callable=PropertyMock(return_value=endpoint_url))
+    mocker.patch(
+        "conf.settings.AWS_ENDPOINT_URL",
+        new_callable=PropertyMock(return_value=endpoint_url),
+    )
     result = _get_aws_endpoint_url_parameter()
     assert result["endpoint_url"] == endpoint_url
 
@@ -63,7 +71,10 @@ def test_get_aws_region_parameter_returns_dict_if_set(mocker: MockerFixture):
     """
     Custom AWS region name parameter is dict
     """
-    mocker.patch("conf.settings.AWS_REGION_NAME", new_callable=PropertyMock(return_value="test-us-east-1"))
+    mocker.patch(
+        "conf.settings.AWS_REGION_NAME",
+        new_callable=PropertyMock(return_value="test-us-east-1"),
+    )
     result = _get_aws_region_parameter()
     assert isinstance(result, dict)
 
@@ -81,7 +92,10 @@ def test_get_aws_region_parameter_returns_dict_with_value_if_set(mocker: MockerF
     Custom AWS region name parameter contatins parameter name and value
     """
     region_name = "test-us-east-1"
-    mocker.patch("conf.settings.AWS_REGION_NAME", new_callable=PropertyMock(return_value=region_name))
+    mocker.patch(
+        "conf.settings.AWS_REGION_NAME",
+        new_callable=PropertyMock(return_value=region_name),
+    )
     result = _get_aws_region_parameter()
     assert result["region_name"] == region_name
 
@@ -147,7 +161,11 @@ async def test_upload_infobase_to_s3_make_retries(
 
 @pytest.mark.asyncio
 async def test_internal_upload_infobase_to_s3_call(
-    mocker: MockerFixture, infobase, success_backup_result, mock_aioboto3_session, mock_os_stat
+    mocker: MockerFixture,
+    infobase,
+    success_backup_result,
+    mock_aioboto3_session,
+    mock_os_stat,
 ):
     """
     boto3.Session.client.upload_file inside should be called when uploading files to AWS

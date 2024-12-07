@@ -31,7 +31,7 @@ class TestSurrogateModuleStubs(unittest.TestCase):
         try:
             stubbed()
         except Exception as e:
-            raise Exception(f"Modules are not stubbed correctly: {e}")
+            raise Exception(f"Modules are not stubbed correctly: {e}") from None
 
     def test_context_manager(self):
         with surrogate("my"), surrogate("my.module.one"), surrogate("my.module.two"):

@@ -100,7 +100,8 @@ def test_cluster_control_interface_get_working_process_connection_info_base_auth
         "test_infobase02": ("test_user02", "test_password02"),
     }
     mocker.patch(
-        "conf.settings.V8_INFOBASES_CREDENTIALS", new_callable=PropertyMock(return_value=infobases_credentials)
+        "conf.settings.V8_INFOBASES_CREDENTIALS",
+        new_callable=PropertyMock(return_value=infobases_credentials),
     )
     cci = ClusterCOMControler()
     cci.get_working_process_connection_with_info_base_auth()

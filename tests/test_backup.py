@@ -81,7 +81,10 @@ async def test_rotate_backups_calls_old_file_remover_for_replication_paths(mocke
     """
     replication_paths = ["test/replication/path/01", "test/replication/path/02"]
     mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=True))
-    mocker.patch("conf.settings.BACKUP_REPLICATION_PATHS", new_callable=PropertyMock(return_value=replication_paths))
+    mocker.patch(
+        "conf.settings.BACKUP_REPLICATION_PATHS",
+        new_callable=PropertyMock(return_value=replication_paths),
+    )
     remove_old_mock = mocker.patch("core.utils.remove_old_files_by_pattern", return_value=AsyncMock())
     await rotate_backups(infobase)
     assert remove_old_mock.await_count == len(replication_paths) + 1  # plus one for initial backup place
@@ -103,7 +106,10 @@ async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get
     Backup with 1cv8 tools makes retries according to retry policy
     """
     backup_retries = 1
-    mocker.patch("conf.settings.BACKUP_RETRIES_V8", new_callable=PropertyMock(return_value=backup_retries))
+    mocker.patch(
+        "conf.settings.BACKUP_RETRIES_V8",
+        new_callable=PropertyMock(return_value=backup_retries),
+    )
     execute_v8_mock = mocker.patch("backup.execute_v8_command", side_effect=V8Exception)
     await _backup_v8(infobase)
     assert execute_v8_mock.await_count == backup_retries + 1  # plus one for initial call
@@ -183,7 +189,10 @@ async def test_backup_v8_return_backup_result_succeeded_false_when_failed(
 
 @pytest.mark.asyncio
 async def test_backup_pgdump_calls_execute_subprocess_command(
-    mocker: MockerFixture, infobase, mock_prepare_postgres_connection_vars, mock_get_postgres_version_16
+    mocker: MockerFixture,
+    infobase,
+    mock_prepare_postgres_connection_vars,
+    mock_get_postgres_version_16,
 ):
     """
     Backup with pgdump calls `execute_subprocess_command`
@@ -205,7 +214,10 @@ async def test_backup_pgdump_makes_retries(
     Backup with pgdump makes retries according to retry policy
     """
     backup_retries = 1
-    mocker.patch("conf.settings.BACKUP_RETRIES_PG", new_callable=PropertyMock(return_value=backup_retries))
+    mocker.patch(
+        "conf.settings.BACKUP_RETRIES_PG",
+        new_callable=PropertyMock(return_value=backup_retries),
+    )
     execute_subprocess_mock = mocker.patch("backup.execute_subprocess_command", side_effect=SubprocessException)
     await _backup_pgdump(infobase, "", "", "")
     assert execute_subprocess_mock.await_count == backup_retries + 1  # plus one for initial call
@@ -521,7 +533,15 @@ def test_analyze_results_calls_backup_analyze(mocker: MockerFixture, infobases, 
     datetime_start = datetime.now()
     datetime_finish = datetime_start + timedelta(minutes=5)
     analyze_backup_result_mock = mocker.patch("backup.analyze_backup_result")
-    analyze_results(infobases, mixed_backup_result, datetime_start, datetime_finish, None, None, None)
+    analyze_results(
+        infobases,
+        mixed_backup_result,
+        datetime_start,
+        datetime_finish,
+        None,
+        None,
+        None,
+    )
     analyze_backup_result_mock.assert_called_with(mixed_backup_result, infobases, datetime_start, datetime_finish)
 
 
@@ -592,7 +612,10 @@ def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mi
     """
     `send_email_notification` calls inner util func for sending notification
     """
-    mocker.patch("conf.settings.NOTIFY_EMAIL_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch(
+        "conf.settings.NOTIFY_EMAIL_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
     mocker.patch("backup.make_html_table")
     send_notification_mock = mocker.patch("backup.send_notification")
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -603,7 +626,10 @@ def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed
     """
     `send_email_notification` calls `make_html_table` for backup results
     """
-    mocker.patch("conf.settings.NOTIFY_EMAIL_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch(
+        "conf.settings.NOTIFY_EMAIL_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
     mocker.patch("backup.send_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -616,7 +642,10 @@ def test_send_email_notification_not_makes_aws_table_when_aws_disabled(
     """
     `send_email_notification` calls `make_html_table` only for backup results when AWS_ENABLED is False
     """
-    mocker.patch("conf.settings.NOTIFY_EMAIL_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch(
+        "conf.settings.NOTIFY_EMAIL_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
     mocker.patch("backup.send_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
     send_email_notification(mixed_backup_result, mixed_aws_result)
@@ -629,7 +658,10 @@ def test_send_email_notification_makes_aws_table_when_aws_enabled(
     """
     `send_email_notification` calls `make_html_table` both for aws and backup results
     """
-    mocker.patch("conf.settings.NOTIFY_EMAIL_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch(
+        "conf.settings.NOTIFY_EMAIL_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
     mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
     mocker.patch("backup.send_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
@@ -643,7 +675,10 @@ def test_send_email_notification_makes_aws_and_backup_tables_when_aws_enabled(
     """
     `send_email_notification` calls `make_html_table` both for aws and backup results
     """
-    mocker.patch("conf.settings.NOTIFY_EMAIL_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch(
+        "conf.settings.NOTIFY_EMAIL_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
     mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
     mocker.patch("backup.send_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
@@ -696,7 +731,10 @@ def test_create_backup_replication_task_does_not_create_task_if_replication_not_
     """
     semaphore = asyncio.Semaphore(1)
     value = core_models.InfoBaseBackupTaskResult(infobase, True, "test/backup.path")
-    mocker.patch("conf.settings.BACKUP_REPLICATION", new_callable=PropertyMock(return_value=False))
+    mocker.patch(
+        "conf.settings.BACKUP_REPLICATION",
+        new_callable=PropertyMock(return_value=False),
+    )
     mock_create_task = mocker.patch("asyncio.create_task")
     create_backup_replication_task(value, semaphore)
     mock_create_task.assert_not_called()

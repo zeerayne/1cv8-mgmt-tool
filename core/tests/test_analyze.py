@@ -30,7 +30,13 @@ def test_analyze_result_log_subprefix(caplog, infobases, success_base_result):
     datetime_start = datetime.now()
     datetime_finish = datetime_start + timedelta(minutes=5)
     with caplog.at_level(logging.INFO):
-        analyze_result(success_base_result, infobases, datetime_start, datetime_finish, log_subprefix)
+        analyze_result(
+            success_base_result,
+            infobases,
+            datetime_start,
+            datetime_finish,
+            log_subprefix,
+        )
     assert log_subprefix in caplog.text
 
 
@@ -86,7 +92,11 @@ def test_analyze_result_maintenance(mock_analyze_result, infobases, success_main
     datetime_finish = datetime_start + timedelta(minutes=5)
     analyze_maintenance_result(success_maintenance_result, infobases, datetime_start, datetime_finish)
     mock_analyze_result.assert_called_with(
-        success_maintenance_result, infobases, datetime_start, datetime_finish, "Maintenance"
+        success_maintenance_result,
+        infobases,
+        datetime_start,
+        datetime_finish,
+        "Maintenance",
     )
 
 

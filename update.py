@@ -179,7 +179,13 @@ async def _update_info_base(ib_name, dry=False):
             # Процесс не может получить доступ к файлу, так как этот файл занят другим процессом.
             pause = (random.randint(0, 100_000)) / 10_000
             # Обновляет информационную базу и конфигурацию БД
-            await execute_v8_command(ib_name, v8_command, log_filename, permission_code, create_subprocess_pause=pause)
+            await execute_v8_command(
+                ib_name,
+                v8_command,
+                log_filename,
+                permission_code,
+                create_subprocess_pause=pause,
+            )
             if is_multiupdate:
                 # Если в цепочке несколько обновлений, то после каждого проверяет версию ИБ,
                 # и продолжает только в случае, если ИБ обновилась.

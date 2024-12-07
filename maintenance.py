@@ -50,7 +50,11 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     )
     try:
         await execute_v8_command(
-            ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True
+            ib_name,
+            v8_command,
+            log_filename,
+            timeout=settings.MAINTENANCE_TIMEOUT_V8,
+            log_output_on_success=True,
         )
     except V8Exception:
         return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)

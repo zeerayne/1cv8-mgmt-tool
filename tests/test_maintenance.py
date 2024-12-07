@@ -131,7 +131,9 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
 
 
 @pytest.mark.asyncio
-async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_credentials(infobase):
+async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_credentials(
+    infobase,
+):
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no credentials found for db
     """
@@ -164,7 +166,9 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_faile
 
 
 @pytest.mark.asyncio
-async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_credentials(infobase):
+async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_credentials(
+    infobase,
+):
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no credentials found for db
     """

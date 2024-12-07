@@ -71,7 +71,10 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBacku
     # Формирует команду для выгрузки
     info_base_user, info_base_pwd = utils.get_info_base_credentials(ib_name)
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
-    dt_filename = os.path.join(settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "dt"))
+    dt_filename = os.path.join(
+        settings.BACKUP_PATH,
+        utils.append_file_extension_to_string(ib_and_time_str, "dt"),
+    )
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = (
@@ -135,7 +138,8 @@ async def _backup_pgdump(
 
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(
-        settings.BACKUP_PATH, utils.append_file_extension_to_string(ib_and_time_str, "pgdump")
+        settings.BACKUP_PATH,
+        utils.append_file_extension_to_string(ib_and_time_str, "pgdump"),
     )
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     pg_dump_path = os.path.join(settings.PG_BIN_PATH, "pg_dump.exe")
@@ -209,7 +213,11 @@ def create_aws_upload_task(
 ):
     if settings.AWS_ENABLED and backup_result.succeeded:
         return asyncio.create_task(
-            aws.upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, aws_semaphore),
+            aws.upload_infobase_to_s3(
+                backup_result.infobase_name,
+                backup_result.backup_filename,
+                aws_semaphore,
+            ),
             name=f"Task :: Upload {backup_result.infobase_name} to S3",
         )
 
@@ -240,7 +248,8 @@ def analyze_results(
 
 
 def send_email_notification(
-    backup_result: List[core_models.InfoBaseBackupTaskResult], aws_result: List[core_models.InfoBaseAWSUploadTaskResult]
+    backup_result: List[core_models.InfoBaseBackupTaskResult],
+    aws_result: List[core_models.InfoBaseAWSUploadTaskResult],
 ):
     if settings.NOTIFY_EMAIL_ENABLED:
         log.info(f"<{log_prefix}> Sending email notification")
@@ -259,7 +268,11 @@ async def main():
             initialize_semaphore(settings.AWS_CONCURRENCY, log_prefix, "AWS") if settings.AWS_ENABLED else None
         )
         backup_replication_semaphore = (
-            initialize_semaphore(settings.BACKUP_REPLICATION_CONCURRENCY, log_prefix, "backup replication")
+            initialize_semaphore(
+                settings.BACKUP_REPLICATION_CONCURRENCY,
+                log_prefix,
+                "backup replication",
+            )
             if settings.BACKUP_REPLICATION
             else None
         )

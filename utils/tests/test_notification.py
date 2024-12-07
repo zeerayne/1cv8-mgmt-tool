@@ -78,7 +78,9 @@ def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_send
     """
     send_notification("", "")
     mock_smtp.assert_called_with(
-        settings.NOTIFY_EMAIL_SMTP_HOST, settings.NOTIFY_EMAIL_SMTP_PORT, timeout=settings.NOTIFY_EMAIL_CONNECT_TIMEOUT
+        settings.NOTIFY_EMAIL_SMTP_HOST,
+        settings.NOTIFY_EMAIL_SMTP_PORT,
+        timeout=settings.NOTIFY_EMAIL_CONNECT_TIMEOUT,
     )
 
 

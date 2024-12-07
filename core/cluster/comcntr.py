@@ -146,7 +146,10 @@ class ClusterCOMControler(ClusterControler):
         return name, version
 
     def lock_info_base(
-        self, infobase: str, permission_code: str = "0000", message: str = "Выполняется обслуживание ИБ"
+        self,
+        infobase: str,
+        permission_code: str = "0000",
+        message: str = "Выполняется обслуживание ИБ",
     ):
         """
         Блокирует фоновые задания и новые сеансы информационной базы

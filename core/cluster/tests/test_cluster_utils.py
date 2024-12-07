@@ -24,7 +24,9 @@ from core.cluster.utils import (
 from core.exceptions import V8Exception
 
 
-def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_com(mock_cluster_control_mode_com):
+def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_com(
+    mock_cluster_control_mode_com,
+):
     """
     `get_cluster_controller_class` returns `ClusterCOMControler` class when `V8_CLUSTER_CONTROL_MODE = 'com'`
     """
@@ -42,7 +44,9 @@ def test_get_cluster_controller_retuns_comcntr_when_mode_is_com(mocker: MockerFi
 
 
 @pytest.mark.asyncio
-def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_rac(mock_cluster_control_mode_rac):
+def test_get_cluster_controller_class_retuns_comcntr_when_mode_is_rac(
+    mock_cluster_control_mode_rac,
+):
     """
     `get_cluster_controller_class` returns `ClusterRACControler` class when `V8_CLUSTER_CONTROL_MODE = 'rac'`
     """
