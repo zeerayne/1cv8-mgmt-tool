@@ -88,3 +88,63 @@ class V8CInfobase(V8CInfobaseShort):
             "minimum_scheduled_jobs_start_period_without_active_users",
             "maximum_scheduled_jobs_start_shift_without_active_users",
         ]
+
+
+class V8CSession(V8CModel):
+    @property
+    def id(self):
+        return self.session
+
+    @property
+    def keys(self):
+        return [
+            "session",
+            "session_id",
+            "infobase",
+            "connection",
+            "process",
+            "user_name",
+            "host",
+            "app_id",
+            "locale",
+            "started_at",
+            "last_active_at",
+            "hibernate",
+            "passive_session_hibernate_time",
+            "hibernate_session_terminate_time",
+            "blocked_by_dbms",
+            "blocked_by_ls",
+            "bytes_all",
+            "bytes_last_5min",
+            "calls_all",
+            "calls_last_5min",
+            "dbms_bytes_all",
+            "dbms_bytes_last_5min",
+            "db_proc_info",
+            "db_proc_took",
+            "db_proc_took_at",
+            "duration_all",
+            "duration_all_dbms",
+            "duration_current",
+            "duration_current_dbms",
+            "duration_last_5min",
+            "duration_last_5min_dbms",
+            "memory_current",
+            "memory_last_5min",
+            "memory_total",
+            "read_current",
+            "read_last_5min",
+            "read_total",
+            "write_current",
+            "write_last_5min",
+            "write_total",
+            "duration_current_service",
+            "duration_last_5min_service",
+            "duration_all_service",
+            "current_service_name",
+            "cpu_time_current",
+            "cpu_time_last_5min",
+            "cpu_time_total",
+            "data_separation",
+            "client_ip",
+        ]
