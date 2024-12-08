@@ -97,14 +97,18 @@ class ClusterRACControler(ClusterControler):
         :param permission_code: Код доступа к информационной базе во время блокировки сеансов
         :param message: Сообщение будет выводиться при попытке установить сеанс с ИБ
         """
-        ...
+        ib = self._filter_infobase(self.get_cluster_info_bases(), infobase)
+        cmd = f"infobase update {self._with_cluster_auth()} {self._with_infobase_auth(ib)} --sessions-deny=on --scheduled-jobs-deny=on --permission-code={permission_code} --denied-message={message}"
+        self._rac_call(cmd)
 
     def unlock_info_base(self, infobase: str):
         """
         Снимает блокировку фоновых заданий и сеансов информационной базы
         :param infobase: имя информационной базы
         """
-        ...
+        ib = self._filter_infobase(self.get_cluster_info_bases(), infobase)
+        cmd = f"infobase update {self._with_cluster_auth()} {self._with_infobase_auth(ib)} --sessions-deny=off --scheduled-jobs-deny=off"
+        self._rac_call(cmd)
 
     def terminate_info_base_sessions(self, infobase: str):
         """
@@ -141,77 +145,6 @@ infobase : 4e242939-180b-47a9-afa3-bdab8ece7f10
 name     : infobase02
 descr    :
 
-Use:
-
-        rac infobase [command] [options] [arguments]
-
-Shared options:
-
-    --version | -v
-        get the utility version
-
-    --help | -h | -?
-        display brief utility description
-
-Shared arguments:
-
-    <host>[:<port>]
-        administration server address (default: localhost:1545)
-
-Mode:
-
-    infobase
-        Infobase administration mode
-
-Parameters:
-
-    --cluster=<uuid>
-        (required) server cluster identifier
-
-    --cluster-user=<name>
-        name of the cluster administrator
-
-    --cluster-pwd=<pwd>
-        password of the cluster administrator
-
-Commands:
-
-    info
-        receiving the information about the infobase
-
-        --infobase=<uuid>
-            (required) infobase identifier
-
-        --infobase-user=<name>
-            name of the infobase administrator
-
-        --infobase-pwd=<pwd>
-            password of the infobase administrator
-
-    summary
-        management of brief information on infobases
-
-        Additional commands:
-            info
-                receiving brief information on the infobase
-
-                --infobase=<uuid>
-                    (required) infobase identifier
-
-            list
-                receiving the list of brief information on infobases
-
-            update
-                updating brief information on the infobase
-
-                --infobase=<uuid>
-                    (required) infobase identifier
-
-                --descr=<descr>
-                    infobase description
-"""
-
-"""
 Use:
 
         rac session [command] [options] [arguments]
