@@ -34,7 +34,7 @@ class ClusterRACControler(ClusterControler):
                 kw.clear()
                 continue
             key, value = line.split(":")
-            kw.setdefault(key.replace("-", "_").strip(), value.strip('"').strip())
+            kw.setdefault(key.replace("-", "_").strip(), value.strip().strip('"'))
         return objects
 
     def _rac_output_to_object(self, output: str, obj_class) -> V8CModel:
