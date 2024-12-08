@@ -1,12 +1,12 @@
 import subprocess
 import logging
 
-from typing import List
+from typing import List, Type
 
 from conf import settings
 from core.exceptions import RACException
 from core.cluster.abc import ClusterControler
-from core.cluster.models import V8CModel, V8CCluster, V8CInfobaseShort, V8CInfobase
+from core.cluster.models import V8CModel, V8CCluster, V8CInfobaseShort, V8CInfobase, V8CSession
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class ClusterRACControler(ClusterControler):
         # TODO: поддержка сценариев, когда утилита не включена в PATH
         return "rac"
 
-    def _rac_output_to_objects(self, output: str, obj_class) -> List[V8CModel]:
+    def _rac_output_to_objects(self, output: str, obj_class: Type[V8CModel]) -> List[V8CModel]:
         objects = []
         lines = [line for line in output.splitlines()]
         kw = dict()
@@ -37,7 +37,7 @@ class ClusterRACControler(ClusterControler):
             kw.setdefault(key.replace("-", "_").strip(), value.strip().strip('"'))
         return objects
 
-    def _rac_output_to_object(self, output: str, obj_class) -> V8CModel:
+    def _rac_output_to_object(self, output: str, obj_class: Type[V8CModel]) -> V8CModel:
         return self._rac_output_to_objects(output, obj_class)[0]
 
     def _rac_call(self, command: str) -> str:
@@ -82,6 +82,18 @@ class ClusterRACControler(ClusterControler):
             if ib.name.lower() == name.lower():
                 return ib
 
+    def _get_infobase_short(self, infobase_name: str) -> V8CInfobaseShort:
+        return self._filter_infobase(self.get_cluster_info_bases(), infobase_name)
+
+    def _get_infobase_sessions(self, infobase: V8CInfobaseShort) -> List[V8CSession]:
+        cmd = f"session list {self._with_cluster_auth()} --infobase={infobase.id}"
+        output = self._rac_call(cmd)
+        return self._rac_output_to_objects(output, V8CSession)
+
+    def _terminate_session(self, session: V8CSession):
+        cmd = f"session terminate {self._with_cluster_auth()} --session={session.id}"
+        self._rac_call(cmd)
+
     def get_cluster_info_bases(self):
         """
         Получает список всех ИБ из кластера
@@ -97,7 +109,7 @@ class ClusterRACControler(ClusterControler):
         :param permission_code: Код доступа к информационной базе во время блокировки сеансов
         :param message: Сообщение будет выводиться при попытке установить сеанс с ИБ
         """
-        ib = self._filter_infobase(self.get_cluster_info_bases(), infobase)
+        ib = self._get_infobase_short(infobase)
         cmd = f"infobase update {self._with_cluster_auth()} {self._with_infobase_auth(ib)} --sessions-deny=on --scheduled-jobs-deny=on --permission-code={permission_code} --denied-message={message}"
         self._rac_call(cmd)
 
@@ -106,7 +118,7 @@ class ClusterRACControler(ClusterControler):
         Снимает блокировку фоновых заданий и сеансов информационной базы
         :param infobase: имя информационной базы
         """
-        ib = self._filter_infobase(self.get_cluster_info_bases(), infobase)
+        ib = self._get_infobase_short(infobase)
         cmd = f"infobase update {self._with_cluster_auth()} {self._with_infobase_auth(ib)} --sessions-deny=off --scheduled-jobs-deny=off"
         self._rac_call(cmd)
 
@@ -115,104 +127,17 @@ class ClusterRACControler(ClusterControler):
         Принудительно завершает текущие сеансы информационной базы
         :param infobase: имя информационной базы
         """
-        ...
+        ib = self._get_infobase_short(infobase)
+        sessions = self._get_infobase_sessions(ib)
+        for s in sessions:
+            self._terminate_session(s)
 
     def get_info_base(self, infobase: str) -> V8CInfobase:
         """
         Получает сведения об ИБ из кластера
         :param infobase: имя информационной базы
         """
-        ib = self._filter_infobase(self.get_cluster_info_bases(), infobase)
+        ib = self._get_infobase_short(infobase)
         cmd = f"infobase info {self._with_cluster_auth()} {self._with_infobase_auth(ib)}"
         output = self._rac_call(cmd)
         return self._rac_output_to_object(output, V8CInfobase)
-
-
-"""
-rac ras:1545 cluster admin list --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
-rac ras:1545 cluster info --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
-rac ras:1545 infobase summary list --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
-rac ras:1545 infobase create --create-database --name=infobase01 --dbms=MSSQLServer --db-server=db --db-name=infobase01 --locale=ru --db-user=sa --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
-rac ras:1545 infobase create --create-database --name=infobase01 --dbms=PostgreSQL --db-server=db --db-name=infobase01 --locale=ru --db-user=postgres --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
-rac ras:1545 infobase create --create-database --name=infobase02 --dbms=PostgreSQL --db-server=db --db-name=infobase02 --locale=ru --db-user=postgres --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
-rac ras:1545 infobase summary list --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
----
-infobase : ecc1909f-4807-4423-becf-f81cf3b96cde
-name     : infobase01
-descr    :
-
-infobase : 4e242939-180b-47a9-afa3-bdab8ece7f10
-name     : infobase02
-descr    :
-
-Use:
-
-        rac session [command] [options] [arguments]
-
-Shared options:
-
-    --version | -v
-        get the utility version
-
-    --help | -h | -?
-        display brief utility description
-
-Shared arguments:
-
-    <host>[:<port>]
-        administration server address (default: localhost:1545)
-
-Mode:
-
-    session
-        Infobase session administration mode
-
-Parameters:
-
-    --cluster=<uuid>
-        (required) server cluster identifier
-
-    --cluster-user=<name>
-        name of the cluster administrator
-
-    --cluster-pwd=<pwd>
-        password of the cluster administrator
-
-Commands:
-
-    info
-        receiving information on the session
-
-        --session=<uuid>
-            (required) infobase session identifier
-
-        --licenses
-            displaying information on licenses granted to the session
-
-    list
-        receiving the session information list
-
-        --infobase=<uuid>
-            infobase identifier
-
-        --licenses
-            displaying information on licenses granted to the session
-
-    terminate
-        Forced termination of the session
-
-        --session=<uuid>
-            (required) infobase session identifier
-
-        --error-message=<string>
-            Session termination reason message
-
-    interrupt-current-server-call
-        current server call termination
-
-        --session=<uuid>
-            (required) infobase session identifier
-
-        --error-message=<string>
-            termination cause message
-"""
