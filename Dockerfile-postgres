@@ -21,7 +21,7 @@ RUN apt-get update \
 ENV LANG ru_RU.UTF-8
 
 RUN wget --quiet -O - http://repo.postgrespro.ru/keys/GPG-KEY-POSTGRESPRO | apt-key add - \
- && echo 'deb http://repo.postgrespro.ru/1c/1c-'${PG_VERSION}'/debian bookworm main' > /etc/apt/sources.list.d/postgrespro-1c.list \
+ && echo 'deb http://repo.postgrespro.ru/1c/1c-'${PG_VERSION}'/debian '$(env -i bash -c '. /etc/os-release; echo $VERSION_CODENAME')' main' > /etc/apt/sources.list.d/postgrespro-1c.list \
  && apt-get update \
  && apt-get install -y postgrespro-1c-${PG_VERSION} \
  && rm -rf /var/lib/apt/lists/*
