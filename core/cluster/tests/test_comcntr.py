@@ -31,7 +31,7 @@ def test_get_server_agent_port_is_str():
     assert type(result) is str
 
 
-def test_cluster_control_interface_initialization(mock_win32com_client_dispatch):
+def test_cluster_com_control_interface_initialization(mock_win32com_client_dispatch):
     """
     ClusterCOMControler instance is initialized sucessfully
     """
@@ -39,7 +39,7 @@ def test_cluster_control_interface_initialization(mock_win32com_client_dispatch)
     mock_win32com_client_dispatch.assert_called_once()
 
 
-def test_cluster_control_interface_connect_agent(mock_connect_agent):
+def test_cluster_com_control_interface_connect_agent(mock_connect_agent):
     """
     `get_agent_connection` makes `COMConnector.ConnectAgent` call
     """
@@ -47,7 +47,7 @@ def test_cluster_control_interface_connect_agent(mock_connect_agent):
     mock_connect_agent.assert_called_once()
 
 
-def test_cluster_control_interface_get_cluster(mock_connect_agent):
+def test_cluster_com_control_interface_get_cluster(mock_connect_agent):
     """
     `get_cluster` makes `IServerAgentConnection.GetClusters` call
     """
@@ -56,7 +56,7 @@ def test_cluster_control_interface_get_cluster(mock_connect_agent):
     mock_connect_agent.return_value.GetClusters.assert_called_once()
 
 
-def test_cluster_control_interface_cluster_auth(mock_connect_agent):
+def test_cluster_com_control_interface_cluster_auth(mock_connect_agent):
     """
     `cluster_auth` makes `IClusterInfo.Authenticate` call
     """
@@ -65,7 +65,7 @@ def test_cluster_control_interface_cluster_auth(mock_connect_agent):
     mock_connect_agent.return_value.Authenticate.assert_called_once()
 
 
-def test_cluster_control_interface_get_working_process_connection(
+def test_cluster_com_control_interface_get_working_process_connection(
     mock_win32com_client_dispatch, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -76,7 +76,7 @@ def test_cluster_control_interface_get_working_process_connection(
     mock_win32com_client_dispatch.return_value.ConnectWorkingProcess.assert_called_once()
 
 
-def test_cluster_control_interface_get_working_process_connection_admin_auth(
+def test_cluster_com_control_interface_get_working_process_connection_admin_auth(
     mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -88,7 +88,7 @@ def test_cluster_control_interface_get_working_process_connection_admin_auth(
     mock_connect_working_process.return_value.AuthenticateAdmin.assert_called_once()
 
 
-def test_cluster_control_interface_get_working_process_connection_info_base_auth(
+def test_cluster_com_control_interface_get_working_process_connection_info_base_auth(
     mocker: MockerFixture, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -108,7 +108,7 @@ def test_cluster_control_interface_get_working_process_connection_info_base_auth
     assert mock_connect_working_process.return_value.AddAuthentication.call_count == len(infobases_credentials)
 
 
-def test_cluster_control_interface_get_cluster_info_bases(mock_connect_agent, mock_connect_working_process):
+def test_cluster_com_control_interface_get_cluster_info_bases(mock_connect_agent, mock_connect_working_process):
     """
     `get_cluster_info_bases` calls `IWorkingProcessConnection.GetInfoBases`
     """
@@ -117,7 +117,7 @@ def test_cluster_control_interface_get_cluster_info_bases(mock_connect_agent, mo
     mock_connect_working_process.return_value.GetInfoBases.assert_called()
 
 
-def test_cluster_control_interface_get_info_base(infobase, mock_connect_agent, mock_connect_working_process):
+def test_cluster_com_control_interface_get_info_base(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `get_info_base` finds exact infobase in list
     """
@@ -126,7 +126,7 @@ def test_cluster_control_interface_get_info_base(infobase, mock_connect_agent, m
     assert infobase_com_obj.Name == infobase
 
 
-def test_cluster_control_interface_get_cluster_info_bases_short(mock_connect_agent):
+def test_cluster_com_control_interface_get_cluster_info_bases_short(mock_connect_agent):
     """
     `get_cluster_info_bases_short` calls `IServerAgentConnection.GetInfoBases`
     """
@@ -137,7 +137,7 @@ def test_cluster_control_interface_get_cluster_info_bases_short(mock_connect_age
     mock_connect_agent.return_value.GetInfoBases.assert_called()
 
 
-def test_cluster_control_interface_get_info_base_short(infobase, mock_connect_agent):
+def test_cluster_com_control_interface_get_info_base_short(infobase, mock_connect_agent):
     """
     `_get_info_base_short` finds exact infobase in list
     """
@@ -148,7 +148,7 @@ def test_cluster_control_interface_get_info_base_short(infobase, mock_connect_ag
     assert infobase_com_obj.Name == infobase
 
 
-def test_cluster_control_interface_get_info_base_metadata(infobase, mock_external_connection):
+def test_cluster_com_control_interface_get_info_base_metadata(infobase, mock_external_connection):
     """
     `get_info_base_metadata` calls `COMConnector.Connect`
     """
@@ -157,7 +157,7 @@ def test_cluster_control_interface_get_info_base_metadata(infobase, mock_externa
     mock_external_connection.assert_called()
 
 
-def test_cluster_control_interface_get_info_base_metadata_connects_to_correct_infobase(
+def test_cluster_com_control_interface_get_info_base_metadata_connects_to_correct_infobase(
     infobase, mock_external_connection
 ):
     """
@@ -168,7 +168,7 @@ def test_cluster_control_interface_get_info_base_metadata_connects_to_correct_in
     assert metadata[0] == infobase
 
 
-def test_cluster_control_interface_lock_info_base(infobase, mock_connect_agent, mock_connect_working_process):
+def test_cluster_com_control_interface_lock_info_base(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `lock_info_base` calls `IWorkingProcessConnection.UpdateInfoBase`
     """
@@ -177,7 +177,7 @@ def test_cluster_control_interface_lock_info_base(infobase, mock_connect_agent, 
     mock_connect_working_process.return_value.UpdateInfoBase.assert_called_with(infobase_com_obj)
 
 
-def test_cluster_control_interface_lock_info_base_set_sessions_denied(
+def test_cluster_com_control_interface_lock_info_base_set_sessions_denied(
     infobase, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -188,7 +188,7 @@ def test_cluster_control_interface_lock_info_base_set_sessions_denied(
     assert infobase_com_obj.SessionsDenied is True
 
 
-def test_cluster_control_interface_lock_info_base_set_scheduled_jobs_denied(
+def test_cluster_com_control_interface_lock_info_base_set_scheduled_jobs_denied(
     infobase, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -199,7 +199,7 @@ def test_cluster_control_interface_lock_info_base_set_scheduled_jobs_denied(
     assert infobase_com_obj.ScheduledJobsDenied is True
 
 
-def test_cluster_control_interface_lock_info_base_set_permission_code(
+def test_cluster_com_control_interface_lock_info_base_set_permission_code(
     infobase, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -211,7 +211,7 @@ def test_cluster_control_interface_lock_info_base_set_permission_code(
     assert infobase_com_obj.PermissionCode == permission_code
 
 
-def test_cluster_control_interface_lock_info_base_set_denied_message(
+def test_cluster_com_control_interface_lock_info_base_set_denied_message(
     infobase, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -223,7 +223,7 @@ def test_cluster_control_interface_lock_info_base_set_denied_message(
     assert infobase_com_obj.DeniedMessage == denied_message
 
 
-def test_cluster_control_interface_unlock_info_base(infobase, mock_connect_agent, mock_connect_working_process):
+def test_cluster_com_control_interface_unlock_info_base(infobase, mock_connect_agent, mock_connect_working_process):
     """
     `unlock_info_base` calls `IWorkingProcessConnection.UpdateInfoBase`
     """
@@ -232,7 +232,7 @@ def test_cluster_control_interface_unlock_info_base(infobase, mock_connect_agent
     mock_connect_working_process.return_value.UpdateInfoBase.assert_called_with(infobase_com_obj)
 
 
-def test_cluster_control_interface_unlock_info_base_set_sessions_denied(
+def test_cluster_com_control_interface_unlock_info_base_set_sessions_denied(
     infobase, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -243,7 +243,7 @@ def test_cluster_control_interface_unlock_info_base_set_sessions_denied(
     assert infobase_com_obj.SessionsDenied is False
 
 
-def test_cluster_control_interface_unlock_info_base_set_scheduled_jobs_denied(
+def test_cluster_com_control_interface_unlock_info_base_set_scheduled_jobs_denied(
     infobase, mock_connect_agent, mock_connect_working_process
 ):
     """
@@ -254,7 +254,7 @@ def test_cluster_control_interface_unlock_info_base_set_scheduled_jobs_denied(
     assert infobase_com_obj.ScheduledJobsDenied is False
 
 
-def test_cluster_control_interface_terminate_info_base_sessions_get_infobase_session(infobase, mock_connect_agent):
+def test_cluster_com_control_interface_terminate_info_base_sessions_get_infobase_session(infobase, mock_connect_agent):
     """
     `terminate_info_base_sessions` calls `IServerAgentConnection.GetInfoBaseSessions`
     """
@@ -263,7 +263,7 @@ def test_cluster_control_interface_terminate_info_base_sessions_get_infobase_ses
     mock_connect_agent.return_value.GetInfoBaseSessions.assert_called()
 
 
-def test_cluster_control_interface_terminate_info_base_sessions_terminate_session(infobase, mock_connect_agent):
+def test_cluster_com_control_interface_terminate_info_base_sessions_terminate_session(infobase, mock_connect_agent):
     """
     `terminate_info_base_sessions` calls `IServerAgentConnection.TerminateSession`
     """
