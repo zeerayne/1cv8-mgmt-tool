@@ -172,12 +172,8 @@ async def _backup_pgdump(
 async def _backup_info_base(ib_name: str) -> core_models.InfoBaseBackupTaskResult:
     cci = cluster_utils.get_cluster_controller_class()()
     ib_info = cci.get_info_base(ib_name)
-    db_server = ib_info.dbServerName
-    dbms = ib_info.DBMS
-    db_name = ib_info.dbName
-    db_user = ib_info.dbUser
-    if settings.BACKUP_PG and postgres.dbms_is_postgres(dbms):
-        result = await _backup_pgdump(ib_name, db_server, db_name, db_user)
+    if settings.BACKUP_PG and postgres.dbms_is_postgres(ib_info.dbms):
+        result = await _backup_pgdump(ib_name, ib_info.db_server, ib_info.db_name, ib_info.db_user)
     else:
         result = await cluster_utils.com_func_wrapper(_backup_v8, ib_name)
     return result

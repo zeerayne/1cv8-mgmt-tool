@@ -94,7 +94,7 @@ class ClusterRACControler(ClusterControler):
         cmd = f"session terminate {self._with_cluster_auth()} --session={session.id}"
         self._rac_call(cmd)
 
-    def get_cluster_info_bases(self):
+    def get_cluster_info_bases(self) -> List[V8CInfobaseShort]:
         """
         Получает список всех ИБ из кластера
         """

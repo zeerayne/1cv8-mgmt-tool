@@ -1,7 +1,7 @@
 import asyncio
 import random
 from textwrap import dedent
-from unittest.mock import AsyncMock, Mock, mock_open
+from unittest.mock import AsyncMock, mock_open
 
 import asyncpg
 import pytest
@@ -9,6 +9,7 @@ from packaging.version import Version
 from pytest_mock import MockerFixture
 
 from core import models as core_models
+from core.cluster import models as cluster_models
 from utils.postgres import POSTGRES_NAME
 
 random.seed(0)
@@ -235,12 +236,13 @@ def mock_cluster_postgres_infobase(mocker: MockerFixture, mock_cluster_com_contr
     db_server = "test_postgres_db_server"
     db_name = "test_postgres_db_name"
     db_user = "test_postgres_db_user"
-    info_base_mock = Mock()
-    info_base_mock.return_value.DBMS = POSTGRES_NAME
-    info_base_mock.return_value.dbServerName = db_server
-    info_base_mock.return_value.dbName = db_name
-    info_base_mock.return_value.dbUser = db_user
-    mock_cluster_com_controller.return_value.get_info_base = info_base_mock
+    ib = cluster_models.V8CInfobase(
+        dbms=POSTGRES_NAME,
+        db_server=db_server,
+        db_name=db_name,
+        db_user=db_user,
+    )
+    mock_cluster_com_controller.return_value.get_info_base.return_value = ib
     return db_server, db_name, db_user
 
 
@@ -249,12 +251,13 @@ def mock_cluster_mssql_infobase(mocker: MockerFixture, mock_cluster_com_controll
     db_server = "test_mssql_db_server"
     db_name = "test_mssql_db_name"
     db_user = "test_mssql_db_user"
-    info_base_mock = Mock()
-    info_base_mock.return_value.DBMS = "MSSQL"
-    info_base_mock.return_value.dbServerName = db_server
-    info_base_mock.return_value.dbName = db_name
-    info_base_mock.return_value.dbUser = db_user
-    mock_cluster_com_controller.return_value.get_info_base = info_base_mock
+    ib = cluster_models.V8CInfobase(
+        dbms="MSSQL",
+        db_server=db_server,
+        db_name=db_name,
+        db_user=db_user,
+    )
+    mock_cluster_com_controller.return_value.get_info_base.return_value = ib
     return db_server, db_name, db_user
 
 

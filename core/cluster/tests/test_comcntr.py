@@ -122,8 +122,8 @@ def test_cluster_com_control_interface_get_info_base(infobase, mock_connect_agen
     `get_info_base` finds exact infobase in list
     """
     cci = ClusterCOMControler()
-    infobase_com_obj = cci.get_info_base(infobase)
-    assert infobase_com_obj.Name == infobase
+    infobase_obj = cci.get_info_base(infobase)
+    assert infobase_obj.name == infobase
 
 
 def test_cluster_com_control_interface_get_cluster_info_bases_short(mock_connect_agent):

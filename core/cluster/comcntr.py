@@ -2,6 +2,7 @@ import logging
 from typing import List
 
 from core.cluster.abc import ClusterControler
+from core.cluster.models import V8CInfobase, V8CInfobaseShort
 from core.cluster.utils import get_server_agent_address, get_server_agent_port
 
 try:
@@ -112,14 +113,28 @@ class ClusterCOMControler(ClusterControler):
             if ib.Name.lower() == name.lower():
                 return ib
 
-    def get_cluster_info_bases(self):
+    def _get_cluster_info_bases(self) -> List:
         working_process_connection = self.get_working_process_connection_with_info_base_auth()
         info_bases = working_process_connection.GetInfoBases()
         return info_bases
 
-    def get_info_base(self, name):
-        info_bases = self.get_cluster_info_bases()
+    def _get_info_base(self, name):
+        info_bases = self._get_cluster_info_bases()
         return self._filter_infobase(info_bases, name)
+
+    def get_cluster_info_bases(self) -> List[V8CInfobaseShort]:
+        info_bases = self._get_cluster_info_bases()
+        return [V8CInfobaseShort(name=ib.Name) for ib in info_bases]
+
+    def get_info_base(self, name) -> V8CInfobase:
+        com_infobase = self._get_info_base(name)
+        return V8CInfobase(
+            name=com_infobase.Name,
+            db_server=com_infobase.dbServerName,
+            dbms=com_infobase.DBMS,
+            db_name=com_infobase.dbName,
+            db_user=com_infobase.dbUser,
+        )
 
     def get_cluster_info_bases_short(self, agent_connection, cluster):
         info_bases_short = agent_connection.GetInfoBases(cluster)
@@ -157,7 +172,7 @@ class ClusterCOMControler(ClusterControler):
         :param permission_code: Код доступа к информационной базе во время блокировки сеансов
         :param message: Сообщение будет выводиться при попытке установить сеанс с ИБ
         """
-        infobase_com_obj = self.get_info_base(infobase)
+        infobase_com_obj = self._get_info_base(infobase)
         infobase_com_obj.ScheduledJobsDenied = True
         infobase_com_obj.SessionsDenied = True
         infobase_com_obj.PermissionCode = permission_code
@@ -176,7 +191,7 @@ class ClusterCOMControler(ClusterControler):
         Снимает блокировку фоновых заданий и сеансов информационной базы
         :param infobase: имя информационной базы
         """
-        infobase_com_obj = self.get_info_base(infobase)
+        infobase_com_obj = self._get_info_base(infobase)
         infobase_com_obj.ScheduledJobsDenied = False
         infobase_com_obj.SessionsDenied = False
         infobase_com_obj.DeniedMessage = ""
