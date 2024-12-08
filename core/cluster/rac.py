@@ -1,16 +1,94 @@
+import subprocess
 import logging
 
+from typing import List
+
+from conf import settings
+from core.exceptions import RACException
 from core.cluster.abc import ClusterControler
+from core.cluster.models import V8CModel, V8CCluster, V8CInfobaseShort, V8CInfobase
 
 log = logging.getLogger(__name__)
 
 
 class ClusterRACControler(ClusterControler):
+    def __init__(self):
+        self.ras_host = settings.V8_RAS["address"]
+        self.ras_port = settings.V8_RAS["port"]
+        self.cluster_admin_name = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
+        self.cluster_admin_pwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
+        self.infobases_credentials = settings.V8_INFOBASES_CREDENTIALS
+
+    def _get_rac_exec_path(self):
+        # TODO: поддержка windows/linux
+        # TODO: поддержка сценариев, когда утилита не включена в PATH
+        return "rac"
+
+    def _rac_output_to_objects(self, output: str, obj_class) -> List[V8CModel]:
+        objects = []
+        lines = [line for line in output.splitlines()]
+        kw = dict()
+        for line in lines:
+            if not line.strip():
+                objects.append(obj_class(**kw))
+                kw.clear()
+                continue
+            key, value = line.split(":")
+            kw.setdefault(key.replace("-", "_").strip(), value.strip('"').strip())
+        return objects
+
+    def _rac_output_to_object(self, output: str, obj_class) -> V8CModel:
+        return self._rac_output_to_objects(output, obj_class)[0]
+
+    def _rac_call(self, command: str) -> str:
+        call_str = f"{self._get_rac_exec_path()} {self.ras_host}:{self.ras_port} {command} ; exit 0"
+        log.debug(f"Created rac command [{call_str}]")
+        try:
+            out = subprocess.check_output(call_str, stderr=subprocess.STDOUT, shell=True)
+            out = out.decode("utf-8")
+        except subprocess.CalledProcessError as e:
+            raise RACException() from e
+        return out
+
+    def _get_clusters(self) -> List[V8CCluster]:
+        cmd = "cluster list"
+        output = self._rac_call(cmd)
+        return self._rac_output_to_objects(output, V8CCluster)
+
+    def _get_cluster(self, name=None) -> V8CCluster:
+        return self._get_clusters()[0]
+
+    def _with_cluster_auth(self) -> str:
+        cluster = self._get_cluster()
+        auth = f"--cluster={cluster.id}"
+        if self.cluster_admin_name:
+            auth += f" --cluster-user={self.cluster_admin_name}"
+        if self.cluster_admin_pwd:
+            auth += f" --cluster-pwd={self.cluster_admin_pwd}"
+        return auth
+
+    def _with_infobase_auth(self, infobase: V8CInfobaseShort):
+        auth = f"--infobase={infobase.id}"
+        default = self.infobases_credentials.get("default")
+        creds = self.infobases_credentials.get(infobase.name, default)
+        if creds[0]:
+            auth += f" --infobase-user={creds[0]}"
+        if creds[1]:
+            auth += f" --infobase-pwd={creds[1]}"
+        return auth
+
+    def _filter_infobase(self, infobases: List[V8CInfobaseShort], name: str):
+        for ib in infobases:
+            if ib.name.lower() == name.lower():
+                return ib
+
     def get_cluster_info_bases(self):
         """
         Получает список всех ИБ из кластера
         """
-        ...
+        cmd = f"infobase summary list {self._with_cluster_auth()} "
+        output = self._rac_call(cmd)
+        return self._rac_output_to_objects(output, V8CInfobaseShort)
 
     def lock_info_base(self, infobase: str, permission_code: str, message: str):
         """
@@ -35,250 +113,33 @@ class ClusterRACControler(ClusterControler):
         """
         ...
 
-    def get_info_base(self, infobase: str):
+    def get_info_base(self, infobase: str) -> V8CInfobase:
         """
         Получает сведения об ИБ из кластера
         :param infobase: имя информационной базы
         """
-        ...
+        ib = self._filter_infobase(self.get_cluster_info_bases(), infobase)
+        cmd = f"infobase info {self._with_cluster_auth()} {self._with_infobase_auth(ib)}"
+        output = self._rac_call(cmd)
+        return self._rac_output_to_object(output, V8CInfobase)
 
 
 """
-Use:
-
-        rac cluster [command] [options] [arguments]
-
-Shared options:
-
-    --version | -v
-        get the utility version
-
-    --help | -h | -?
-        display brief utility description
-
-Shared arguments:
-
-    <host>[:<port>]
-        administration server address (default: localhost:1545)
-
-Mode:
-
-    cluster
-        Server cluster administration mode
-
-Commands:
-
-    admin
-        management of cluster administrators
-
-        Additional commands:
-            list
-                receipt of the cluster administrator list
-
-            register
-                adding a new cluster administrator
-
-                --name=<name>
-                    (required) administrator name
-
-                --pwd=<name>
-                    administrator password in case of password authentication
-
-                --descr=<descr>
-                    description of the administrator
-
-                --auth=pwd[,os]
-                    available authentication methods:
-                        pwd - using the user name and password
-                        os - authentication using OS
-
-                --os-user=<name>
-                    OS user name
-
-                --agent-user=<name>
-                    name of the cluster agent administrator
-
-                --agent-pwd=<pwd>
-                    password of the cluster agent administrator
-
-            remove
-                deleting the cluster administrator
-
-                --name=<name>
-                    (required) name of the cluster administrator
-
-        --cluster=<uuid>
-            (required) server cluster identifier
-
-        --cluster-user=<name>
-            name of the cluster administrator
-
-        --cluster-pwd=<pwd>
-            password of the cluster administrator
-
-    info
-        receipt of cluster information
-
-        --cluster=<uuid>
-            (required) server cluster identifier
-
-    list
-        receipt of the cluster information list
-
-    insert
-        new cluster registration
-
-        --host=<host>
-            (required) name (or IP-address) of the computer where
-            the cluster registry and the main cluster manager process are located
-
-        --port=<port>
-            (required) main port of the main manager
-
-        --name=<name>
-            cluster name (presentation)
-
-        --expiration-timeout=<seconds>
-            forced termination time (seconds)
-
-        --lifetime-limit=<seconds>
-            restart time of cluster working processes (seconds)
-
-        --max-memory-size=<Kb>
-            maximum virtual address space (KB),
-            used by the working process
-
-        --max-memory-time-limit=<seconds>
-            maximum period of exceeding critical memory limit (seconds)
-
-        --security-level=<level>
-            connection security level
-
-        --session-fault-tolerance-level=<level>
-            fault-tolerance level
-
-        --load-balancing-mode=performance|memory
-            load balancing mode
-                performance - priority by available performance
-                memory - priority by available memory
-
-        --errors-count-threshold=<percentage>
-            server errors threshold (percentage)
-
-        --kill-problem-processes=<yes/no>
-            terminate corrupted processes
-
-        --kill-by-memory-with-dump=<yes/no>
-            create process dump when maximum memory amount is exceeded
-
-        --agent-user=<name>
-            name of the cluster agent administrator
-
-        --agent-pwd=<pwd>
-            password of the cluster agent administrator
-
-    update
-        cluster parameter update
-
-        --cluster=<uuid>
-            (required) server cluster identifier
-
-        --name=<name>
-            cluster name (presentation)
-
-        --expiration-timeout=<seconds>
-            forced termination time (seconds)
-
-        --lifetime-limit=<seconds>
-            restart time of cluster working processes (seconds)
-
-        --max-memory-size=<Kb>
-            maximum virtual address space (KB),
-            used by the working process
-
-        --max-memory-time-limit=<seconds>
-            maximum period of exceeding critical memory limit (seconds)
-
-        --security-level=<level>
-            connection security level
-
-        --session-fault-tolerance-level=<level>
-            fault-tolerance level
-
-        --load-balancing-mode=performance|memory
-            load balancing mode
-                performance - priority by available performance
-                memory - priority by available memory
-
-        --errors-count-threshold=<percentage>
-            server errors threshold (percentage)
-
-        --kill-problem-processes=<yes/no>
-            terminate corrupted processes
-
-        --kill-by-memory-with-dump=<yes/no>
-            create process dump when maximum memory amount is exceeded
-
-        --agent-user=<name>
-            name of the cluster agent administrator
-
-        --agent-pwd=<pwd>
-            password of the cluster agent administrator
-
-    remove
-        deleting the cluster
-
-        --cluster=<uuid>
-            (required) server cluster identifier
-
-        --cluster-user=<name>
-            name of the cluster administrator
-
-        --cluster-pwd=<pwd>
-            password of the cluster administrator
-
-
-./rac cluster admin list --cluster-user=Администратор --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
-name    : Администратор
-auth    : pwd
-os-user :
-descr   :
-
-./rac cluster info --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
-cluster                       : b930e651-0160-47c6-aeae-68b8ed937120
-host                          : ragent
-port                          : 1541
-name                          : "Local cluster"
-expiration-timeout            : 60
-lifetime-limit                : 0
-max-memory-size               : 0
-max-memory-time-limit         : 0
-security-level                : 0
-session-fault-tolerance-level : 0
-load-balancing-mode           : performance
-errors-count-threshold        : 0
-kill-problem-processes        : 1
-kill-by-memory-with-dump      : 0
-
-./rac cluster list ras:1545
-cluster                       : b930e651-0160-47c6-aeae-68b8ed937120
-host                          : ragent
-port                          : 1541
-name                          : "Local cluster"
-expiration-timeout            : 60
-lifetime-limit                : 0
-max-memory-size               : 0
-max-memory-time-limit         : 0
-security-level                : 0
-session-fault-tolerance-level : 0
-load-balancing-mode           : performance
-errors-count-threshold        : 0
-kill-problem-processes        : 1
-kill-by-memory-with-dump      : 0
-"""
-"""
-./rac infobase summary list --cluster-user=Администратор --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
-
+rac ras:1545 cluster admin list --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+rac ras:1545 cluster info --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+rac ras:1545 infobase summary list --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+rac ras:1545 infobase create --create-database --name=infobase01 --dbms=MSSQLServer --db-server=db --db-name=infobase01 --locale=ru --db-user=sa --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+rac ras:1545 infobase create --create-database --name=infobase01 --dbms=PostgreSQL --db-server=db --db-name=infobase01 --locale=ru --db-user=postgres --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+rac ras:1545 infobase create --create-database --name=infobase02 --dbms=PostgreSQL --db-server=db --db-name=infobase02 --locale=ru --db-user=postgres --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+rac ras:1545 infobase summary list --cluster-user=Администратор --cluster=167b70e8-31d3-40ce-a06f-0bf091b04fb3
+---
+infobase : ecc1909f-4807-4423-becf-f81cf3b96cde
+name     : infobase01
+descr    :
+
+infobase : 4e242939-180b-47a9-afa3-bdab8ece7f10
+name     : infobase02
+descr    :
 
 Use:
 
@@ -348,176 +209,6 @@ Commands:
 
                 --descr=<descr>
                     infobase description
-
-    create
-        infobase creation
-
-        --create-database
-            Create database when creating infobase
-
-        --name=<name>
-            (required) name of infobase
-
-        --dbms=MSSQLServer|PostgreSQL|IBMDB2|OracleDatabase
-            (required) type of the Database Management System where the infobase is located:
-                MSSQLServer - MS SQL Server
-                PostgreSQL - PostgreSQL
-                IBMDB2 - IBM DB2
-                OracleDatabase - Oracle Database
-
-        --db-server=<host>
-            (required) the name of the database server
-
-        --db-name=<name>
-            (required) database name
-
-        --locale=<locale>
-            (required) identifier of national settings of the infobase
-
-        --db-user=<name>
-            database administrator name
-
-        --db-pwd=<pwd>
-            database administrator password
-
-        --descr=<descr>
-            infobase description
-
-        --date-offset=<offset>
-            date offset in the infobase
-
-        --security-level=<level>
-            infobase connection security level
-
-        --scheduled-jobs-deny=on|off
-            scheduled job lock management
-                on - scheduled job execution prohibited
-                off - scheduled job execution permitted
-
-        --license-distribution=deny|allow
-            management of licenses granting by 1C:Enterprise server
-                deny - licensing is forbidden
-                allow - licensing is allowed
-
-    update
-        updating information on infobase
-
-        --infobase=<uuid>
-            (required) infobase identifier
-
-        --infobase-user=<name>
-            name of the infobase administrator
-
-        --infobase-pwd=<pwd>
-            password of the infobase administrator
-
-        --dbms=MSSQLServer|PostgreSQL|IBMDB2|OracleDatabase
-            type of the Database Management System where the infobase is located:
-                MSSQLServer - MS SQL Server
-                PostgreSQL - PostgreSQL
-                IBMDB2 - IBM DB2
-                OracleDatabase - Oracle Database
-
-        --db-server=<host>
-            the name of the database server
-
-        --db-name=<name>
-            database name
-
-        --db-user=<name>
-            database administrator name
-
-        --db-pwd=<pwd>
-            database administrator password
-
-        --descr=<descr>
-            infobase description
-
-        --denied-from=<date>
-            start of the time interval within which the session lock mode is enabled
-
-        --denied-message=<msg>
-            message displayed upon session lock violation
-
-        --denied-parameter=<string>
-            session lock parameter
-
-        --denied-to=<date>
-            end of the time interval within which the session lock mode is enabled
-
-        --permission-code=<string>
-            access code that allows the session to start in spite of enabled session lock
-
-        --sessions-deny=on|off
-            session lock mode management
-                on - mode of session start lock enabled
-                off - mode of session start lock disabled
-
-        --scheduled-jobs-deny=on|off
-            scheduled job lock management
-                on - scheduled job execution prohibited
-                off - scheduled job execution permitted
-
-        --license-distribution=deny|allow
-            management of licenses granting by 1C:Enterprise server
-                deny - licensing is forbidden
-                allow - licensing is allowed
-
-        --external-session-manager-connection-string=<connect-string>
-            external session management parameter
-
-        --external-session-manager-required=yes|no
-            external session management required
-                yes - external session management is a must
-                no - external session management is optional
-
-        --reserve-working-processes=yes|no
-            Workflow backup
-                yes - Workflow backup is enabled
-                no - Workflow backup is disabled
-
-        --security-profile-name=<name>
-            infobase security profile
-
-        --safe-mode-security-profile-name=<name>
-            external code security profile
-
-    drop
-        remote infobase mode
-
-        --infobase=<uuid>
-            (required) infobase identifier
-
-        --infobase-user=<name>
-            name of the infobase administrator
-
-        --infobase-pwd=<pwd>
-            password of the infobase administrator
-
-        --drop-database
-            delete database upon deleting infobase
-
-        --clear-database
-            clear database upon deleting infobase
-
-
-./rac infobase create --create-database --name=infobase01 --dbms=MSSQLServer --db-server=db --db-name=infobase01 --locale=ru --db-user=sa --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
-./rac infobase create --create-database --name=infobase01 --dbms=PostgreSQL --db-server=db --db-name=infobase01 --locale=ru --db-user=postgres --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
-./rac infobase create --create-database --name=infobase02 --dbms=PostgreSQL --db-server=db --db-name=infobase02 --locale=ru --db-user=postgres --db-pwd=supersecretpassword --cluster-user=Администратор --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
----
-infobase : 9046c0db-1939-42a7-9b2d-f0370ca950df
----
-./rac infobase summary list --cluster-user=Администратор --cluster=b930e651-0160-47c6-aeae-68b8ed937120 ras:1545
----
-server_addr=tcp://ragent:1540 descr=32(0x00000020): Broken pipe line=1470 file=src/rtrsrvc/src/DataExchangeTcpClientImpl.cpp
----
-infobase : 01c55c12-0f4c-4101-8113-7707d450e83c
-name     : infobase01
-descr    :
-
-infobase : 9046c0db-1939-42a7-9b2d-f0370ca950df
-name     : infobase02
-descr    :
 """
 
 """
