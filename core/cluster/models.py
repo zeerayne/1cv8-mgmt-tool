@@ -14,6 +14,16 @@ class V8CModel(ABC):
     def __init__(self, **kwargs):
         self.__dict__.update((k, v) for k, v in kwargs.items() if k in self.keys)
 
+    def __eq__(self, other):
+        result = True
+        for k in self.keys:
+            a = getattr(self, k, None)
+            b = getattr(other, k, None)
+            if a is None and b is None:
+                continue
+            result &= a == b
+        return result
+
 
 class V8CCluster(V8CModel):
     @property
