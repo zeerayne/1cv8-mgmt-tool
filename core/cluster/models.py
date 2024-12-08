@@ -54,7 +54,7 @@ class V8CInfobaseShort(V8CModel):
         ]
 
 
-class V8CInfobase(V8CModel):
+class V8CInfobase(V8CInfobaseShort):
     @property
     def id(self):
         return self.infobase
