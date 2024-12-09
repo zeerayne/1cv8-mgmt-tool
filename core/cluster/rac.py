@@ -33,7 +33,7 @@ class ClusterRACControler(ClusterControler):
                 objects.append(obj_class(**kw))
                 kw.clear()
                 continue
-            key, value = line.split(":")
+            key, value = line.split(":", maxsplit=1)
             kw.setdefault(key.replace("-", "_").strip(), value.strip().strip('"'))
         return objects
 

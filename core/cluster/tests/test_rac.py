@@ -1,5 +1,5 @@
 import textwrap
-from core.cluster.models import V8CCluster
+from core.cluster.models import V8CCluster, V8CInfobase
 from core.cluster.rac import ClusterRACControler
 
 
@@ -60,4 +60,68 @@ def test_cluster_rac_control_interface_parse_cluster():
         """
     )
     constructed_object = ClusterRACControler()._rac_output_to_object(cluster_output, V8CCluster)
+    assert constructed_object == reference_object
+
+
+def test_cluster_rac_control_interface_parse_infobase():
+    """
+    `_rac_output_to_object` parse infobase object from rac output correctly
+    """
+    reference_object = V8CInfobase(
+        infobase="f3466741-0208-4680-a9d3-21f16672048f",
+        name="buh",
+        dbms="MSSQLServer",
+        db_server="10.0.0.0",
+        db_name="buh",
+        db_user="sa",
+        security_level="0",
+        license_distribution="allow",
+        scheduled_jobs_deny="off",
+        sessions_deny="off",
+        denied_from="2020-09-12T18:49:18",
+        denied_message="",
+        denied_parameter="",
+        denied_to="2020-09-12T18:50:18",
+        permission_code="0000",
+        external_session_manager_connection_string="",
+        external_session_manager_required="no",
+        security_profile_name="",
+        safe_mode_security_profile_name="",
+        reserve_working_processes="no",
+        descr="Бухгалтерия",
+        disable_local_speech_to_text="no",
+        configuration_unload_delay_by_working_process_without_active_users="0",
+        minimum_scheduled_jobs_start_period_without_active_users="0",
+        maximum_scheduled_jobs_start_shift_without_active_users="0",
+    )
+    cluster_output = textwrap.dedent(
+        """infobase                                                           : f3466741-0208-4680-a9d3-21f16672048f
+        name                                                               : buh
+        dbms                                                               : MSSQLServer
+        db-server                                                          : 10.0.0.0
+        db-name                                                            : buh
+        db-user                                                            : sa
+        security-level                                                     : 0
+        license-distribution                                               : allow
+        scheduled-jobs-deny                                                : off
+        sessions-deny                                                      : off
+        denied-from                                                        : 2020-09-12T18:49:18
+        denied-message                                                     :
+        denied-parameter                                                   :
+        denied-to                                                          : 2020-09-12T18:50:18
+        permission-code                                                    : "0000"
+        external-session-manager-connection-string                         :
+        external-session-manager-required                                  : no
+        security-profile-name                                              :
+        safe-mode-security-profile-name                                    :
+        reserve-working-processes                                          : no
+        descr                                                              : "Бухгалтерия"
+        disable-local-speech-to-text                                       : no
+        configuration-unload-delay-by-working-process-without-active-users : 0
+        minimum-scheduled-jobs-start-period-without-active-users           : 0
+        maximum-scheduled-jobs-start-shift-without-active-users            : 0
+
+        """
+    )
+    constructed_object = ClusterRACControler()._rac_output_to_object(cluster_output, V8CInfobase)
     assert constructed_object == reference_object
