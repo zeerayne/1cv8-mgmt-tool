@@ -78,7 +78,7 @@ async def _backup_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBaseBacku
     log_filename = os.path.join(settings.LOG_PATH, utils.append_file_extension_to_string(ib_and_time_str, "log"))
     # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000526
     v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
+        rf'"{utils.get_1cv8_service_full_path()}" '
         rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
         rf'/N"{info_base_user}" /P"{info_base_pwd}" '
         rf"/Out {log_filename} -NoTruncate "

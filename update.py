@@ -163,7 +163,7 @@ async def _update_info_base(ib_name, dry=False):
         log_filename = os.path.join(settings.LOG_PATH, utils.get_ib_and_time_filename(ib_name, "log"))
         # https://its.1c.ru/db/v838doc#bookmark:adm:TI000000530
         v8_command = (
-            rf'"{utils.get_platform_full_path()}" '
+            rf'"{utils.get_1cv8_service_full_path()}" '
             rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
             rf'/N"{info_base_user}" /P"{info_base_pwd}" '
             rf"/Out {log_filename} -NoTruncate "

@@ -91,7 +91,7 @@ async def test_rotate_backups_calls_old_file_remover_for_replication_paths(mocke
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path):
     """
     Backup with 1cv8 tools calls `execute_v8_command`
     """
@@ -101,7 +101,7 @@ async def test_backup_v8_calls_execute_v8_command(mocker: MockerFixture, infobas
 
 
 @pytest.mark.asyncio
-async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path):
     """
     Backup with 1cv8 tools makes retries according to retry policy
     """
@@ -117,7 +117,7 @@ async def test_backup_v8_makes_retries(mocker: MockerFixture, infobase, mock_get
 
 @pytest.mark.asyncio
 async def test_backup_v8_return_backup_result_type_object_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when succeeded
@@ -129,7 +129,7 @@ async def test_backup_v8_return_backup_result_type_object_when_succeeded(
 
 @pytest.mark.asyncio
 async def test_backup_v8_return_backup_result_type_object_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Backup with 1cv8 tools returns object of type `InfoBaseBackupTaskResult` when failed
@@ -141,7 +141,7 @@ async def test_backup_v8_return_backup_result_type_object_when_failed(
 
 @pytest.mark.asyncio
 async def test_backup_v8_return_result_for_exact_infobase_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Backup with 1cv8 tools returns object for exact infobase which was provided when succeeded
@@ -153,7 +153,7 @@ async def test_backup_v8_return_result_for_exact_infobase_when_succeeded(
 
 @pytest.mark.asyncio
 async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Backup with 1cv8 tools returns object with succeeded is True when succeeded
@@ -165,7 +165,7 @@ async def test_backup_v8_return_backup_result_succeeded_true_when_succeeded(
 
 @pytest.mark.asyncio
 async def test_backup_v8_return_result_for_exact_infobase_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Backup with 1cv8 tools returns object for exact infobase which was provided when faild
@@ -177,7 +177,7 @@ async def test_backup_v8_return_result_for_exact_infobase_when_failed(
 
 @pytest.mark.asyncio
 async def test_backup_v8_return_backup_result_succeeded_false_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Backup with 1cv8 tools returns object with succeeded is False when failed
@@ -206,7 +206,7 @@ async def test_backup_pgdump_calls_execute_subprocess_command(
 async def test_backup_pgdump_makes_retries(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -227,7 +227,7 @@ async def test_backup_pgdump_makes_retries(
 async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -243,7 +243,7 @@ async def test_backup_pgdump_return_backup_result_type_object_when_succeeded(
 async def test_backup_pgdump_return_backup_result_type_object_when_failed(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -259,7 +259,7 @@ async def test_backup_pgdump_return_backup_result_type_object_when_failed(
 async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -275,7 +275,7 @@ async def test_backup_pgdump_return_backup_result_succeeded_true_when_succeeded(
 async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -291,7 +291,7 @@ async def test_backup_pgdump_return_backup_result_succeeded_false_when_failed(
 async def test_backup_pgdump_return_result_for_exact_infobase_when_succeeded(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -307,7 +307,7 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_succeeded(
 async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):
@@ -323,7 +323,7 @@ async def test_backup_pgdump_return_result_for_exact_infobase_when_failed(
 async def test_backup_pgdump_return_negative_result_when_failed(
     mocker: MockerFixture,
     infobase,
-    mock_get_platform_full_path,
+    mock_get_1cv8_service_full_path,
     mock_prepare_postgres_connection_vars,
     mock_get_postgres_version_16,
 ):

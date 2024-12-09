@@ -222,8 +222,8 @@ def mock_asyncio_subprocess_termination_error(mocker: MockerFixture):
 
 
 @pytest.fixture
-def mock_get_platform_full_path(mocker: MockerFixture):
-    return mocker.patch("core.utils.get_platform_full_path", return_value="")
+def mock_get_1cv8_service_full_path(mocker: MockerFixture):
+    return mocker.patch("core.utils.get_1cv8_service_full_path", return_value="")
 
 
 @pytest.fixture

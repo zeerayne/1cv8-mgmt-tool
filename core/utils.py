@@ -15,14 +15,18 @@ from core.cluster import utils as cluster_utils
 log = logging.getLogger(__name__)
 
 
-def get_platform_full_path() -> str:
+def get_platform_directory() -> str:
     platformPath = settings.V8_PLATFORM_PATH
     platformVersion = version.find_platform_last_version(platformPath)
-    platformDirectory = os.path.join(platformPath, str(platformVersion))
+    return os.path.join(platformPath, str(platformVersion))
+
+
+def get_1cv8_service_full_path(service: str = "1cv8") -> str:
+    platformDirectory = get_platform_directory()
     if platform.system() == "Windows":
-        full_path = os.path.join(platformDirectory, "bin", "1cv8.exe")
+        full_path = os.path.join(platformDirectory, "bin", f"{service}.exe")
     if platform.system() == "Linux":
-        full_path = os.path.join(platformDirectory, "1cv8")
+        full_path = os.path.join(platformDirectory, service)
     return full_path
 
 

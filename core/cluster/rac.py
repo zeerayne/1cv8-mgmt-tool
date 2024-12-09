@@ -7,6 +7,7 @@ from conf import settings
 from core.exceptions import RACException
 from core.cluster.abc import ClusterControler
 from core.cluster.models import V8CModel, V8CCluster, V8CInfobaseShort, V8CInfobase, V8CSession
+from core import utils
 
 log = logging.getLogger(__name__)
 
@@ -20,9 +21,7 @@ class ClusterRACControler(ClusterControler):
         self.infobases_credentials = settings.V8_INFOBASES_CREDENTIALS
 
     def _get_rac_exec_path(self):
-        # TODO: поддержка windows/linux
-        # TODO: поддержка сценариев, когда утилита не включена в PATH
-        return "rac"
+        return utils.get_1cv8_service_full_path("rac")
 
     def _rac_output_to_objects(self, output: str, obj_class: Type[V8CModel]) -> List[V8CModel]:
         objects = []
@@ -41,7 +40,7 @@ class ClusterRACControler(ClusterControler):
         return self._rac_output_to_objects(output, obj_class)[0]
 
     def _rac_call(self, command: str) -> str:
-        call_str = f"{self._get_rac_exec_path()} {self.ras_host}:{self.ras_port} {command} ; exit 0"
+        call_str = f"{self._get_rac_exec_path()} {self.ras_host}:{self.ras_port} {command}"
         log.debug(f"Created rac command [{call_str}]")
         try:
             out = subprocess.check_output(call_str, stderr=subprocess.STDOUT, shell=True)

@@ -42,7 +42,7 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
     v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
+        rf'"{utils.get_1cv8_service_full_path()}" '
         rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
         rf'/N"{info_base_user}" /P"{info_base_pwd}" '
         rf"/Out {log_filename} -NoTruncate "
