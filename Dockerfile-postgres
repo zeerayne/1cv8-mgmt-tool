@@ -1,0 +1,36 @@
+FROM debian:12
+
+ENV DEBIAN_FRONTEND=noninteractive 
+
+ENV PG_APP_HOME="/etc/docker-postgresql"\
+    PG_VERSION=15 \
+    PG_USER=postgres \
+    PG_HOME=/var/lib/postgresql \
+    PG_RUNDIR=/run/postgresql \
+    PG_LOGDIR=/var/log/postgresql \
+    PG_CERTDIR=/etc/postgresql/certs
+
+ENV PG_BINDIR=/opt/pgpro/1c-${PG_VERSION}/bin \
+    PG_DATADIR=${PG_HOME}/${PG_VERSION}/main
+
+RUN apt-get update \
+    && apt-get install -y sudo locales wget gnupg2 \
+    && localedef -i ru_RU -c -f UTF-8 -A /usr/share/locale/locale.alias ru_RU.UTF-8 \
+    && update-locale LANG=ru_RU.UTF-8
+
+ENV LANG ru_RU.UTF-8
+
+RUN wget --quiet -O - http://repo.postgrespro.ru/keys/GPG-KEY-POSTGRESPRO | apt-key add - \
+ && echo 'deb http://repo.postgrespro.ru/1c/1c-'${PG_VERSION}'/debian '$(env -i bash -c '. /etc/os-release; echo $VERSION_CODENAME')' main' > /etc/apt/sources.list.d/postgrespro-1c.list \
+ && apt-get update \
+ && apt-get install -y postgrespro-1c-${PG_VERSION} \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY docker/posgres-runtime/ ${PG_APP_HOME}/
+COPY docker/posgres-entrypoint.sh /opt/docker/entrypoint.sh
+
+EXPOSE 5432
+VOLUME ${PG_DATADIR}
+WORKDIR ${PG_HOME}
+RUN chmod +x /opt/docker/entrypoint.sh
+ENTRYPOINT ["/opt/docker/entrypoint.sh"]

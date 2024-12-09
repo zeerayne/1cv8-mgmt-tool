@@ -56,7 +56,7 @@ def create_bucket_object(mock_aioboto3_session, last_modified: datetime):
             try:
                 return next(self.iter)
             except StopIteration:
-                raise StopAsyncIteration
+                raise StopAsyncIteration from None
 
     bucket_obj = AsyncMock()
     bucket_obj.last_modified = AsyncMock(return_value=last_modified)()
@@ -80,7 +80,8 @@ async def mock_aioboto3_bucket_objects_old(mock_aioboto3_session):
     from conf import settings
 
     return create_bucket_object(
-        mock_aioboto3_session, datetime.now(tz=timezone.utc) - timedelta(days=settings.AWS_RETENTION_DAYS + 2)
+        mock_aioboto3_session,
+        datetime.now(tz=timezone.utc) - timedelta(days=settings.AWS_RETENTION_DAYS + 2),
     )
 
 
@@ -100,7 +101,8 @@ def mock_os_stat(mocker: MockerFixture):
 def mock_os_platform_path(mocker: MockerFixture, mock_platform_versions):
     mocker.patch("os.path.isdir", return_value=True)
     return mocker.patch(
-        "os.listdir", return_value=mock_platform_versions + ["test_common", "test_conf", "test_srvinfo"]
+        "os.listdir",
+        return_value=mock_platform_versions + ["test_common", "test_conf", "test_srvinfo"],
     )
 
 
@@ -128,7 +130,10 @@ def mock_datetime():
 def mock_infobases_credentials(mocker: MockerFixture, infobases):
     creds = {infobase: (f"test_{infobase}_login", f"test_{infobase}_password") for infobase in infobases}
     creds.update(settings.V8_INFOBASES_CREDENTIALS)
-    mocker.patch("conf.settings.V8_INFOBASES_CREDENTIALS", new_callable=PropertyMock(return_value=creds))
+    mocker.patch(
+        "conf.settings.V8_INFOBASES_CREDENTIALS",
+        new_callable=PropertyMock(return_value=creds),
+    )
     return creds
 
 

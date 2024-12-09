@@ -15,11 +15,11 @@ test:
 test-coverage:
 	poetry run coverage run -m pytest
 
-.PHONY: code-style
-code-style:
-	poetry run isort . 
-	poetry run black .
+.PHONY: ruff
+ruff:
+	poetry run ruff check
 
-.PHONY: flake8
-flake8:
-	poetry run flake8 .
+.PHONY: format
+format:
+	poetry run ruff check --fix
+	poetry run ruff format

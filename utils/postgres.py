@@ -26,8 +26,8 @@ def prepare_postgres_connection_vars(db_server: str, db_user: str) -> Tuple[str,
     db_host, db_port = get_postgres_host_and_port(db_server)
     try:
         db_pwd = settings.PG_CREDENTIALS[db_user_string]
-    except KeyError:
-        raise KeyError(f"{POSTGRES_NAME} password not found for user {db_user_string}")
+    except KeyError as e:
+        raise KeyError(f"{POSTGRES_NAME} password not found for user {db_user_string}") from e
     return db_host, db_port, db_pwd
 
 

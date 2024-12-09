@@ -25,26 +25,26 @@ from core.utils import (
     get_info_base_credentials,
     get_info_bases,
     get_infobase_glob_pattern,
-    get_platform_full_path,
+    get_1cv8_service_full_path,
     path_leaf,
     read_file_content,
     remove_old_files_by_pattern,
 )
 
 
-def test_get_platform_full_path_contains_platform_version(mock_os_platform_path, mock_platform_last_version):
+def test_get_1cv8_service_full_path_contains_platform_version(mock_os_platform_path, mock_platform_last_version):
     """
     Full path to platform binary contains last platform version directory
     """
-    result = get_platform_full_path()
+    result = get_1cv8_service_full_path()
     assert mock_platform_last_version in result
 
 
-def test_get_platform_full_path_contains_executable(mock_os_platform_path):
+def test_get_1cv8_service_full_path_contains_executable(mock_os_platform_path):
     """
     Full path to platform binary contains executable file
     """
-    result = get_platform_full_path()
+    result = get_1cv8_service_full_path()
     assert "1cv8" in result
 
 
@@ -90,7 +90,9 @@ def test_get_ib_and_time_string_has_infobase_name_in_result_string(infobase):
 
 
 @pytest.mark.freeze_time("2022-01-01 12:01:01")
-def test_get_ib_and_time_string_has_properly_formatted_datetime_in_result_string(infobase):
+def test_get_ib_and_time_string_has_properly_formatted_datetime_in_result_string(
+    infobase,
+):
     """
     Datetime is properly formatted in `ib_and_time` string
     """
@@ -259,7 +261,10 @@ async def test_remove_old_files_by_pattern_removes_old_files(mocker: MockerFixtu
     retention_days = 1
     files = ["test_file1", "test_file2"]
     mocker.patch("glob.glob", return_value=files)
-    mocker.patch("os.path.getmtime", return_value=(datetime.now() - timedelta(days=retention_days + 1)).timestamp())
+    mocker.patch(
+        "os.path.getmtime",
+        return_value=(datetime.now() - timedelta(days=retention_days + 1)).timestamp(),
+    )
     aioremove_mock = mocker.patch("aiofiles.os.remove", return_value=AsyncMock())
     await remove_old_files_by_pattern("", retention_days)
     assert aioremove_mock.await_count == len(files)

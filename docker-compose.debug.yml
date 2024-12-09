@@ -1,0 +1,55 @@
+version: '3.4'
+services:
+  ragent:
+    build:
+      context: .
+      target: ragent
+    container_name: ragent
+    depends_on:
+      - db
+    environment:
+      - RAGENT_PORT=1540
+      - RAGENT_REGPORT=1541
+      - RAGENT_VOLUME=/home/1c/volume
+    hostname: ragent
+    volumes:
+      - .ragent-data:/home/1c/volume
+  ras:
+    build:
+      context: .
+      target: ras
+    container_name: ras
+    depends_on:
+      - ragent   
+    environment:
+      - RAGENT_HOST=ragent
+      - RAGENT_PORT=1540
+      - RAS_PORT=1545
+  db:
+    build:
+      context: .
+      dockerfile: Dockerfile-postgres
+    container_name: db
+    environment:
+      - PG_DATADIR=/var/lib/postgresql/data
+      - PG_USER=postgres
+      - PG_PASSWORD=supersecretpassword
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - .postgres-data:/var/lib/postgresql/data
+  rac:
+    build:
+      context: .
+      target: rac
+    command: ["rac.py"]
+    container_name: rac
+    environment:
+      - POETRY_VENV=/opt/poetry-venv
+    ports:
+      - 5678:5678
+    volumes:
+      - .:/app

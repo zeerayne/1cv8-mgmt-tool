@@ -106,10 +106,19 @@ async def upload_to_s3(backup_results: core_models.InfoBaseBackupTaskResult):
         datetime_start = datetime.now()
         result = await asyncio.gather(
             *[
-                upload_infobase_to_s3(backup_result.infobase_name, backup_result.backup_filename, semaphore)
+                upload_infobase_to_s3(
+                    backup_result.infobase_name,
+                    backup_result.backup_filename,
+                    semaphore,
+                )
                 for backup_result in backup_results
                 if backup_result.succeeded
             ]
         )
         datetime_finish = datetime.now()
-        analyze_s3_result(result, [e.infobase_name for e in backup_results], datetime_start, datetime_finish)
+        analyze_s3_result(
+            result,
+            [e.infobase_name for e in backup_results],
+            datetime_start,
+            datetime_finish,
+        )

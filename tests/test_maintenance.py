@@ -27,7 +27,9 @@ async def test_rotate_logs_calls_inner_func(mocker: MockerFixture, infobase):
 
 
 @pytest.mark.asyncio
-async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_maintenance_v8_calls_execute_v8_command(
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
+):
     """
     Maintenance with 1cv8 tools calls execute_v8_command to run created command
     """
@@ -38,7 +40,7 @@ async def test_maintenance_v8_calls_execute_v8_command(mocker: MockerFixture, in
 
 @pytest.mark.asyncio
 async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if no errors
@@ -50,7 +52,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_succeeded(
 
 @pytest.mark.asyncio
 async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Maintenance with 1cv8 tools returns result of `InfoBaseMaintenanceTaskResult` type if an error occured
@@ -62,7 +64,7 @@ async def test_maintenance_v8_returns_maintenance_result_type_when_failed(
 
 @pytest.mark.asyncio
 async def test_maintenance_v8_returns_success_result_for_exact_infobase(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Maintenance with 1cv8 tools returns success result for exact infobase which was provided if no errors
@@ -74,7 +76,7 @@ async def test_maintenance_v8_returns_success_result_for_exact_infobase(
 
 @pytest.mark.asyncio
 async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Maintenance with 1cv8 tools returns failed result for exact infobase which was provided if an error occured
@@ -85,7 +87,7 @@ async def test_maintenance_v8_returns_failed_result_for_exact_infobase(
 
 
 @pytest.mark.asyncio
-async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, infobase, mock_get_platform_full_path):
+async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path):
     """
     Maintenance with 1cv8 tools returns success result if no errors
     """
@@ -96,7 +98,7 @@ async def test_maintenance_v8_returns_success_result(mocker: MockerFixture, info
 
 @pytest.mark.asyncio
 async def test_maintenance_v8_returns_failed_result_if_error(
-    mocker: MockerFixture, infobase, mock_get_platform_full_path
+    mocker: MockerFixture, infobase, mock_get_1cv8_service_full_path
 ):
     """
     Maintenance with 1cv8 tools returns failed result if an error occured
@@ -131,7 +133,9 @@ async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_failed(
 
 
 @pytest.mark.asyncio
-async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_credentials(infobase):
+async def test_maintenance_vacuumdb_returns_maintenance_result_type_when_no_credentials(
+    infobase,
+):
     """
     Maintenance with vacuumdb returns result of `InfoBaseMaintenanceTaskResult` type if no credentials found for db
     """
@@ -164,7 +168,9 @@ async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_faile
 
 
 @pytest.mark.asyncio
-async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_credentials(infobase):
+async def test_maintenance_vacuumdb_returns_result_for_exact_infobase_when_no_credentials(
+    infobase,
+):
     """
     Maintenance with vacuumdb returns result for exact infobase which was provided if no credentials found for db
     """

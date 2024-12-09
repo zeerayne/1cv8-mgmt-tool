@@ -42,7 +42,7 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     reduce_date = datetime.now() - timedelta(days=settings.MAINTENANCE_REGISTRATION_LOG_RETENTION_DAYS)
     reduce_date_str = utils.get_formatted_date_for_1cv8(reduce_date)
     v8_command = (
-        rf'"{utils.get_platform_full_path()}" '
+        rf'"{utils.get_1cv8_service_full_path()}" '
         rf"DESIGNER /S {cluster_utils.get_server_agent_address()}\{ib_name} "
         rf'/N"{info_base_user}" /P"{info_base_pwd}" '
         rf"/Out {log_filename} -NoTruncate "
@@ -50,7 +50,11 @@ async def _maintenance_v8(ib_name: str, *args, **kwargs) -> core_models.InfoBase
     )
     try:
         await execute_v8_command(
-            ib_name, v8_command, log_filename, timeout=settings.MAINTENANCE_TIMEOUT_V8, log_output_on_success=True
+            ib_name,
+            v8_command,
+            log_filename,
+            timeout=settings.MAINTENANCE_TIMEOUT_V8,
+            log_output_on_success=True,
         )
     except V8Exception:
         return core_models.InfoBaseMaintenanceTaskResult(ib_name, False)
@@ -86,18 +90,14 @@ async def maintenance_info_base(
 ) -> core_models.InfoBaseMaintenanceTaskResult:
     cci = cluster_utils.get_cluster_controller_class()()
     ib_info = cci.get_info_base(ib_name)
-    db_server = ib_info.dbServerName
-    dbms = ib_info.DBMS
-    db_name = ib_info.dbName
-    db_user = ib_info.dbUser
     async with semaphore:
         try:
             succeeded = True
             if settings.MAINTENANCE_V8:
                 result_v8 = await cluster_utils.com_func_wrapper(_maintenance_v8, ib_name)
                 succeeded &= result_v8.succeeded
-            if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(dbms):
-                result_pg = await _maintenance_vacuumdb(ib_name, db_server, db_name, db_user)
+            if settings.MAINTENANCE_PG and postgres.dbms_is_postgres(ib_info.dbms):
+                result_pg = await _maintenance_vacuumdb(ib_name, ib_info.db_server, ib_info.db_name, ib_info.db_user)
                 succeeded &= result_pg.succeeded
             result_logs = await rotate_logs(ib_name)
             succeeded &= result_logs.succeeded

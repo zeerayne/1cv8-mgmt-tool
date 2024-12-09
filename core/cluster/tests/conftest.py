@@ -18,15 +18,41 @@ def mock_infobase_version():
 @pytest.fixture
 def mock_excluded_infobases(mocker: MockerFixture, infobases):
     excluded_infobases = [infobases[-1]]
-    mocker.patch("conf.settings.V8_INFOBASES_EXCLUDE", new_callable=PropertyMock(return_value=excluded_infobases))
+    mocker.patch(
+        "conf.settings.V8_INFOBASES_EXCLUDE",
+        new_callable=PropertyMock(return_value=excluded_infobases),
+    )
     return excluded_infobases
 
 
 @pytest.fixture
 def mock_only_infobases(mocker: MockerFixture, infobases):
     only_infobases = infobases[:-1]
-    mocker.patch("conf.settings.V8_INFOBASES_ONLY", new_callable=PropertyMock(return_value=only_infobases))
+    mocker.patch(
+        "conf.settings.V8_INFOBASES_ONLY",
+        new_callable=PropertyMock(return_value=only_infobases),
+    )
     return only_infobases
+
+
+@pytest.fixture
+def mock_cluster_control_mode_com(mocker: MockerFixture):
+    cluster_control_mode = "com"
+    mocker.patch(
+        "conf.settings.V8_CLUSTER_CONTROL_MODE",
+        new_callable=PropertyMock(return_value=cluster_control_mode),
+    )
+    return cluster_control_mode
+
+
+@pytest.fixture
+def mock_cluster_control_mode_rac(mocker: MockerFixture):
+    cluster_control_mode = "rac"
+    mocker.patch(
+        "conf.settings.V8_CLUSTER_CONTROL_MODE",
+        new_callable=PropertyMock(return_value=cluster_control_mode),
+    )
+    return cluster_control_mode
 
 
 @surrogate("win32com.client")

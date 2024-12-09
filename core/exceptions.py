@@ -4,3 +4,7 @@ class SubprocessException(Exception):
 
 class V8Exception(SubprocessException):
     pass
+
+
+class RACException(Exception):
+    pass

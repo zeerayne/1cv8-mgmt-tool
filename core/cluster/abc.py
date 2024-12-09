@@ -2,11 +2,12 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from conf import settings
+from core.cluster.models import V8CInfobase, V8CInfobaseShort
 
 
 class ClusterControler(ABC):
     @abstractmethod
-    def get_cluster_info_bases(self):
+    def get_cluster_info_bases(self) -> List[V8CInfobaseShort]:
         """
         Получает список всех ИБ из кластера
         """
@@ -38,6 +39,14 @@ class ClusterControler(ABC):
         """
         ...
 
+    @abstractmethod
+    def get_info_base(self, infobase: str) -> V8CInfobase:
+        """
+        Получает сведения об ИБ из кластера
+        :param infobase: имя информационной базы
+        """
+        ...
+
     def get_info_bases(self) -> List[str]:
         """
         Получает имена всех ИБ, кроме указанных в списке V8_INFOBASES_EXCLUDE
@@ -45,11 +54,12 @@ class ClusterControler(ABC):
         :return: массив с именами ИБ
         """
         info_bases_obj = self.get_cluster_info_bases()
-        info_bases_raw = [ib.Name for ib in info_bases_obj]
+        info_bases_raw = [ib.name for ib in info_bases_obj]
         if settings.V8_INFOBASES_ONLY:
             info_bases = list(
                 filter(
-                    lambda ib: ib.lower() in [ib_only.lower() for ib_only in settings.V8_INFOBASES_ONLY], info_bases_raw
+                    lambda ib: ib.lower() in [ib_only.lower() for ib_only in settings.V8_INFOBASES_ONLY],
+                    info_bases_raw,
                 )
             )
         else:
