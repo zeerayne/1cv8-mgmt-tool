@@ -1,3 +1,4 @@
+import platform
 import subprocess
 import logging
 
@@ -19,9 +20,13 @@ class ClusterRACControler(ClusterControler):
         self.cluster_admin_name = settings.V8_CLUSTER_ADMIN_CREDENTIALS[0]
         self.cluster_admin_pwd = settings.V8_CLUSTER_ADMIN_CREDENTIALS[1]
         self.infobases_credentials = settings.V8_INFOBASES_CREDENTIALS
+        if platform.system() == "Windows":
+            self.shell_encoding = "cp866"
+        if platform.system() == "Linux":
+            self.shell_encoding = "utf-8"
 
     def _get_rac_exec_path(self):
-        return utils.get_1cv8_service_full_path("rac")
+        return f'"{utils.get_1cv8_service_full_path("rac")}"'
 
     def _rac_output_to_objects(self, output: str, obj_class: Type[V8CModel]) -> List[V8CModel]:
         objects = []
@@ -43,8 +48,7 @@ class ClusterRACControler(ClusterControler):
         call_str = f"{self._get_rac_exec_path()} {self.ras_host}:{self.ras_port} {command}"
         log.debug(f"Created rac command [{call_str}]")
         try:
-            out = subprocess.check_output(call_str, stderr=subprocess.STDOUT, shell=True)
-            out = out.decode("utf-8")
+            out = subprocess.check_output(call_str, stderr=subprocess.STDOUT, shell=True, encoding=self.shell_encoding)
         except subprocess.CalledProcessError as e:
             raise RACException() from e
         return out
