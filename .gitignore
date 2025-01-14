@@ -139,6 +139,9 @@ dmypy.json
 # All deb packages
 *.deb
 
+# ruff cache
+.ruff_cache
+
 # Postgres datadir
 .postgres-data
 # Ragent datadir
