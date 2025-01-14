@@ -128,13 +128,17 @@ async def _backup_pgdump(
     except (ValueError, KeyError) as e:
         log.error(f"<{ib_name}> {str(e)}")
         return core_models.InfoBaseBackupTaskResult(ib_name, False)
-
-    try:
-        pg_major_version = (await postgres.get_postgres_version(db_host, db_port, db_name, db_user, db_pwd)).major
-        blobs = "large-objects" if pg_major_version >= 16 else "blobs"
-    except (ConnectionRefusedError, CancelledError, TimeoutError) as e:
-        log.error(f"<{ib_name}> {str(e)}")
-        return core_models.InfoBaseBackupTaskResult(ib_name, False)
+    backup_retries = settings.BACKUP_RETRIES_PG
+    for i in range(0, backup_retries + 1):
+        try:
+            pg_major_version = (await postgres.get_postgres_version(db_host, db_port, db_name, db_user, db_pwd)).major
+            blobs = "large-objects" if pg_major_version >= 16 else "blobs"
+        except (ConnectionRefusedError, CancelledError, TimeoutError) as e:
+            if i == backup_retries:
+                log.error(f"<{ib_name}> {type(e)}: {e.message}")
+                return core_models.InfoBaseBackupTaskResult(ib_name, False)
+            else:
+                log.error(f"<{ib_name}> Postgres version check failed, retrying")
 
     ib_and_time_str = utils.get_ib_and_time_string(ib_name)
     backup_filename = os.path.join(
@@ -153,7 +157,6 @@ async def _backup_pgdump(
     pgdump_env["PGPASSWORD"] = db_pwd
     log.debug(f"<{ib_name}> Created pgdump command [{pgdump_command}]")
     # Делает резервную копию базы данных в *.pgdump файл
-    backup_retries = settings.BACKUP_RETRIES_PG
     # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
     for i in range(0, backup_retries + 1):
         try:
