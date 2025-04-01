@@ -59,7 +59,7 @@ async def upload_infobase_to_s3(
                         await asyncio.sleep(aws_retry_pause)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in AWS coroutine")
-            return core_models.InfoBaseAWSUploadTaskResult(ib_name, False)
+    return core_models.InfoBaseAWSUploadTaskResult(ib_name, False)
 
 
 async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_models.InfoBaseAWSUploadTaskResult:
