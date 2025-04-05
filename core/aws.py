@@ -38,13 +38,17 @@ async def upload_infobase_to_s3(
     ib_name: str, full_backup_path: str, semaphore: asyncio.Semaphore
 ) -> core_models.InfoBaseAWSUploadTaskResult:
     aws_retries = settings.AWS_RETRIES
+    aws_upload_timeout = settings.AWS_UPLOAD_TIMEOUT
     async with semaphore:
         try:
             # Добавляет 1 к количеству повторных попыток, потому что одну попытку всегда нужно делать
             for i in range(0, aws_retries + 1):
                 try:
-                    return await _upload_infobase_to_s3(ib_name, full_backup_path)
-                except EndpointConnectionError as e:
+                    # Changed in version 3.11: Raises TimeoutError instead of asyncio.TimeoutError
+                    return await asyncio.wait_for(
+                        _upload_infobase_to_s3(ib_name, full_backup_path), timeout=aws_upload_timeout
+                    )
+                except (EndpointConnectionError, asyncio.TimeoutError, TimeoutError) as e:
                     # Если количество попыток исчерпано, но ошибка по прежнему присутствует
                     if i == aws_retries:
                         raise e
@@ -55,7 +59,7 @@ async def upload_infobase_to_s3(
                         await asyncio.sleep(aws_retry_pause)
         except Exception:
             log.exception(f"<{ib_name}> Unknown exception occurred in AWS coroutine")
-            return core_models.InfoBaseAWSUploadTaskResult(ib_name, False)
+    return core_models.InfoBaseAWSUploadTaskResult(ib_name, False)
 
 
 async def _upload_infobase_to_s3(ib_name: str, full_backup_path: str) -> core_models.InfoBaseAWSUploadTaskResult:
