@@ -55,8 +55,8 @@ def mock_cluster_control_mode_rac(mocker: MockerFixture):
     return cluster_control_mode
 
 
-@surrogate("win32com.client")
 @pytest.fixture
+@surrogate("win32com.client")
 def mock_win32com_client_dispatch(mocker: MockerFixture):
     import win32com.client as win32com_client
 

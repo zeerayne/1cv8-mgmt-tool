@@ -22,7 +22,7 @@ COPY docker/ras-entrypoint.sh /opt/docker/entrypoint.sh
 RUN chmod +x /opt/docker/entrypoint.sh
 ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 
-FROM python:3.12 AS python-base
+FROM python:3.13 AS python-base
 ENV PYTHONUNBUFFERED 1
 ENV POETRY_VERSION=1.8.4
 ENV POETRY_HOME=/opt/poetry
