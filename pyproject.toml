@@ -5,7 +5,7 @@ description = ""
 authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.13"
 pywin32 = [
     { version = "^304", platform = "win32" },
 ]
