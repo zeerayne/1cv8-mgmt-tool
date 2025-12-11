@@ -2,61 +2,61 @@
 
 [[package]]
 name = "aioboto3"
-version = "13.4.0"
+version = "15.5.0"
 description = "Async boto3 wrapper"
 optional = false
-python-versions = "<4.0,>=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "aioboto3-13.4.0-py3-none-any.whl", hash = "sha256:d78f3400ef3a01b4d5515108ef244941894a0bc39c4716321a00e15898d7e002"},
-    {file = "aioboto3-13.4.0.tar.gz", hash = "sha256:3105f9e5618c686c90050e60eb5ebf9e28f7f8c4e0fa162d4481aaa402008aab"},
+    {file = "aioboto3-15.5.0-py3-none-any.whl", hash = "sha256:cc880c4d6a8481dd7e05da89f41c384dbd841454fc1998ae25ca9c39201437a6"},
+    {file = "aioboto3-15.5.0.tar.gz", hash = "sha256:ea8d8787d315594842fbfcf2c4dce3bac2ad61be275bc8584b2ce9a3402a6979"},
 ]
 
 [package.dependencies]
-aiobotocore = {version = "2.18.0", extras = ["boto3"]}
+aiobotocore = {version = "2.25.1", extras = ["boto3"]}
 aiofiles = ">=23.2.1"
 
 [package.extras]
 chalice = ["chalice (>=1.24.0)"]
-s3cse = ["cryptography (>=2.3.1)"]
+s3cse = ["cryptography (>=44.0.1)"]
 
 [[package]]
 name = "aiobotocore"
-version = "2.18.0"
+version = "2.25.1"
 description = "Async client for aws services using botocore and aiohttp"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "aiobotocore-2.18.0-py3-none-any.whl", hash = "sha256:89634470946944baf0a72fe2939cdd5f98b61335d400ca55f3032aca92989ec1"},
-    {file = "aiobotocore-2.18.0.tar.gz", hash = "sha256:c54db752c5a742bf1a05c8359a93f508b4bf702b0e6be253a4c9ef1f9c9b6706"},
+    {file = "aiobotocore-2.25.1-py3-none-any.whl", hash = "sha256:eb6daebe3cbef5b39a0bb2a97cffbe9c7cb46b2fcc399ad141f369f3c2134b1f"},
+    {file = "aiobotocore-2.25.1.tar.gz", hash = "sha256:ea9be739bfd7ece8864f072ec99bb9ed5c7e78ebb2b0b15f29781fbe02daedbc"},
 ]
 
 [package.dependencies]
 aiohttp = ">=3.9.2,<4.0.0"
 aioitertools = ">=0.5.1,<1.0.0"
-boto3 = {version = ">=1.36.0,<1.36.2", optional = true, markers = "extra == \"boto3\""}
-botocore = ">=1.36.0,<1.36.2"
+boto3 = {version = ">=1.40.46,<1.40.62", optional = true, markers = "extra == \"boto3\""}
+botocore = ">=1.40.46,<1.40.62"
 jmespath = ">=0.7.1,<2.0.0"
 multidict = ">=6.0.0,<7.0.0"
 python-dateutil = ">=2.1,<3.0.0"
-urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
 wrapt = ">=1.10.10,<2.0.0"
 
 [package.extras]
-awscli = ["awscli (>=1.37.0,<1.37.2)"]
-boto3 = ["boto3 (>=1.36.0,<1.36.2)"]
+awscli = ["awscli (>=1.42.46,<1.42.62)"]
+boto3 = ["boto3 (>=1.40.46,<1.40.62)"]
+httpx = ["httpx (>=0.25.1,<0.29)"]
 
 [[package]]
 name = "aiofiles"
-version = "24.1.0"
+version = "25.1.0"
 description = "File support for asyncio."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5"},
-    {file = "aiofiles-24.1.0.tar.gz", hash = "sha256:22a075c9e5a3810f0c2e48f3008c94d68c65d763b9b03857924c99e57355166c"},
+    {file = "aiofiles-25.1.0-py3-none-any.whl", hash = "sha256:abe311e527c862958650f9438e859c1fa7568a141b22abcd015e120e86a85695"},
+    {file = "aiofiles-25.1.0.tar.gz", hash = "sha256:a8d728f0a29de45dc521f18f07297428d56992a742f0cd2701ba86e44d23d5b2"},
 ]
 
 [[package]]
@@ -336,34 +336,34 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.36.1"
+version = "1.40.61"
 description = "The AWS SDK for Python"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "boto3-1.36.1-py3-none-any.whl", hash = "sha256:eb21380d73fec6645439c0d802210f72a0cdb3295b02953f246ff53f512faa8f"},
-    {file = "boto3-1.36.1.tar.gz", hash = "sha256:258ab77225a81d3cf3029c9afe9920cd9dec317689dfadec6f6f0a23130bb60a"},
+    {file = "boto3-1.40.61-py3-none-any.whl", hash = "sha256:6b9c57b2a922b5d8c17766e29ed792586a818098efe84def27c8f582b33f898c"},
+    {file = "boto3-1.40.61.tar.gz", hash = "sha256:d6c56277251adf6c2bdd25249feae625abe4966831676689ff23b4694dea5b12"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.1,<1.37.0"
+botocore = ">=1.40.61,<1.41.0"
 jmespath = ">=0.7.1,<2.0.0"
-s3transfer = ">=0.11.0,<0.12.0"
+s3transfer = ">=0.14.0,<0.15.0"
 
 [package.extras]
 crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.36.1"
+version = "1.40.61"
 description = "Low-level, data-driven core of boto 3."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "botocore-1.36.1-py3-none-any.whl", hash = "sha256:dec513b4eb8a847d79bbefdcdd07040ed9d44c20b0001136f0890a03d595705a"},
-    {file = "botocore-1.36.1.tar.gz", hash = "sha256:f789a6f272b5b3d8f8756495019785e33868e5e00dd9662a3ee7959ac939bb12"},
+    {file = "botocore-1.40.61-py3-none-any.whl", hash = "sha256:17ebae412692fd4824f99cde0f08d50126dc97954008e5ba2b522eb049238aa7"},
+    {file = "botocore-1.40.61.tar.gz", hash = "sha256:a2487ad69b090f9cccd64cf07c7021cd80ee9c0655ad974f87045b02f3ef52cd"},
 ]
 
 [package.dependencies]
@@ -372,7 +372,7 @@ python-dateutil = ">=2.1,<3.0.0"
 urllib3 = {version = ">=1.25.4,<2.2.0 || >2.2.0,<3", markers = "python_version >= \"3.10\""}
 
 [package.extras]
-crt = ["awscrt (==0.23.4)"]
+crt = ["awscrt (==0.27.6)"]
 
 [[package]]
 name = "certifi"
@@ -599,23 +599,23 @@ toml = ["tomli ; python_full_version <= \"3.11.0a6\""]
 
 [[package]]
 name = "coveralls"
-version = "3.3.1"
+version = "4.0.2"
 description = "Show coverage stats online via coveralls.io"
 optional = false
-python-versions = ">= 3.5"
+python-versions = "<4.0,>=3.10"
 groups = ["dev"]
 files = [
-    {file = "coveralls-3.3.1-py2.py3-none-any.whl", hash = "sha256:f42015f31d386b351d4226389b387ae173207058832fbf5c8ec4b40e27b16026"},
-    {file = "coveralls-3.3.1.tar.gz", hash = "sha256:b32a8bb5d2df585207c119d6c01567b81fba690c9c10a753bfe27a335bfc43ea"},
+    {file = "coveralls-4.0.2-py3-none-any.whl", hash = "sha256:3940f613eac6b3c14d1425741929e1d15f57666f5e7ae0572bbe92357bd6f7ee"},
+    {file = "coveralls-4.0.2.tar.gz", hash = "sha256:7c21ffa2808d3052fa0cfca3842a9f3d21cc8eada02538c192d932199e5f07d4"},
 ]
 
 [package.dependencies]
-coverage = ">=4.1,<6.0.dev0 || >6.1,<6.1.1 || >6.1.1,<7.0"
-docopt = ">=0.6.1"
-requests = ">=1.0.0"
+coverage = {version = ">=5.0,<6.0.dev0 || >6.1,<6.1.1 || >6.1.1,<8.0", extras = ["toml"]}
+docopt = ">=0.6.1,<0.7.0"
+requests = ">=1.0.0,<3.0.0"
 
 [package.extras]
-yaml = ["PyYAML (>=3.10)"]
+yaml = ["pyyaml (>=3.10,<7.0)"]
 
 [[package]]
 name = "debugpy"
@@ -1127,14 +1127,14 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
-version = "3.8.0"
+version = "4.5.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "pre_commit-3.8.0-py2.py3-none-any.whl", hash = "sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f"},
-    {file = "pre_commit-3.8.0.tar.gz", hash = "sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af"},
+    {file = "pre_commit-4.5.0-py2.py3-none-any.whl", hash = "sha256:25e2ce09595174d9c97860a95609f9f852c0614ba602de3561e267547f2335e1"},
+    {file = "pre_commit-4.5.0.tar.gz", hash = "sha256:dc5a065e932b19fc1d4c653c6939068fe54325af8e741e74e88db4d28a4dd66b"},
 ]
 
 [package.dependencies]
@@ -1386,19 +1386,18 @@ dev = ["pre-commit", "pytest-asyncio", "tox"]
 
 [[package]]
 name = "pytest-spec"
-version = "4.0.0"
+version = "5.2.0"
 description = "Library pytest-spec is a pytest plugin to display test execution output like a SPECIFICATION."
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "pytest_spec-4.0.0-py3-none-any.whl", hash = "sha256:5d85ed29d9240722dfe778bed80022b917154c8200020864a61bfa65f138f70a"},
-    {file = "pytest_spec-4.0.0.tar.gz", hash = "sha256:71c9985e97d090a69b1f1b7adb64e7a208fb1ac42432ce9566c32cdd6b44c1ad"},
+    {file = "pytest_spec-5.2.0-py3-none-any.whl", hash = "sha256:25e1b790c33456b0f7285429f8ccac5fc721a8a327c1dfa9bb23810a12ec8589"},
+    {file = "pytest_spec-5.2.0.tar.gz", hash = "sha256:8a29edfcecd4a407036651973b254c89c0f8d6a82da4e06ab8af95ee9a9afb09"},
 ]
 
 [package.extras]
-deploy = ["build", "twine"]
-test = ["pytest", "pytest-describe"]
+test = ["mypy", "pytest", "pytest-describe"]
 
 [[package]]
 name = "python-dateutil"
@@ -1576,21 +1575,21 @@ files = [
 
 [[package]]
 name = "s3transfer"
-version = "0.11.3"
+version = "0.14.0"
 description = "An Amazon S3 Transfer Manager"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "s3transfer-0.11.3-py3-none-any.whl", hash = "sha256:ca855bdeb885174b5ffa95b9913622459d4ad8e331fc98eb01e6d5eb6a30655d"},
-    {file = "s3transfer-0.11.3.tar.gz", hash = "sha256:edae4977e3a122445660c7c114bba949f9d191bae3b34a096f18a1c8c354527a"},
+    {file = "s3transfer-0.14.0-py3-none-any.whl", hash = "sha256:ea3b790c7077558ed1f02a3072fb3cb992bbbd253392f4b6e9e8976941c7d456"},
+    {file = "s3transfer-0.14.0.tar.gz", hash = "sha256:eff12264e7c8b4985074ccce27a3b38a485bb7f7422cc8046fee9be4983e4125"},
 ]
 
 [package.dependencies]
-botocore = ">=1.36.0,<2.0a.0"
+botocore = ">=1.37.4,<2.0a.0"
 
 [package.extras]
-crt = ["botocore[crt] (>=1.36.0,<2.0a.0)"]
+crt = ["botocore[crt] (>=1.37.4,<2.0a.0)"]
 
 [[package]]
 name = "six"
@@ -1882,4 +1881,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "baed4881afd0ede89098c4f976c024022d3ac9b0237a61ba60da497ef3ba4d35"
+content-hash = "73a28094b20a6ad1929a593313f90806b4c04a7070b733673f77429b2f511c95"
