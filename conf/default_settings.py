@@ -100,6 +100,15 @@ NOTIFY_EMAIL_TO = [
     "",
 ]
 
+## -------- ##
+## Telegram ##
+## -------- ##
+
+NOTIFY_TELEGRAM_ENABLED = False
+NOTIFY_TELEGRAM_BOT_ID = ""
+NOTIFY_TELEGRAM_CHAT_ID = ""
+NOTIFY_TELEGRAM_CAPTION = "1cv8-mgmt backup"
+
 ## ------- ##
 ## Logging ##
 ## ------- ##

@@ -18,7 +18,8 @@ from backup import (
     replicate_backup,
     replicate_info_base,
     rotate_backups,
-    send_email_notification,
+    _send_email_notification,
+    _send_telegram_notification,
 )
 from conf import settings
 from core.exceptions import SubprocessException, V8Exception
@@ -603,9 +604,9 @@ def test_send_email_notification_does_nothing_when_disabled(
     """
     `send_email_notification` does nothing when NOTIFY_EMAIL_ENABLED is False
     """
-    send_notification_mock = mocker.patch("backup.send_notification")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
-    send_notification_mock.assert_not_called()
+    send_email_notification_mock = mocker.patch("backup.send_email_notification")
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
+    send_email_notification_mock.assert_not_called()
 
 
 def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
@@ -617,9 +618,9 @@ def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mi
         new_callable=PropertyMock(return_value=True),
     )
     mocker.patch("backup.make_html_table")
-    send_notification_mock = mocker.patch("backup.send_notification")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
-    send_notification_mock.assert_called_once()
+    send_email_notification_mock = mocker.patch("backup.send_email_notification")
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
+    send_email_notification_mock.assert_called_once()
 
 
 def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
@@ -630,9 +631,9 @@ def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed
         "conf.settings.NOTIFY_EMAIL_ENABLED",
         new_callable=PropertyMock(return_value=True),
     )
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_with("Backup", mixed_backup_result)
 
 
@@ -646,9 +647,9 @@ def test_send_email_notification_not_makes_aws_table_when_aws_disabled(
         "conf.settings.NOTIFY_EMAIL_ENABLED",
         new_callable=PropertyMock(return_value=True),
     )
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_once()
 
 
@@ -663,9 +664,9 @@ def test_send_email_notification_makes_aws_table_when_aws_enabled(
         new_callable=PropertyMock(return_value=True),
     )
     mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_with("AWS upload", mixed_aws_result)
 
 
@@ -680,10 +681,99 @@ def test_send_email_notification_makes_aws_and_backup_tables_when_aws_enabled(
         new_callable=PropertyMock(return_value=True),
     )
     mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     assert make_html_table_mock.call_count == 2
+
+
+def test_send_telegram_notification_does_nothing_when_disabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
+    """
+    `_send_telegram_notification` does nothing when NOTIFY_TELEGRAM_ENABLED is False
+    """
+    send_telegram_notification_mock = mocker.patch("backup.send_telegram_notification")
+    _send_telegram_notification(mixed_backup_result, mixed_aws_result)
+    send_telegram_notification_mock.assert_not_called()
+
+
+def test_send_telegram_notification_calls_inner_send_func(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+    """
+    `_send_telegram_notification` calls inner util func for sending notification
+    """
+    mocker.patch(
+        "conf.settings.NOTIFY_TELEGRAM_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
+    mocker.patch("backup.format_result_as_text")
+    send_telegram_notification_mock = mocker.patch("backup.send_telegram_notification")
+    _send_telegram_notification(mixed_backup_result, mixed_aws_result)
+    send_telegram_notification_mock.assert_called_once()
+
+
+def test_send_telegram_notification_makes_backup_text(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
+    """
+    `_send_telegram_notification` calls `format_result_as_text` for backup results
+    """
+    mocker.patch(
+        "conf.settings.NOTIFY_TELEGRAM_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
+    mocker.patch("backup.send_telegram_notification")
+    format_result_as_text_mock = mocker.patch("backup.format_result_as_text")
+    _send_telegram_notification(mixed_backup_result, mixed_aws_result)
+    format_result_as_text_mock.assert_called_with("Backup", mixed_backup_result)
+
+
+def test_send_telegram_notification_not_makes_aws_text_when_aws_disabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
+    """
+    `_send_telegram_notification` calls `format_result_as_text` only for backup results when AWS_ENABLED is False
+    """
+    mocker.patch(
+        "conf.settings.NOTIFY_TELEGRAM_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
+    mocker.patch("backup.send_telegram_notification")
+    format_result_as_text_mock = mocker.patch("backup.format_result_as_text")
+    _send_telegram_notification(mixed_backup_result, mixed_aws_result)
+    format_result_as_text_mock.assert_called_once()
+
+
+def test_send_telegram_notification_makes_aws_text_when_aws_enabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
+    """
+    `_send_telegram_notification` calls `format_result_as_text` both for aws and backup results when AWS is enabled
+    """
+    mocker.patch(
+        "conf.settings.NOTIFY_TELEGRAM_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
+    mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch("backup.send_telegram_notification")
+    format_result_as_text_mock = mocker.patch("backup.format_result_as_text")
+    _send_telegram_notification(mixed_backup_result, mixed_aws_result)
+    format_result_as_text_mock.assert_called_with("AWS upload", mixed_aws_result)
+
+
+def test_send_telegram_notification_makes_aws_and_backup_text_when_aws_enabled(
+    mocker: MockerFixture, mixed_backup_result, mixed_aws_result
+):
+    """
+    `_send_telegram_notification` calls `format_result_as_text` twice when AWS is enabled
+    """
+    mocker.patch(
+        "conf.settings.NOTIFY_TELEGRAM_ENABLED",
+        new_callable=PropertyMock(return_value=True),
+    )
+    mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
+    mocker.patch("backup.send_telegram_notification")
+    format_result_as_text_mock = mocker.patch("backup.format_result_as_text")
+    _send_telegram_notification(mixed_backup_result, mixed_aws_result)
+    assert format_result_as_text_mock.call_count == 2
 
 
 def test_create_aws_upload_task_does_not_create_task_if_aws_not_enabled(mocker: MockerFixture, infobase):
