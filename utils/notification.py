@@ -1,4 +1,5 @@
 import logging
+import requests
 import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
@@ -43,13 +44,11 @@ def send_telegram_notification(caption: str, text_body: str):
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
     payload = {
         "chat_id": chat_id,
-        "text": text_body,
+        "text": f"{caption}\n\n{text_body}",
         "parse_mode": "HTML",
     }
 
     try:
-        import requests
-
         response = requests.post(url, json=payload, timeout=30)
         response.raise_for_status()
         log.info(f"Telegram notification sent successfully to {chat_id}")
