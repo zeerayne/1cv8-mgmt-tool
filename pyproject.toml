@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "1cv8-mgmt-tool"
-version = "2025.12.11"
+version = "2026.07.12"
 description = ""
 authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
 
