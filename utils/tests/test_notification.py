@@ -1,7 +1,7 @@
 from xml.etree import ElementTree
 
 from conf import settings
-from utils.notification import make_html_table, make_message, send_notification
+from utils.notification import make_html_table, make_message, send_email_notification
 
 
 def test_html_table_empty_input():
@@ -72,11 +72,11 @@ def test_html_table_mixed_output_is_valid_xml(mixed_base_result):
     assert ElementTree.fromstring(result) is not None
 
 
-def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
+def test_send_email_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
     """
     To send email, SMTP should be created with proper SMTP host, port and timeout
     """
-    send_notification("", "")
+    send_email_notification("", "")
     mock_smtp.assert_called_with(
         settings.NOTIFY_EMAIL_SMTP_HOST,
         settings.NOTIFY_EMAIL_SMTP_PORT,
@@ -84,19 +84,21 @@ def test_send_notification_calls_smtp(mock_smtp, mock_smtp_login, mock_smtp_send
     )
 
 
-def test_send_notification_calls_smtp_login(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
+def test_send_email_notification_calls_smtp_login(mock_smtp, mock_smtp_login, mock_smtp_sendmail):
     """
     To send email, should be logged in on smtp server
     """
-    send_notification("", "")
+    send_email_notification("", "")
     mock_smtp_login.assert_called_with(settings.NOTIFY_EMAIL_LOGIN, settings.NOTIFY_EMAIL_PASSWORD)
 
 
-def test_send_notification_calls_smtp_sendmail(mock_smtp, mock_smtp_login, mock_smtp_sendmail, mock_email_message):
+def test_send_email_notification_calls_smtp_sendmail(
+    mock_smtp, mock_smtp_login, mock_smtp_sendmail, mock_email_message
+):
     """
     To send email, should actually send message
     """
-    send_notification("", "")
+    send_email_notification("", "")
     mock_smtp_sendmail.assert_called_with(settings.NOTIFY_EMAIL_FROM, settings.NOTIFY_EMAIL_TO, mock_email_message())
 
 

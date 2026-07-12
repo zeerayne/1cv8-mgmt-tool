@@ -18,7 +18,7 @@ from backup import (
     replicate_backup,
     replicate_info_base,
     rotate_backups,
-    send_email_notification,
+    _send_email_notification,
 )
 from conf import settings
 from core.exceptions import SubprocessException, V8Exception
@@ -603,9 +603,9 @@ def test_send_email_notification_does_nothing_when_disabled(
     """
     `send_email_notification` does nothing when NOTIFY_EMAIL_ENABLED is False
     """
-    send_notification_mock = mocker.patch("backup.send_notification")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
-    send_notification_mock.assert_not_called()
+    send_email_notification_mock = mocker.patch("backup.send_email_notification")
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
+    send_email_notification_mock.assert_not_called()
 
 
 def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
@@ -617,9 +617,9 @@ def test_send_email_notification_calls_inner_send_func(mocker: MockerFixture, mi
         new_callable=PropertyMock(return_value=True),
     )
     mocker.patch("backup.make_html_table")
-    send_notification_mock = mocker.patch("backup.send_notification")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
-    send_notification_mock.assert_called_once()
+    send_email_notification_mock = mocker.patch("backup.send_email_notification")
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
+    send_email_notification_mock.assert_called_once()
 
 
 def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed_backup_result, mixed_aws_result):
@@ -630,9 +630,9 @@ def test_send_email_notification_makes_backup_table(mocker: MockerFixture, mixed
         "conf.settings.NOTIFY_EMAIL_ENABLED",
         new_callable=PropertyMock(return_value=True),
     )
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_with("Backup", mixed_backup_result)
 
 
@@ -646,9 +646,9 @@ def test_send_email_notification_not_makes_aws_table_when_aws_disabled(
         "conf.settings.NOTIFY_EMAIL_ENABLED",
         new_callable=PropertyMock(return_value=True),
     )
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_once()
 
 
@@ -663,9 +663,9 @@ def test_send_email_notification_makes_aws_table_when_aws_enabled(
         new_callable=PropertyMock(return_value=True),
     )
     mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     make_html_table_mock.assert_called_with("AWS upload", mixed_aws_result)
 
 
@@ -680,9 +680,9 @@ def test_send_email_notification_makes_aws_and_backup_tables_when_aws_enabled(
         new_callable=PropertyMock(return_value=True),
     )
     mocker.patch("conf.settings.AWS_ENABLED", new_callable=PropertyMock(return_value=True))
-    mocker.patch("backup.send_notification")
+    mocker.patch("backup.send_email_notification")
     make_html_table_mock = mocker.patch("backup.make_html_table")
-    send_email_notification(mixed_backup_result, mixed_aws_result)
+    _send_email_notification(mixed_backup_result, mixed_aws_result)
     assert make_html_table_mock.call_count == 2
 
 

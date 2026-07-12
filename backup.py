@@ -18,7 +18,12 @@ from core.process import execute_subprocess_command, execute_v8_command
 from utils import postgres
 from utils.asyncio import initialize_event_loop, initialize_semaphore
 from utils.log import configure_logging
-from utils.notification import make_html_table, send_notification
+from utils.notification import (
+    format_result_as_text,
+    make_html_table,
+    send_email_notification,
+    send_telegram_notification,
+)
 
 log = logging.getLogger(__name__)
 log_prefix = "Backup"
@@ -246,7 +251,7 @@ def analyze_results(
         analyze_s3_result(aws_result, infobases, aws_datetime_start, aws_datetime_finish)
 
 
-def send_email_notification(
+def _send_email_notification(
     backup_result: List[core_models.InfoBaseBackupTaskResult],
     aws_result: List[core_models.InfoBaseAWSUploadTaskResult],
 ):
@@ -256,7 +261,19 @@ def send_email_notification(
         msg += make_html_table("Backup", backup_result)
         if settings.AWS_ENABLED:
             msg += make_html_table("AWS upload", aws_result)
-        send_notification(settings.NOTIFY_EMAIL_CAPTION, msg)
+        send_email_notification(settings.NOTIFY_EMAIL_CAPTION, msg)
+
+
+def _send_telegram_notification(
+    backup_result: List[core_models.InfoBaseBackupTaskResult],
+    aws_result: List[core_models.InfoBaseAWSUploadTaskResult],
+):
+    if settings.NOTIFY_TELEGRAM_ENABLED:
+        log.info(f"<{log_prefix}> Sending telegram notification")
+        msg = format_result_as_text("Backup", backup_result)
+        if settings.AWS_ENABLED:
+            msg += "\n\n" + format_result_as_text("AWS upload", aws_result)
+        send_telegram_notification(settings.NOTIFY_TELEGRAM_CAPTION, msg)
 
 
 async def main():
@@ -315,7 +332,9 @@ async def main():
             aws_datetime_finish,
         )
 
-        send_email_notification(backup_results, aws_results)
+        _send_email_notification(backup_results, aws_results)
+
+        _send_telegram_notification(backup_results, aws_results)
 
         log.info(f"<{log_prefix}> Done")
     except Exception:
