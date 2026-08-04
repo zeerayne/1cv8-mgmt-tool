@@ -22,26 +22,20 @@ COPY docker/ras-entrypoint.sh /opt/docker/entrypoint.sh
 RUN chmod +x /opt/docker/entrypoint.sh
 ENTRYPOINT ["/opt/docker/entrypoint.sh"]
 
-FROM python:3.13 AS python-base
-ENV PYTHONUNBUFFERED 1
-ENV POETRY_VERSION=1.8.4
-ENV POETRY_HOME=/opt/poetry
-ENV POETRY_VENV=/opt/poetry-venv
-ENV POETRY_CACHE_DIR=/opt/.cache
+FROM python:3.15 AS python-base
+ENV PYTHONUNBUFFERED=1
+ENV UV_CACHE_DIR=/opt/.cache/uv
+ENV UV_PROJECT_ENVIRONMENT=/opt/.venv
 
-FROM python-base AS poetry-base
-RUN python3 -m venv $POETRY_VENV \
-    && $POETRY_VENV/bin/pip install -U pip setuptools \
-    && $POETRY_VENV/bin/pip install poetry==${POETRY_VERSION}
+FROM python-base AS uv-base
+RUN pip install --no-cache-dir uv
 
 FROM python-base AS rac
 COPY --from=ras /opt/1cv8 /opt/1cv8
-COPY --from=poetry-base ${POETRY_VENV} ${POETRY_VENV}
-ENV PATH="${PATH}:${POETRY_VENV}/bin"
+COPY --from=uv-base /usr/local/bin/uv /usr/local/bin/uv
 WORKDIR /app
-COPY pyproject.toml poetry.lock ./
-RUN poetry check \
-    && poetry install --no-interaction --no-cache --no-root --without dev --with debug
+COPY pyproject.toml uv.lock ./
+RUN uv sync --group debug
 COPY docker/rac-entrypoint.sh /opt/docker/entrypoint.sh
 RUN chmod +x /opt/docker/entrypoint.sh
 ENTRYPOINT ["/opt/docker/entrypoint.sh"]

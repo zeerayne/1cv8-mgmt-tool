@@ -50,10 +50,10 @@ choco install python3
 scoop install python
 ```
 
-### Poetry
+### uv
 
 ```powershell
-(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -
+(powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
 ### Регистрация COM-компоненты 1С Предприятие
@@ -81,7 +81,7 @@ git clone https://github.com/zeerayne/1cv8-mgmt-tool.git
 
 ```powershell
 cd 1cv8-mgmt-tool
-poetry install --no-root --only main
+uv sync --frozen --no-group dev --no-group debug
 ```
 
 # Настройка
@@ -249,23 +249,23 @@ TIP: для работы с путями в шаблонном файле нас
 ## Запуск резервного копирования
 
 ```powershell
-poetry run python backup.py
+uv run python backup.py
 ```
 
 ## Запуск обслуживания
 
 ```powershell
-poetry run python maintenance.py
+uv run python maintenance.py
 ```
 
 ## Запуск обновления
 
 ```powershell
-poetry run python update.py
+uv run python update.py
 ```
 
 ## Запуск любого сценария с кастомным модулем настроек
 
 ```powershell
-$env:1CV8MGMT_SETTINGS_MODULE = 'custom_settings.py'; poetry run python <scenario>.py
+$env:1CV8MGMT_SETTINGS_MODULE = 'custom_settings.py'; uv run python <scenario>.py
 ```

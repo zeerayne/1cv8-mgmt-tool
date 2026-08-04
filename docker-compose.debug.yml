@@ -1,4 +1,3 @@
-version: '3.4'
 services:
   ragent:
     build:
@@ -47,8 +46,6 @@ services:
       target: rac
     command: ["rac.py"]
     container_name: rac
-    environment:
-      - POETRY_VENV=/opt/poetry-venv
     ports:
       - 5678:5678
     volumes:

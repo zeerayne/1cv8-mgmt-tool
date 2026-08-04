@@ -1,34 +1,35 @@
-[tool.poetry]
+[project]
 name = "1cv8-mgmt-tool"
 version = "2026.07.12"
 description = ""
-authors = ["Ilya Bogdanov <zeerayne1337@gmail.com>"]
-
-[tool.poetry.dependencies]
-python = "^3.13"
-pywin32 = [
-    { version = "^304", platform = "win32" },
+authors = [{ name = "Ilya Bogdanov", email = "zeerayne1337@gmail.com" }]
+requires-python = ">=3.13"
+dependencies = [
+    "aioboto3>=15.0.0,<16",
+    "filechunkio>=1.8,<2",
+    "aioshutil>=1.6,<2",
+    "aiofiles>=25.0.0,<26",
+    "packaging",
+    "asyncpg",
+    "pywin32>=312,<313; sys_platform == 'win32'",
 ]
-aioboto3 = "^15.0.0"
-filechunkio = "^1.8"
-aioshutil = "^1.6"
-aiofiles = "^25.0.0"
-packaging = "*"
-asyncpg = "*"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^9.0.0"
-pytest-spec = "^5.0.0"
-pytest-mock = "^3.0.0"
-pytest-asyncio = "^1.3.0"
-pytest-env = "^1.0.0"
-pytest-freezer = "^0.4.9"
-pre-commit = "^4.0.0"
-coveralls = "^4.0.0"
-ruff = "*"
-
-[tool.poetry.group.debug.dependencies]
-debugpy = "^1.6.6"
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0,<10",
+    "pytest-spec>=5.0.0,<6",
+    "pytest-mock>=3.0.0,<4",
+    "pytest-asyncio>=1.3.0,<2",
+    "pytest-env>=1.0.0,<2",
+    "pytest-freezer>=0.4.9,<1",
+    "pre-commit>=4.0.0,<5",
+    "coveralls>=4.0.0,<5",
+    "coverage>=7,<8",
+    "ruff",
+]
+debug = [
+    "debugpy>=1.6.6",
+]
 
 [tool.pytest.ini_options]
 spec_header_format = "Case: {test_case}\nPath: {module_path}"
@@ -61,7 +62,3 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
