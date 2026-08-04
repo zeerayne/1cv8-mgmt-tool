@@ -124,8 +124,9 @@ configure_hot_standby() {
       echo "Configuring hot standby..."
       set_postgresql_param "wal_level" "hot_standby"
       set_postgresql_param "max_wal_senders" "16"
-      set_postgresql_param "checkpoint_segments" "8"
-      set_postgresql_param "wal_keep_segments" "32"
+      set_postgresql_param "max_wal_size" "256MB"
+      set_postgresql_param "min_wal_size" "80MB"
+      set_postgresql_param "wal_keep_size" "512MB"
       set_postgresql_param "hot_standby" "on"
       ;;
   esac
@@ -185,26 +186,24 @@ initialize_database() {
         ;;
       *)
         echo "Initializing database..."
-        PG_OLD_VERSION=$(find ${PG_HOME}/[0-9].[0-9]/main -maxdepth 1 -name PG_VERSION 2>/dev/null | grep -v $PG_VERSION | sort -r | head -n1 | cut -d'/' -f5)
-        if [[ -n ${PG_OLD_VERSION} ]]; then
-          echo "‣ Migrating PostgreSQL ${PG_OLD_VERSION} data to ${PG_VERSION}..."
+        if [[ -f ${PG_DATADIR}/PG_VERSION ]]; then
+          PG_OLD_VERSION=$(cat ${PG_DATADIR}/PG_VERSION)
+          if [[ "${PG_OLD_VERSION}" != "${PG_VERSION}" ]]; then
+            echo "‣ Migrating PostgreSQL ${PG_OLD_VERSION} data to ${PG_VERSION}..."
 
-          # protect the existing data from being altered by apt-get
-          mv ${PG_HOME}/${PG_OLD_VERSION} ${PG_HOME}/${PG_OLD_VERSION}.migrating
+            # protect the existing data from being altered by apt
+            mv ${PG_DATADIR} ${PG_HOME}/${PG_OLD_VERSION}.migrating
 
-          echo "‣ Installing PostgreSQL ${PG_OLD_VERSION}..."
-          if ! ( apt-get update &&  DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-${PG_OLD_VERSION} postgresql-client-${PG_OLD_VERSION} ) >/dev/null; then
-            echo "ERROR! Failed to install PostgreSQL ${PG_OLD_VERSION}. Exiting..."
-            # first move the old data back
-            rm -rf ${PG_HOME}/${PG_OLD_VERSION}
-            mv ${PG_HOME}/${PG_OLD_VERSION}.migrating ${PG_HOME}/${PG_OLD_VERSION}
-            exit 1
+            echo "‣ Installing PostgreSQL ${PG_OLD_VERSION}..."
+            if ! ( apt update && DEBIAN_FRONTEND=noninteractive apt install -y postgresql-${PG_OLD_VERSION} postgresql-client-${PG_OLD_VERSION} ) >/dev/null; then
+              echo "ERROR! Failed to install PostgreSQL ${PG_OLD_VERSION}. Exiting..."
+              # move the old data back
+              rm -rf ${PG_DATADIR}
+              mv ${PG_HOME}/${PG_OLD_VERSION}.migrating ${PG_DATADIR}
+              exit 1
+            fi
+            rm -rf /var/lib/apt/lists/*
           fi
-          rm -rf /var/lib/apt/lists/*
-
-          # we're ready to migrate, move back the old data and remove the trap
-          rm -rf ${PG_HOME}/${PG_OLD_VERSION}
-          mv ${PG_HOME}/${PG_OLD_VERSION}.migrating ${PG_HOME}/${PG_OLD_VERSION}
         fi
 
         if [[ -n $PG_PASSWORD ]]; then
@@ -214,9 +213,9 @@ initialize_database() {
         exec_as_postgres ${PG_BINDIR}/initdb --pgdata=${PG_DATADIR} \
           --username=${PG_USER} --encoding=unicode --auth=trust ${PG_PASSWORD:+--pwfile=/tmp/pwfile} >/dev/null
 
-        if [[ -n ${PG_OLD_VERSION} ]]; then
+        if [[ "${PG_OLD_VERSION}" != "${PG_VERSION}" ]]; then
           PG_OLD_BINDIR=/usr/lib/postgresql/${PG_OLD_VERSION}/bin
-          PG_OLD_DATADIR=${PG_HOME}/${PG_OLD_VERSION}/main
+          PG_OLD_DATADIR=${PG_HOME}/${PG_OLD_VERSION}.migrating
           PG_OLD_CONF=${PG_OLD_DATADIR}/postgresql.conf
           PG_OLD_HBA_CONF=${PG_OLD_DATADIR}/pg_hba.conf
           PG_OLD_IDENT_CONF=${PG_OLD_DATADIR}/pg_ident.conf

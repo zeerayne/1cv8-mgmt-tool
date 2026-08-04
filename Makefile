@@ -1,25 +1,25 @@
 .PHONY: install
 install:
-	poetry install --no-root --only main
+	uv sync --frozen --no-group dev --no-group debug
 
 .PHONY: install-dev
 install-dev:
-	poetry install --no-root
-	poetry run pre-commit install
+	uv sync --frozen --all-groups
+	uv run pre-commit install
 
 .PHONY: test
 test:
-	poetry run pytest --spec
+	uv run pytest --spec
 
 .PHONY: test-coverage
 test-coverage:
-	poetry run coverage run -m pytest
+	uv run coverage run -m pytest
 
 .PHONY: ruff
 ruff:
-	poetry run ruff check
+	uv run ruff check
 
 .PHONY: format
 format:
-	poetry run ruff check --fix
-	poetry run ruff format
+	uv run ruff check --fix
+	uv run ruff format
