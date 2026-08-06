@@ -26,8 +26,8 @@
 ## Установка внешних зависимостей
 
 Для работы необходимы 
-- Python 3.8 или более новый 
-- [Poetry](https://python-poetry.org/)
+- Python 3.13 или более новый 
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - [Платформа 1С Предприятие 8.3](https://releases.1c.ru/project/Platform83)
 
 ### Python
